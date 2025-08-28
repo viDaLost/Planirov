@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Планировщик задач</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -16,6 +16,7 @@
             --tg-theme-button-color: #3390ec;
             --tg-theme-button-text-color: #ffffff;
             --tg-theme-secondary-bg-color: #f4f4f5;
+            --ring: rgba(51,144,236,.35);
         }
         .dark {
             --tg-theme-bg-color: #1c1c1d;
@@ -25,45 +26,34 @@
             --tg-theme-button-color: #5d9ce6;
             --tg-theme-button-text-color: #ffffff;
             --tg-theme-secondary-bg-color: #2c2c2e;
+            --ring: rgba(93,156,230,.35);
         }
-        body{
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            transition: background-color .3s, color .3s;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            transition: background-color .25s, color .25s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Inter', system-ui, sans-serif;
         }
-
-        .task-card{ transition: transform .2s, box-shadow .2s; }
-        .task-card:hover{ transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,.1); }
-
-        .priority-low{ background-color: rgba(52,211,153,.1); color: rgb(16,185,129); }
-        .priority-medium{ background-color: rgba(96,165,250,.1); color: rgb(59,130,246); }
-        .priority-high{ background-color: rgba(251,191,36,.1); color: rgb(234,179,8); }
-        .priority-critical{ background-color: rgba(239,68,68,.1); color: rgb(239,68,68); }
-
-        .status-backlog{ background-color: rgba(156,163,175,.1); color: rgb(156,163,175); }
-        .status-in-progress{ background-color: rgba(59,130,246,.1); color: rgb(59,130,246); }
-        .status-review{ background-color: rgba(168,85,247,.1); color: rgb(168,85,247); }
-        .status-done{ background-color: rgba(16,185,129,.1); color: rgb(16,185,129); }
-
-        .kanban-column{ min-height: 60vh; }
-        .calendar-day{ min-height: 100px; }
-        .calendar-day.today{ background-color: rgba(59,130,246,.1); }
-        .calendar-day:hover{ background-color: rgba(59,130,246,.05); }
-
-        .subtask-checkbox:checked + .subtask-label{
-            text-decoration: line-through;
-            color: var(--tg-theme-hint-color);
-        }
-
-        .command-palette{ backdrop-filter: blur(10px); }
-
+        .task-card { transition: transform .15s, box-shadow .15s; }
+        .task-card:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgb(0 0 0 / .08); }
+        .priority-low{background:rgba(52,211,153,.12);color:rgb(16,185,129)}
+        .priority-medium{background:rgba(96,165,250,.12);color:rgb(59,130,246)}
+        .priority-high{background:rgba(251,191,36,.12);color:rgb(234,179,8)}
+        .priority-critical{background:rgba(239,68,68,.12);color:rgb(239,68,68)}
+        .status-backlog{background:rgba(156,163,175,.12);color:rgb(156,163,175)}
+        .status-in-progress{background:rgba(59,130,246,.12);color:rgb(59,130,246)}
+        .status-review{background:rgba(168,85,247,.12);color:rgb(168,85,247)}
+        .status-done{background:rgba(16,185,129,.12);color:rgb(16,185,129)}
+        .kanban-column{min-height:60vh}
+        .calendar-day{min-height:100px}
+        .calendar-day.today{outline:2px solid var(--ring); outline-offset: -2px; background: rgba(59,130,246,.06);}
+        .subtask-checkbox:checked + .subtask-label { text-decoration: line-through; color: var(--tg-theme-hint-color); }
+        .command-palette{backdrop-filter: blur(10px);}
+        .ring-focus:focus{outline:none; box-shadow: 0 0 0 3px var(--ring)}
         @media (max-width: 640px){
-            .kanban-column{
-                min-height: auto;
-                max-height: 60vh;
-                overflow-y: auto;
-            }
+            .kanban-column{min-height:auto;max-height:60vh;overflow-y:auto}
         }
     </style>
 </head>
@@ -72,17 +62,42 @@
     <!-- Header -->
     <header class="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] border-b border-[var(--tg-theme-secondary-bg-color)]">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <button id="menu-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                    <i class="fas fa-bars"></i>
-                </button>
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <button id="menu-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Открыть меню">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <!-- Side menu -->
+                    <aside id="side-menu" class="hidden fixed top-0 left-0 h-full w-72 bg-[var(--tg-theme-bg-color)] shadow-xl z-20 border-r border-[var(--tg-theme-secondary-bg-color)]">
+                        <div class="p-4 border-b border-[var(--tg-theme-secondary-bg-color)] flex justify-between items-center">
+                            <h2 class="text-lg font-semibold">Меню</h2>
+                            <button id="close-menu" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть меню">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="p-3 space-y-1">
+                            <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                <i class="fas fa-user mr-2"></i><span id="menu-user">Профиль</span>
+                            </button>
+                            <button id="btn-theme-toggle" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                <i class="fas fa-moon mr-2"></i><span>Переключить тему</span>
+                            </button>
+                            <button id="btn-export" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                <i class="fas fa-file-export mr-2"></i>Экспортировать данные
+                            </button>
+                            <button id="btn-import" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                <i class="fas fa-file-import mr-2"></i>Импортировать данные
+                            </button>
+                        </div>
+                    </aside>
+                </div>
                 <h1 class="text-xl font-semibold">Планировщик задач</h1>
             </div>
-            <div class="flex items-center space-x-2">
-                <button id="search-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+            <div class="flex items-center gap-2">
+                <button id="search-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Поиск">
                     <i class="fas fa-search"></i>
                 </button>
-                <button id="add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">
+                <button id="add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] ring-focus" aria-label="Новая задача">
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
@@ -97,7 +112,7 @@
                 <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
                     <i class="fas fa-list mr-2"></i> Список
                 </button>
-                <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-t border-b border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-y border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
                     <i class="fas fa-columns mr-2"></i> Доска
                 </button>
                 <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
@@ -108,22 +123,20 @@
 
         <!-- Project Selector -->
         <div class="mb-4 flex items-center">
-            <select id="project-selector" class="bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+            <select id="project-selector" class="bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] rounded-lg px-4 py-2 ring-focus">
                 <option value="all">Все проекты</option>
-                <option value="work">Работа</option>
-                <option value="personal">Личное</option>
-                <option value="team">Команда</option>
             </select>
-            <button id="add-project-button" class="ml-2 p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                <i class="fas fa-plus"></i>
+            <button id="add-project-button" class="ml-2 p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Новый проект">
+                <i class="fas fa-folder-plus"></i>
             </button>
         </div>
 
         <!-- List View -->
-        <div id="list-view" class="view-content">
+        <section id="list-view" class="view-content">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold">Задачи</h2>
-                <div class="flex space-x-2">
+                <div class="flex gap-2">
+                    <input id="search-input" placeholder="Поиск..." class="hidden md:block px-3 py-2 rounded-lg bg-[var(--tg-theme-secondary-bg-color)] ring-focus" />
                     <button id="filter-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
                         <i class="fas fa-filter mr-1"></i> Фильтр
                     </button>
@@ -132,182 +145,52 @@
                     </button>
                 </div>
             </div>
-
-            <div class="space-y-3">
-                <!-- Task Item -->
-                <div class="task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 cursor-pointer">
-                    <div class="flex items-start justify-between">
-                        <div class="flex items-start space-x-3">
-                            <div class="mt-1">
-                                <input type="checkbox" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
-                            </div>
-                            <div>
-                                <h3 class="font-medium">Подготовить проектное предложение</h3>
-                                <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">Срок: завтра, 15:00</p>
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    <span class="priority-high text-xs px-2 py-1 rounded-full">Высокий</span>
-                                    <span class="status-in-progress text-xs px-2 py-1 rounded-full">В работе</span>
-                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Работа</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Task Item -->
-                <div class="task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 cursor-pointer">
-                    <div class="flex items-start justify-between">
-                        <div class="flex items-start space-x-3">
-                            <div class="mt-1">
-                                <input type="checkbox" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
-                            </div>
-                            <div>
-                                <h3 class="font-medium">Командная встреча</h3>
-                                <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">Сегодня в 10:00</p>
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    <span class="priority-medium text-xs px-2 py-1 rounded-full">Средний</span>
-                                    <span class="status-backlog text-xs px-2 py-1 rounded-full">Бэклог</span>
-                                    <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Команда</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Task Item -->
-                <div class="task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 cursor-pointer">
-                    <div class="flex items-start justify-between">
-                        <div class="flex items-start space-x-3">
-                            <div class="mt-1">
-                                <input type="checkbox" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
-                            </div>
-                            <div>
-                                <h3 class="font-medium">Купить продукты</h3>
-                                <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">Без срока</p>
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    <span class="priority-low text-xs px-2 py-1 rounded-full">Низкий</span>
-                                    <span class="status-backlog text-xs px-2 py-1 rounded-full">Бэклог</span>
-                                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Личное</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <div id="list-container" class="space-y-3"></div>
+        </section>
 
         <!-- Kanban View -->
-        <div id="kanban-view" class="view-content hidden">
+        <section id="kanban-view" class="view-content hidden">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <!-- Backlog -->
-                <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                <div data-col="backlog" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="font-medium">Бэклог</h3>
-                        <span class="text-xs bg-gray-200 text-gray-800 rounded-full px-2 py-1">3</span>
+                        <span class="text-xs bg-gray-200 text-gray-800 rounded-full px-2 py-1" id="cnt-backlog">0</span>
                     </div>
-                    <div class="space-y-3">
-                        <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
-                            <h4 class="font-medium">Исследовать конкурентов</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="priority-medium text-xs px-2 py-1 rounded-full">Средний</span>
-                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Работа</span>
-                            </div>
-                        </div>
-                        <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
-                            <h4 class="font-medium">Обновить портфолио</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="priority-low text-xs px-2 py-1 rounded-full">Низкий</span>
-                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Команда</span>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="space-y-3 column-body"></div>
                 </div>
-
-                <!-- In Progress -->
-                <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                <div data-col="in-progress" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="font-medium">В работе</h3>
-                        <span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-1">2</span>
+                        <span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-1" id="cnt-in-progress">0</span>
                     </div>
-                    <div class="space-y-3">
-                        <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
-                            <h4 class="font-medium">Подготовить проектное предложение</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="priority-high text-xs px-2 py-1 rounded-full">Высокий</span>
-                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Работа</span>
-                            </div>
-                        </div>
-                        <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
-                            <h4 class="font-medium">Дизайн нового логотипа</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="priority-medium text-xs px-2 py-1 rounded-full">Средний</span>
-                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Команда</span>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="space-y-3 column-body"></div>
                 </div>
-
-                <!-- Review -->
-                <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                <div data-col="review" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium">На проверке</h3>
-                        <span class="text-xs bg-purple-200 text-purple-800 rounded-full px-2 py-1">1</span>
+                        <h3 class="font-medium">Проверка</h3>
+                        <span class="text-xs bg-purple-200 text-purple-800 rounded-full px-2 py-1" id="cnt-review">0</span>
                     </div>
-                    <div class="space-y-3">
-                        <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
-                            <h4 class="font-medium">Ревью PR #42</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="priority-critical text-xs px-2 py-1 rounded-full">Критичный</span>
-                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Команда</span>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="space-y-3 column-body"></div>
                 </div>
-
-                <!-- Done -->
-                <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                <div data-col="done" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="font-medium">Готово</h3>
-                        <span class="text-xs bg-green-200 text-green-800 rounded-full px-2 py-1">2</span>
+                        <span class="text-xs bg-green-200 text-green-800 rounded-full px-2 py-1" id="cnt-done">0</span>
                     </div>
-                    <div class="space-y-3">
-                        <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move opacity-70">
-                            <h4 class="font-medium line-through">Настроить CI/CD</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="priority-high text-xs px-2 py-1 rounded-full">Высокий</span>
-                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Команда</span>
-                            </div>
-                        </div>
-                        <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move opacity-70">
-                            <h4 class="font-medium line-through">Написать документацию</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="priority-medium text-xs px-2 py-1 rounded-full">Средний</span>
-                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Работа</span>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="space-y-3 column-body"></div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Calendar View -->
-        <div id="calendar-view" class="view-content hidden">
+        <section id="calendar-view" class="view-content hidden">
             <div class="mb-4 flex justify-between items-center">
-                <div class="flex items-center space-x-4">
-                    <button id="prev-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                <div class="flex items-center gap-4">
+                    <button id="prev-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Предыдущий месяц">
                         <i class="fas fa-chevron-left"></i>
                     </button>
-                    <h2 class="text-lg font-semibold" id="calendar-title">Июнь 2023</h2>
-                    <button id="next-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                    <h2 id="month-title" class="text-lg font-semibold">Месяц ГГГГ</h2>
+                    <button id="next-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Следующий месяц">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
@@ -317,96 +200,48 @@
                     </button>
                 </div>
             </div>
-
-            <div class="grid grid-cols-7 gap-1 mb-1">
-                <div class="text-center text-sm font-medium py-2">Вс</div>
-                <div class="text-center text-sm font-medium py-2">Пн</div>
-                <div class="text-center text-sm font-medium py-2">Вт</div>
-                <div class="text-center text-sm font-medium py-2">Ср</div>
-                <div class="text-center text-sm font-medium py-2">Чт</div>
-                <div class="text-center text-sm font-medium py-2">Пт</div>
-                <div class="text-center text-sm font-medium py-2">Сб</div>
-            </div>
-
-            <div class="grid grid-cols-7 gap-1">
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">28</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">29</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">30</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">31</div></div>
-
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">1</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">2</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">3</div></div>
-
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">4</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">5</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
-                    <div class="text-right text-sm mb-1">6</div>
-                    <div class="text-xs truncate px-1 py-0.5 bg-blue-100 text-blue-800 rounded mb-1">Командная встреча</div>
-                </div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">7</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">8</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">9</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">10</div></div>
-
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">11</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">12</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">13</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">14</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">15</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">16</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">17</div></div>
-
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">18</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">19</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">20</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">21</div></div>
-                <div class="calendar-day today border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
-                    <div class="text-right text-sm mb-1 font-bold">22</div>
-                    <div class="text-xs truncate px-1 py-0.5 bg-red-100 text-red-800 rounded mb-1">Дедлайн по проекту</div>
-                    <div class="text-xs truncate px-1 py-0.5 bg-green-100 text-green-800 rounded mb-1">Купить продукты</div>
-                </div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">23</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">24</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">25</div></div>
-
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">26</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">27</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">28</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">29</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">30</div></div>
-                <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1"><div class="text-right text-sm mb-1">1</div></div>
-            </div>
-        </div>
+            <div id="weekday-row" class="grid grid-cols-7 gap-1 mb-1"></div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+        </section>
     </main>
 
     <!-- Bottom Navigation (Mobile) -->
     <nav class="md:hidden sticky bottom-0 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
         <div class="flex justify-around py-2">
-            <button data-view="list" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Список"><i class="fas fa-list text-lg"></i></button>
-            <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Доска"><i class="fas fa-columns text-lg"></i></button>
-            <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Календарь"><i class="fas fa-calendar-alt text-lg"></i></button>
-            <button id="mobile-add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]" aria-label="Добавить задачу"><i class="fas fa-plus text-lg"></i></button>
+            <button data-view="list" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Список">
+                <i class="fas fa-list text-lg"></i>
+            </button>
+            <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Доска">
+                <i class="fas fa-columns text-lg"></i>
+            </button>
+            <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Календарь">
+                <i class="fas fa-calendar-alt text-lg"></i>
+            </button>
+            <button id="mobile-add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]" aria-label="Новая задача">
+                <i class="fas fa-plus text-lg"></i>
+            </button>
         </div>
     </nav>
 
     <!-- Task Modal -->
-    <div id="task-modal" class="fixed inset-0 z-50 hidden">
+    <div id="task-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
         <div class="absolute inset-0 bg-black bg-opacity-50"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
-                <h2 class="text-xl font-semibold">Новая задача</h2>
-                <button id="close-task-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]"><i class="fas fa-times"></i></button>
+                <h2 id="task-modal-title" class="text-xl font-semibold">Новая задача</h2>
+                <button id="close-task-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="p-4">
+                <input type="hidden" id="task-id">
                 <div class="mb-4">
-                    <input type="text" id="task-title" placeholder="Название задачи" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                    <input type="text" id="task-title" placeholder="Название задачи" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
                 </div>
-
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Приоритет</label>
-                        <select id="task-priority" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                        <select id="task-priority" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
                             <option value="low">Низкий</option>
                             <option value="medium" selected>Средний</option>
                             <option value="high">Высокий</option>
@@ -415,90 +250,37 @@
                     </div>
                     <div>
                         <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Статус</label>
-                        <select id="task-status" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                        <select id="task-status" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
                             <option value="backlog">Бэклог</option>
                             <option value="in-progress">В работе</option>
-                            <option value="review">На проверке</option>
+                            <option value="review">Проверка</option>
                             <option value="done">Готово</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Проект</label>
-                        <select id="task-project" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
-                            <option value="work">Работа</option>
-                            <option value="personal">Личное</option>
-                            <option value="team">Команда</option>
-                        </select>
+                        <select id="task-project" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></select>
                     </div>
                     <div>
-                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Дата завершения</label>
-                        <input type="date" id="task-due-date" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Срок</label>
+                        <input type="date" id="task-due-date" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
                     </div>
                 </div>
-
                 <div class="mb-4">
                     <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Описание</label>
-                    <textarea id="task-description" rows="3" placeholder="Добавьте детали..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]"></textarea>
+                    <textarea id="task-description" rows="3" placeholder="Подробности..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
                 </div>
-
                 <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Подзадачи</label>
-                    <div class="space-y-2">
-                        <div class="flex items-center">
-                            <input type="checkbox" id="subtask1" class="subtask-checkbox rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
-                            <label for="subtask1" class="subtask-label ml-2">Изучить конкурентов</label>
-                        </div>
-                        <div class="flex items-center">
-                            <input type="checkbox" id="subtask2" class="subtask-checkbox rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
-                            <label for="subtask2" class="subtask-label ml-2">Набросать структуру</label>
-                        </div>
-                        <div class="flex items-center">
-                            <input type="checkbox" id="subtask3" class="subtask-checkbox rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
-                            <label for="subtask3" class="subtask-label ml-2">Написать черновик</label>
-                        </div>
-                    </div>
-                    <button class="mt-2 text-sm text-[var(--tg-theme-link-color)] flex items-center">
-                        <i class="fas fa-plus mr-1"></i> Добавить подзадачу
-                    </button>
+                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Подзадачи (через Enter)</label>
+                    <textarea id="task-subtasks" rows="2" placeholder="Например: Исследовать конкурентов\nСделать план" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
                 </div>
-
                 <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Метки</label>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                            Работа
-                            <button class="ml-1 text-blue-500 hover:text-blue-700">
-                                <i class="fas fa-times text-xs"></i>
-                            </button>
-                        </span>
-                        <span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Важно
-                            <button class="ml-1 text-green-500 hover:text-green-700">
-                                <i class="fas fa-times text-xs"></i>
-                            </button>
-                        </span>
-                        <button class="text-sm text-[var(--tg-theme-link-color)] flex items-center">
-                            <i class="fas fa-plus mr-1"></i> Добавить метку
-                        </button>
-                    </div>
+                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Метки (через запятую)</label>
+                    <input id="task-tags" placeholder="Работа, Важно" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
                 </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Напоминание</label>
-                    <select id="task-reminder" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
-                        <option value="">Без напоминания</option>
-                        <option value="5min">За 5 минут</option>
-                        <option value="15min">За 15 минут</option>
-                        <option value="30min">За 30 минут</option>
-                        <option value="1hour">За 1 час</option>
-                        <option value="1day">За 1 день</option>
-                    </select>
-                </div>
-
-                <div class="flex justify-end space-x-2 mt-6">
+                <div class="flex justify-end gap-2 mt-6">
                     <button id="cancel-task" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Отмена</button>
                     <button id="save-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Сохранить</button>
                 </div>
@@ -507,38 +289,32 @@
     </div>
 
     <!-- Project Modal -->
-    <div id="project-modal" class="fixed inset-0 z-50 hidden">
+    <div id="project-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
         <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[70vh] overflow-y-auto">
+        <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[75vh] overflow-y-auto">
             <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
                 <h2 class="text-xl font-semibold">Новый проект</h2>
-                <button id="close-project-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]"><i class="fas fa-times"></i></button>
+                <button id="close-project-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="p-4">
+                <input type="hidden" id="project-id">
                 <div class="mb-4">
-                    <input type="text" id="project-name" placeholder="Название проекта" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                    <input type="text" id="project-name" placeholder="Название проекта" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
                 </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Цвет</label>
-                    <div class="flex space-x-2">
-                        <button class="w-8 h-8 rounded-full bg-blue-500 border-2 border-blue-700"></button>
-                        <button class="w-8 h-8 rounded-full bg-green-500 border-2 border-transparent"></button>
-                        <button class="w-8 h-8 rounded-full bg-purple-500 border-2 border-transparent"></button>
-                        <button class="w-8 h-8 rounded-full bg-red-500 border-2 border-transparent"></button>
-                        <button class="w-8 h-8 rounded-full bg-yellow-500 border-2 border-transparent"></button>
-                        <button class="w-8 h-8 rounded-full bg-pink-500 border-2 border-transparent"></button>
-                    </div>
-                </div>
-
                 <div class="mb-4">
                     <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Описание</label>
-                    <textarea id="project-description" rows="3" placeholder="Добавьте описание проекта..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]"></textarea>
+                    <textarea id="project-description" rows="3" placeholder="Короткое описание..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
                 </div>
-
-                <div class="flex justify-end space-x-2 mt-6">
-                    <button id="cancel-project" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Отмена</button>
-                    <button id="save-project" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Сохранить</button>
+                <div class="flex justify-between mt-6">
+                    <button id="delete-project" class="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50/10">
+                        <i class="fas fa-trash mr-1"></i>Удалить
+                    </button>
+                    <div class="flex gap-2">
+                        <button id="cancel-project" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Отмена</button>
+                        <button id="save-project" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Сохранить</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -554,26 +330,30 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-search text-[var(--tg-theme-hint-color)]"></i>
                         </div>
-                        <input type="text" id="command-input" placeholder="Введите команду или поиск..." class="w-full pl-10 pr-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                        <input type="text" id="command-input" placeholder="Команда или поиск..." class="w-full pl-10 pr-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
                     </div>
                 </div>
                 <div class="max-h-96 overflow-y-auto">
                     <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Задачи</div>
                     <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
                         <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-blue-100 text-blue-800 mr-3"><i class="fas fa-plus"></i></div>
+                            <div class="p-2 rounded-full bg-blue-100 text-blue-800 mr-3">
+                                <i class="fas fa-plus"></i>
+                            </div>
                             <div>
-                                <div class="font-medium">Создать новую задачу</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Добавьте новую задачу в список</div>
+                                <div class="font-medium">Создать задачу</div>
+                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Добавить новую задачу</div>
                             </div>
                         </div>
                     </div>
                     <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
                         <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-purple-100 text-purple-800 mr-3"><i class="fas fa-search"></i></div>
+                            <div class="p-2 rounded-full bg-purple-100 text-purple-800 mr-3">
+                                <i class="fas fa-search"></i>
+                            </div>
                             <div>
-                                <div class="font-medium">Искать задачи</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Найдите задачи по названию или описанию</div>
+                                <div class="font-medium">Поиск задач</div>
+                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Искать по названию/описанию</div>
                             </div>
                         </div>
                     </div>
@@ -581,45 +361,53 @@
                     <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Проекты</div>
                     <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
                         <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-green-100 text-green-800 mr-3"><i class="fas fa-folder-plus"></i></div>
+                            <div class="p-2 rounded-full bg-green-100 text-green-800 mr-3">
+                                <i class="fas fa-folder-plus"></i>
+                            </div>
                             <div>
-                                <div class="font-medium">Создать новый проект</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Организуйте задачи по проектам</div>
+                                <div class="font-medium">Создать проект</div>
+                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Организовать задачи по проектам</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Представления</div>
+                    <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Виды</div>
                     <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
                         <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3"><i class="fas fa-list"></i></div>
+                            <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3">
+                                <i class="fas fa-list"></i>
+                            </div>
                             <div>
                                 <div class="font-medium">Переключить на Список</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Простой список задач</div>
+                                <div class="text-xs text-[var(--tg-theme-hинt-color)]">Простой список задач</div>
                             </div>
                         </div>
                     </div>
                     <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
                         <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3"><i class="fas fa-columns"></i></div>
+                            <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3">
+                                <i class="fas fa-columns"></i>
+                            </div>
                             <div>
                                 <div class="font-medium">Переключить на Доску</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Канбан-управление задачами</div>
+                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Канбан</div>
                             </div>
                         </div>
                     </div>
                     <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
                         <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3"><i class="fas fa-calendar-alt"></i></div>
+                            <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
                             <div>
                                 <div class="font-medium">Переключить на Календарь</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Задачи на календаре</div>
+                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Показ задач по датам</div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="p-2 text-xs text-center text-[var(--tg-theme-hint-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
-                    Нажмите Esc, чтобы закрыть
+                    Esc — закрыть • N — новая задача • Ctrl/Cmd+K — палитра
                 </div>
             </div>
         </div>
@@ -631,217 +419,595 @@
             <i class="fas fa-tasks text-3xl text-[var(--tg-theme-hint-color)]"></i>
         </div>
         <h3 class="text-lg font-medium mb-2">Пока нет задач</h3>
-        <p class="text-sm text-[var(--tg-theme-hint-color)] mb-4 text-center max-w-md px-4">Начните с создания первой задачи. Нажмите «+» или клавишу «N» на клавиатуре.</p>
+        <p class="text-sm text-[var(--tg-theme-hint-color)] mb-4 text-center max-w-md px-4">
+            Создайте первую задачу — нажмите «+» или клавишу N.
+        </p>
         <button id="empty-state-add-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Добавить задачу</button>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Telegram WebApp / тема
-    const tg = window.Telegram ? window.Telegram.WebApp : null;
-    if (tg && tg.colorScheme === 'dark') {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-    tg && tg.expand();
+(() => {
+    // --- Telegram + Тема ---
+    const tg = window.Telegram?.WebApp;
+    if (tg?.expand) tg.expand();
+    const user = tg?.initDataUnsafe?.user || null;
+    const themeFromTg = tg?.colorScheme === 'dark' ? 'dark' : 'light';
+    const LS_THEME = 'tp_theme';
+    const LS_DATA_PREFIX = 'tp_data_';
+    const STORAGE_KEY = LS_DATA_PREFIX + (user?.id || 'default');
 
-    const user = tg?.initDataUnsafe?.user;
-    if (user) {
-        console.log('User ID:', user.id, 'Name:', user.first_name, user.last_name || '');
+    const applyTheme = (t) => {
+        document.documentElement.classList.toggle('dark', t === 'dark');
+        localStorage.setItem(LS_THEME, t);
     }
+    const savedTheme = localStorage.getItem(LS_THEME) || themeFromTg;
+    applyTheme(savedTheme);
 
-    // Представления
+    // --- Элементы ---
+    const sideMenu = document.getElementById('side-menu');
+    const menuBtn = document.getElementById('menu-button');
+    const closeMenu = document.getElementById('close-menu');
+    const themeToggle = document.getElementById('btn-theme-toggle');
+    const btnExport = document.getElementById('btn-export');
+    const btnImport = document.getElementById('btn-import');
+
     const viewContents = document.querySelectorAll('.view-content');
     const viewSelectors = document.querySelectorAll('.view-selector');
-    let currentView = 'list';
-
-    function showView(view){
-        viewContents.forEach(content => {
-            content.classList.add('hidden');
-            if (content.id === `${view}-view`) content.classList.remove('hidden');
-        });
-        viewSelectors.forEach(btn => {
-            btn.classList.remove('bg-[var(--tg-theme-button-color)]', 'text-[var(--tg-theme-button-text-color)]');
-            if (btn.dataset.view === view) {
-                btn.classList.add('bg-[var(--tg-theme-button-color)]', 'text-[var(--tg-theme-button-text-color)]');
-            }
-        });
-        currentView = view;
-    }
-    viewSelectors.forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
-    showView('list'); // по умолчанию
-
-    // Модалка задачи
-    const taskModal = document.getElementById('task-modal');
-    const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
-    const closeTaskModalBtn = document.getElementById('close-task-modal');
-    const cancelTaskBtn = document.getElementById('cancel-task');
-
-    function openTaskModal(){ taskModal.classList.remove('hidden'); }
-    function closeTaskModal(){ taskModal.classList.add('hidden'); }
-
-    addTaskButtons.forEach(b => b.addEventListener('click', openTaskModal));
-    closeTaskModalBtn.addEventListener('click', closeTaskModal);
-    cancelTaskBtn.addEventListener('click', closeTaskModal);
-
-    // Модалка проекта
-    const projectModal = document.getElementById('project-modal');
+    const listContainer = document.getElementById('list-container');
+    const projectSelector = document.getElementById('project-selector');
     const addProjectButton = document.getElementById('add-project-button');
-    const closeProjectModalBtn = document.getElementById('close-project-modal');
-    const cancelProjectBtn = document.getElementById('cancel-project');
+    const searchButton = document.getElementById('search-button');
+    const searchInput = document.getElementById('search-input');
 
-    function openProjectModal(){ projectModal.classList.remove('hidden'); }
-    function closeProjectModal(){ projectModal.classList.add('hidden'); }
+    const taskModal = document.getElementById('task-modal');
+    const taskModalTitle = document.getElementById('task-modal-title');
+    const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
+    const closeTaskModal = document.getElementById('close-task-modal');
+    const cancelTask = document.getElementById('cancel-task');
+    const saveTaskBtn = document.getElementById('save-task');
 
-    addProjectButton.addEventListener('click', openProjectModal);
-    closeProjectModalBtn.addEventListener('click', closeProjectModal);
-    cancelProjectBtn.addEventListener('click', closeProjectModal);
+    const projectModal = document.getElementById('project-modal');
+    const closeProjectModal = document.getElementById('close-project-modal');
+    const cancelProject = document.getElementById('cancel-project');
+    const saveProject = document.getElementById('save-project');
+    const deleteProject = document.getElementById('delete-project');
 
-    // Палитра команд
     const commandPalette = document.getElementById('command-palette');
     const commandInput = document.getElementById('command-input');
     const commandOptions = document.querySelectorAll('.command-option');
 
-    function openCommandPalette(){
-        commandPalette.classList.remove('hidden');
-        commandInput.value = '';
-        setTimeout(() => commandInput.focus(), 0);
+    const emptyState = document.getElementById('empty-state');
+
+    // Календарь
+    const prevMonth = document.getElementById('prev-month');
+    const nextMonth = document.getElementById('next-month');
+    const todayButton = document.getElementById('today-button');
+    const monthTitle = document.getElementById('month-title');
+    const weekdayRow = document.getElementById('weekday-row');
+    const calendarGrid = document.getElementById('calendar-grid');
+
+    // --- Данные/Модель ---
+    const state = {
+        projects: [
+            { id: 'work', name: 'Работа' },
+            { id: 'personal', name: 'Личное' },
+            { id: 'team', name: 'Команда' }
+        ],
+        tasks: [
+            // Примерные данные
+            { id: uid(), title: 'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], completed:false },
+            { id: uid(), title: 'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], completed:false },
+            { id: uid(), title: 'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], completed:false },
+            { id: uid(), title: 'Настроить CI/CD', priority:'high', status:'done', project:'team', dueDate: todayISO(-3), description:'GitHub Actions', tags:['DevOps'], subtasks:[], completed:true },
+        ],
+        view: 'list',
+        search: '',
+        currentMonth: new Date(), // первый рендер календаря
+    };
+
+    // Загрузка/Сохранение
+    const load = () => {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed.projects && Array.isArray(parsed.projects)) state.projects = parsed.projects;
+            if (parsed.tasks && Array.isArray(parsed.tasks)) state.tasks = parsed.tasks;
+        } catch(e){ console.warn('Ошибка загрузки:', e); }
+    };
+    const save = () => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            projects: state.projects,
+            tasks: state.tasks
+        }));
+    };
+
+    // Утилиты
+    function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+    function todayISO(shiftDays=0){ const d=new Date(); d.setDate(d.getDate()+shiftDays); return d.toISOString().slice(0,10); }
+    function fmtDateHuman(iso){
+        if(!iso) return 'Без срока';
+        const d = new Date(iso+'T00:00:00');
+        const fmt = d.toLocaleDateString('ru-RU',{ day:'2-digit', month:'long' });
+        return fmt;
     }
-    function closeCommandPalette(){
-        commandPalette.classList.add('hidden');
-    }
-    document.addEventListener('keydown', (e) => {
-        const inInput = ['INPUT','TEXTAREA'].includes(document.activeElement.tagName);
-        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-            e.preventDefault();
-            openCommandPalette();
-        }
-        if (!inInput && e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey){
-            e.preventDefault();
-            openTaskModal();
-        }
-        if (e.key === 'Escape'){
-            if (!commandPalette.classList.contains('hidden')) closeCommandPalette();
-            else if (!taskModal.classList.contains('hidden')) closeTaskModal();
-            else if (!projectModal.classList.contains('hidden')) closeProjectModal();
-        }
+    const PRIORITY_BADGE = {
+        low:'priority-low', medium:'priority-medium', high:'priority-high', critical:'priority-critical'
+    };
+    const STATUS_BADGE = {
+        'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'
+    };
+    const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+    // --- Инициализация ---
+    load();
+    hydrateProjectSelector();
+    hydrateTaskProjectSelect();
+    // Если нет задач — покажем пустое состояние позже
+    showView('list');
+    renderAll();
+
+    // --- Меню/Тема/Экспорт/Импорт ---
+    menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
+    closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
+    themeToggle.addEventListener('click', ()=>{
+        const t = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+        applyTheme(t);
     });
-    commandPalette.addEventListener('click', (e) => { if (e.target === commandPalette) closeCommandPalette(); });
-    commandOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            const action = option.querySelector('.font-medium').textContent.trim();
-            console.log('Выбрано:', action);
-            closeCommandPalette();
-            if (action.includes('Создать новую задачу')) openTaskModal();
-            else if (action.includes('Искать задачи')) document.getElementById('search-button').click();
-            else if (action.includes('Создать новый проект')) openProjectModal();
-            else if (action.includes('Список')) showView('list');
-            else if (action.includes('Доску')) showView('kanban');
-            else if (action.includes('Календарь')) showView('calendar');
+    btnExport.addEventListener('click', ()=>{
+        const blob = new Blob([localStorage.getItem(STORAGE_KEY) || '{}'], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'planner-data.json'; a.click();
+        URL.revokeObjectURL(url);
+    });
+    btnImport.addEventListener('click', ()=>{
+        const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+        inp.onchange = (e)=>{
+            const f = e.target.files[0]; if(!f) return;
+            const reader = new FileReader();
+            reader.onload = ()=>{
+                try{
+                    const data = JSON.parse(reader.result);
+                    if (data.projects) state.projects = data.projects;
+                    if (data.tasks) state.tasks = data.tasks;
+                    save(); renderAll();
+                    alert('Импортировано успешно');
+                }catch(err){ alert('Ошибка импорта'); }
+            };
+            reader.readAsText(f);
+        };
+        inp.click();
+    });
+
+    // --- Виды / Переключение ---
+    function showView(view){
+        state.view = view;
+        viewContents.forEach(el=>{
+            el.classList.toggle('hidden', el.id !== `${view}-view`);
         });
+        viewSelectors.forEach(btn=>{
+            btn.classList.remove('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
+            if (btn.dataset.view === view){
+                btn.classList.add('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
+            }
+        });
+        if(view==='calendar') renderCalendar();
+        if(view==='kanban') renderKanban();
+        if(view==='list') renderList();
+    }
+    viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
+
+    // --- Поиск ---
+    searchButton.addEventListener('click', ()=>{
+        openCommandPalette();
+        commandInput.value = '';
+        commandInput.placeholder = 'Введите текст для поиска...';
+    });
+    if (searchInput) {
+        searchInput.addEventListener('input', ()=>{
+            state.search = searchInput.value.trim().toLowerCase();
+            renderAll();
+        });
+    }
+
+    // --- Проекты ---
+    addProjectButton.addEventListener('click', openProjectModal);
+    closeProjectModal.addEventListener('click', closeProjectModalFunc);
+    cancelProject.addEventListener('click', closeProjectModalFunc);
+    saveProject.addEventListener('click', ()=>{
+        const name = document.getElementById('project-name').value.trim();
+        if(!name) { alert('Введите название проекта'); return; }
+        const id = name.toLowerCase().replace(/\s+/g,'-');
+        if(!state.projects.find(p=>p.id===id)){
+            state.projects.push({id, name});
+            save();
+        }
+        hydrateProjectSelector();
+        hydrateTaskProjectSelect();
+        closeProjectModalFunc();
+    });
+    deleteProject.addEventListener('click', ()=>{
+        const name = document.getElementById('project-name').value.trim();
+        const id = name.toLowerCase().replace(/\s+/g,'-');
+        if(!id) return;
+        if (['work','personal','team'].includes(id)){
+            alert('Системные проекты удалить нельзя.');
+            return;
+        }
+        state.projects = state.projects.filter(p=>p.id!==id);
+        // переназначим задачи этого проекта на "Без проекта" (покажем как пустую строку)
+        state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
+        save();
+        hydrateProjectSelector();
+        hydrateTaskProjectSelect();
+        renderAll();
+        closeProjectModalFunc();
     });
 
-    // Сохранение задачи / проекта (демо-логика)
-    const saveTaskBtn = document.getElementById('save-task');
-    const saveProjectBtn = document.getElementById('save-project');
+    function hydrateProjectSelector(){
+        // очистить и заполнить
+        projectSelector.innerHTML = '<option value="all">Все проекты</option>';
+        state.projects.forEach(p=>{
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            projectSelector.appendChild(opt);
+        });
+    }
+    function hydrateTaskProjectSelect(){
+        const sel = document.getElementById('task-project');
+        sel.innerHTML = '';
+        state.projects.forEach(p=>{
+            const opt = document.createElement('option');
+            opt.value = p.id; opt.textContent = p.name;
+            sel.appendChild(opt);
+        });
+    }
+    projectSelector.addEventListener('change', renderAll);
 
-    saveTaskBtn.addEventListener('click', () => {
+    // --- Задачи: модалка ---
+    addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
+    closeTaskModal.addEventListener('click', closeTaskModalFunc);
+    cancelTask.addEventListener('click', closeTaskModalFunc);
+    saveTaskBtn.addEventListener('click', ()=>{
+        const id = document.getElementById('task-id').value;
         const title = document.getElementById('task-title').value.trim();
+        if(!title){ alert('Введите название задачи'); return; }
         const priority = document.getElementById('task-priority').value;
         const status = document.getElementById('task-status').value;
         const project = document.getElementById('task-project').value;
         const dueDate = document.getElementById('task-due-date').value;
         const description = document.getElementById('task-description').value.trim();
-        const reminder = document.getElementById('task-reminder').value;
+        const subtasksRaw = document.getElementById('task-subtasks').value;
+        const tagsRaw = document.getElementById('task-tags').value;
 
-        console.log('Задача сохранена:', { title, priority, status, project, dueDate, description, reminder });
-        closeTaskModal();
-        document.getElementById('empty-state').classList.add('hidden');
-        // Здесь можно повесить сохранение в IndexedDB/Firebase/бот и т.д.
-    });
+        const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
+        const tags = tagsRaw.split(',').map(s=>s.trim()).filter(Boolean);
 
-    saveProjectBtn.addEventListener('click', () => {
-        const name = document.getElementById('project-name').value.trim();
-        const description = document.getElementById('project-description').value.trim();
-        console.log('Проект сохранён:', { name, description });
-        closeProjectModal();
-        if (name) {
-            const projectSelector = document.getElementById('project-selector');
-            const option = document.createElement('option');
-            option.value = name.toLowerCase();
-            option.textContent = name;
-            projectSelector.appendChild(option);
+        if(id){ // update
+            const t = state.tasks.find(t=>t.id===id);
+            if(t){
+                Object.assign(t,{title,priority,status,project,dueDate,description,subtasks, tags});
+            }
+        } else { // create
+            state.tasks.unshift({ id: uid(), title, priority, status, project, dueDate, description, tags, subtasks, completed:false });
         }
+        save();
+        closeTaskModalFunc();
+        renderAll();
     });
 
-    // Отмечание выполнения задачи (перечёркивание)
-    document.querySelectorAll('.task-card input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', function(){
-            const card = this.closest('.task-card');
-            const title = card.querySelector('h3');
-            if (this.checked){
-                card.classList.add('opacity-70');
-                title && title.classList.add('line-through');
-            } else {
-                card.classList.remove('opacity-70');
-                title && title.classList.remove('line-through');
+    function openTaskModal(task=null, prefillDate=null){
+        taskModal.classList.remove('hidden');
+        taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
+        document.getElementById('task-id').value = task?.id || '';
+        document.getElementById('task-title').value = task?.title || '';
+        document.getElementById('task-priority').value = task?.priority || 'medium';
+        document.getElementById('task-status').value = task?.status || 'backlog';
+        document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
+        document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
+        document.getElementById('task-description').value = task?.description || '';
+        document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
+        document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
+    }
+    function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
+
+    function openProjectModal(){ projectModal.classList.remove('hidden'); document.getElementById('project-id').value=''; document.getElementById('project-name').value=''; document.getElementById('project-description').value=''; }
+    function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
+
+    // --- Командная палитра ---
+    function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
+    function closeCommandPalette(){ commandPalette.classList.add('hidden'); }
+    commandOptions.forEach(opt=>{
+        opt.addEventListener('click', ()=>{
+            const label = opt.querySelector('.font-medium').textContent;
+            closeCommandPalette();
+            if(label.includes('Создать задачу')) openTaskModal();
+            else if(label.includes('Создать проект')) openProjectModal();
+            else if(label.includes('Список')) showView('list');
+            else if(label.includes('Доску')) showView('kanban');
+            else if(label.includes('Календарь')) showView('calendar');
+            else if(label.includes('Поиск')) {
+                if (searchInput) searchInput.focus();
             }
         });
     });
+    commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
 
-    // Подзадачи — визуальный тоггл
-    document.querySelectorAll('.subtask-checkbox').forEach(cb => {
-        cb.addEventListener('change', function(){
-            const label = this.nextElementSibling;
-            label && label.classList.toggle('line-through', this.checked);
+    // --- Клавиатура ---
+    document.addEventListener('keydown', (e)=>{
+        if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCommandPalette(); }
+        if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase()==='n'){ e.preventDefault(); openTaskModal(); }
+        if (e.key==='Escape'){
+            if (!commandPalette.classList.contains('hidden')) closeCommandPalette();
+            else if (!taskModal.classList.contains('hidden')) closeTaskModalFunc();
+            else if (!projectModal.classList.contains('hidden')) closeProjectModalFunc();
+        }
+    });
+
+    // --- Рендеры ---
+    function getFilteredTasks(){
+        const q = state.search;
+        const proj = projectSelector.value;
+        return state.tasks.filter(t=>{
+            if (proj!=='all' && t.project!==proj) return false;
+            if (!q) return true;
+            const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
+            return hay.includes(q);
         });
-    });
+    }
 
-    // Календарь: клик по дню — открыть модалку и проставить дату (пример: июнь 2023)
-    document.querySelectorAll('.calendar-day').forEach(day => {
-        day.addEventListener('click', function(){
-            const numberEl = this.querySelector('.text-right');
-            if (!numberEl) return;
-            const dayNum = numberEl.textContent.trim().padStart(2, '0');
-            document.getElementById('task-due-date').value = `2023-06-${dayNum}`;
-            openTaskModal();
+    function renderList(){
+        const tasks = getFilteredTasks();
+        listContainer.innerHTML = '';
+        if (tasks.length===0){ emptyState.classList.remove('hidden'); return; }
+        emptyState.classList.add('hidden');
+
+        tasks.forEach(t=>{
+            const card = document.createElement('div');
+            card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4';
+            card.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-1">
+                            <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+                        </div>
+                        <div>
+                            <h3 class="font-medium ${t.completed?'line-through opacity-70':''}">${escapeHtml(t.title)}</h3>
+                            <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">
+                                ${t.dueDate? ('Срок: '+fmtDateHuman(t.dueDate)) : 'Без срока'}
+                            </p>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="${PRIORITY_BADGE[t.priority]} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                                <span class="${STATUS_BADGE[t.status]} text-xs px-2 py-1 rounded-full">${statusRu(t.status)}</span>
+                                ${t.project? `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${projectName(t.project)}</span>`:''}
+                                ${(t.tags||[]).map(tag=>`<span class="bg-[var(--tg-theme-bg-color)] border border-[var(--tg-theme-secondary-bg-color)] text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="menu" aria-label="Меню" data-id="${t.id}">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="hidden absolute right-0 mt-2 w-44 bg-[var(--tg-theme-bg-color)] rounded-md shadow-lg z-10 border border-[var(--tg-theme-secondary-bg-color)]">
+                            <button class="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="edit" data-id="${t.id}">
+                                <i class="fas fa-pen mr-2"></i>Редактировать
+                            </button>
+                            <button class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="delete" data-id="${t.id}">
+                                <i class="fas fa-trash mr-2"></i>Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            listContainer.appendChild(card);
         });
-    });
 
-    // Навигация календаря (заглушки)
-    document.getElementById('prev-month').addEventListener('click', () => console.log('Предыдущий месяц'));
-    document.getElementById('next-month').addEventListener('click', () => console.log('Следующий месяц'));
-    document.getElementById('today-button').addEventListener('click', () => console.log('К сегодняшнему дню'));
-
-    // Drag & Drop (упрощённо)
-    const kanbanCards = document.querySelectorAll('.kanban-column .task-card');
-    kanbanCards.forEach(card => {
-        card.setAttribute('draggable', 'true');
-        card.addEventListener('dragstart', () => card.classList.add('opacity-50'));
-        card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
-    });
-    document.querySelectorAll('.kanban-column').forEach(column => {
-        column.addEventListener('dragover', (e) => { e.preventDefault(); column.classList.add('bg-opacity-50'); });
-        column.addEventListener('dragleave', () => column.classList.remove('bg-opacity-50'));
-        column.addEventListener('drop', (e) => {
-            e.preventDefault();
-            column.classList.remove('bg-opacity-50');
-            const dragged = document.querySelector('.task-card.opacity-50');
-            if (!dragged) return;
-            const list = column.querySelector('.space-y-3') || column;
-            list.appendChild(dragged);
-
-            let newStatus = 'backlog';
-            const title = column.querySelector('h3')?.textContent || '';
-            if (title.includes('В работе')) newStatus = 'in-progress';
-            else if (title.includes('На проверке')) newStatus = 'review';
-            else if (title.includes('Готово')) newStatus = 'done';
-            console.log('Задача перемещена, новый статус:', newStatus);
+        // Меню карточек
+        listContainer.querySelectorAll('[data-act="menu"]').forEach(btn=>{
+            btn.addEventListener('click', (e)=>{
+                e.stopPropagation();
+                const menu = btn.nextElementSibling;
+                document.querySelectorAll('#list-container .relative > div').forEach(m=>{ if(m!==menu) m.classList.add('hidden'); });
+                menu.classList.toggle('hidden');
+            });
         });
+        document.addEventListener('click', ()=> {
+            document.querySelectorAll('#list-container .relative > div').forEach(m=> m.classList.add('hidden'));
+        }, { once:true });
+
+        // Действия
+        listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
+            inp.addEventListener('change', ()=>{
+                const t = state.tasks.find(x=>x.id===inp.dataset.id);
+                if (t){ t.completed = inp.checked; if (t.completed) t.status='done'; save(); renderAll(); }
+            });
+        });
+        listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
+            const t = state.tasks.find(x=>x.id===b.dataset.id);
+            if (t) openTaskModal(t);
+        }));
+        listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
+            const t = state.tasks.find(x=>x.id===b.dataset.id);
+            if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+        }));
+    }
+
+    function renderKanban(){
+        const columns = document.querySelectorAll('.kanban-column');
+        columns.forEach(col=>{
+            const body = col.querySelector('.column-body');
+            body.innerHTML = '';
+            const status = col.getAttribute('data-col');
+            const tasks = getFilteredTasks().filter(t=>t.status===status);
+            tasks.forEach(t=>{
+                const card = document.createElement('div');
+                card.className='task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move';
+                card.draggable=true;
+                card.dataset.id = t.id;
+                card.innerHTML = `
+                    <div class="flex justify-between gap-2">
+                        <div class="${t.completed?'line-through opacity-70':''}">
+                            <h4 class="font-medium">${escapeHtml(t.title)}</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="${PRIORITY_BADGE[t.priority]} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                                ${t.project? `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${projectName(t.project)}</span>`:''}
+                            </div>
+                            <div class="text-xs text-[var(--tg-theme-hint-color)] mt-1">${t.dueDate? 'Срок: '+fmtDateHuman(t.dueDate):'Без срока'}</div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                body.appendChild(card);
+            });
+        });
+        // Счётчики
+        ['backlog','in-progress','review','done'].forEach(s=>{
+            document.getElementById('cnt-'+s).textContent = state.tasks.filter(t=>t.status===s).length;
+        });
+
+        // DnD
+        document.querySelectorAll('.kanban-column .task-card').forEach(card=>{
+            card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
+            card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
+        });
+        document.querySelectorAll('.kanban-column').forEach(col=>{
+            col.addEventListener('dragover', (e)=>{ e.preventDefault(); col.classList.add('bg-opacity-50'); });
+            col.addEventListener('dragleave', ()=> col.classList.remove('bg-opacity-50'));
+            col.addEventListener('drop', (e)=>{
+                e.preventDefault(); col.classList.remove('bg-opacity-50');
+                const dragged = document.querySelector('.kanban-column .task-card.opacity-50') || document.querySelector('.kanban-column .task-card[draggable="true"]:focus');
+                const status = col.getAttribute('data-col');
+                if(!dragged) return;
+                const id = dragged.dataset.id;
+                const t = state.tasks.find(x=>x.id===id);
+                if(t){ t.status = status; if(status==='done') t.completed=true; else t.completed=false; save(); renderKanban(); renderList(); renderCalendar(); }
+            });
+        });
+
+        // Actions
+        document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
+            const t = state.tasks.find(x=>x.id===b.dataset.id);
+            if (t) openTaskModal(t);
+        }));
+        document.querySelectorAll('#kanban-view [data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
+            const t = state.tasks.find(x=>x.id===b.dataset.id);
+            if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+        }));
+    }
+
+    function renderCalendar(){
+        // Шапка дней
+        weekdayRow.innerHTML = '';
+        WEEKDAYS.forEach(w=>{
+            const div = document.createElement('div');
+            div.className = 'text-center text-sm font-medium py-2';
+            div.textContent = w;
+            weekdayRow.appendChild(div);
+        });
+
+        // Рассчёт сетки
+        const d = new Date(state.currentMonth);
+        d.setDate(1);
+        const month = d.getMonth();
+        const year = d.getFullYear();
+        monthTitle.textContent = `${MONTHS_NOM[month]} ${year}`;
+
+        // В JS неделя начинается с воскресенья (0), нам нужен понедельник (1)
+        let startIdx = (d.getDay() + 6) % 7; // 0..6 (Пн..Вс)
+        const daysInMonth = new Date(year, month+1, 0).getDate();
+
+        // Предыдущие дни
+        calendarGrid.innerHTML = '';
+        for(let i=0;i<startIdx;i++){
+            const cell = document.createElement('div');
+            cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1 opacity-50';
+            calendarGrid.appendChild(cell);
+        }
+        // Дни текущего месяца
+        const today = new Date(); const todayISOstr = today.toISOString().slice(0,10);
+        for(let day=1; day<=daysInMonth; day++){
+            const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const cell = document.createElement('div');
+            cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1';
+            if (iso===todayISOstr) cell.classList.add('today');
+
+            cell.innerHTML = `<div class="text-right text-sm mb-1 ${iso===todayISOstr?'font-bold':''}">${day}</div>`;
+
+            // Задачи на этот день
+            const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
+            tasks.slice(0,4).forEach(t=>{
+                const badge = document.createElement('div');
+                badge.className = `text-xs truncate px-1 py-0.5 rounded mb-1 ${t.status==='done'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}`;
+                badge.textContent = t.title;
+                cell.appendChild(badge);
+            });
+            if (tasks.length>4){
+                const more = document.createElement('div');
+                more.className='text-[var(--tg-theme-hint-color)] text-xs px-1';
+                more.textContent = `+ ещё ${tasks.length-4}`;
+                cell.appendChild(more);
+            }
+
+            // Клик по дню — новая задача с проставленной датой
+            cell.addEventListener('click', ()=>{
+                openTaskModal(null, iso);
+            });
+
+            calendarGrid.appendChild(cell);
+        }
+    }
+
+    prevMonth.addEventListener('click', ()=>{
+        const d = new Date(state.currentMonth); d.setMonth(d.getMonth()-1);
+        state.currentMonth = d; renderCalendar();
     });
-});
+    nextMonth.addEventListener('click', ()=>{
+        const d = new Date(state.currentMonth); d.setMonth(d.getMonth()+1);
+        state.currentMonth = d; renderCalendar();
+    });
+    todayButton.addEventListener('click', ()=>{
+        state.currentMonth = new Date(); renderCalendar();
+    });
+
+    // --- Вспомогательное ---
+    function projectName(id){ return (state.projects.find(p=>p.id===id)||{name:'Без проекта'}).name; }
+    function priorityRu(p){ return ({low:'Низкий', medium:'Средний', high:'Высокий', critical:'Критичный'})[p] || p; }
+    function statusRu(s){ return ({'backlog':'Бэклог','in-progress':'В работе','review':'Проверка','done':'Готово'})[s] || s; }
+    function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
+
+    // --- Общий рендер ---
+    function renderAll(){
+        renderList();
+        renderKanban();
+        if (state.view==='calendar') renderCalendar();
+        emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
+        save();
+    }
+
+    // --- Слушатели внешние ---
+    // Боковое меню/клики вне меню
+    document.addEventListener('click', (e)=>{
+        if (sideMenu && !sideMenu.classList.contains('hidden')){
+            const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
+            if (!inside) sideMenu.classList.add('hidden');
+        }
+    });
+
+    // Пользователь в меню
+    const menuUser = document.getElementById('menu-user');
+    if (user) menuUser.textContent = `${user.first_name || 'Профиль'}${user.last_name?' '+user.last_name:''} (@${user.username || 'id:'+user.id})`;
+
+})();
 </script>
 </body>
 </html>
