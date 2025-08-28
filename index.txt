@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-hint-color: #707579;
+            --tg-theme-link-color: #3390ec;
+            --tg-theme-button-color: #3390ec;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f4f4f5;
+        }
+
+        .dark {
+            --tg-theme-bg-color: #1c1c1d;
+            --tg-theme-text-color: #ffffff;
+            --tg-theme-hint-color: #aaaaaa;
+            --tg-theme-link-color: #5d9ce6;
+            --tg-theme-button-color: #5d9ce6;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #2c2c2e;
+        }
+
+        body {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            transition: background-color 0.3s, color 0.3s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .task-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .priority-low {
+            background-color: rgba(52, 211, 153, 0.1);
+            color: rgb(16, 185, 129);
+        }
+
+        .priority-medium {
+            background-color: rgba(96, 165, 250, 0.1);
+            color: rgb(59, 130, 246);
+        }
+
+        .priority-high {
+            background-color: rgba(251, 191, 36, 0.1);
+            color: rgb(234, 179, 8);
+        }
+
+        .priority-critical {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: rgb(239, 68, 68);
+        }
+
+        .status-backlog {
+            background-color: rgba(156, 163, 175, 0.1);
+            color: rgb(156, 163, 175);
+        }
+
+        .status-in-progress {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: rgb(59, 130, 246);
+        }
+
+        .status-review {
+            background-color: rgba(168, 85, 247, 0.1);
+            color: rgb(168, 85, 247);
+        }
+
+        .status-done {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: rgb(16, 185, 129);
+        }
+
+        .kanban-column {
+            min-height: 60vh;
+        }
+
+        .calendar-day {
+            min-height: 100px;
+        }
+
+        .calendar-day.today {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .calendar-day:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .subtask-checkbox:checked + .subtask-label {
+            text-decoration: line-through;
+            color: var(--tg-theme-hint-color);
+        }
+
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.2s;
+        }
+        .fade-enter, .fade-leave-to {
+            opacity: 0;
+        }
+
+        .slide-up-enter-active, .slide-up-leave-active {
+            transition: all 0.2s ease;
+        }
+        .slide-up-enter, .slide-up-leave-to {
+            transform: translateY(10px);
+            opacity: 0;
+        }
+
+        .command-palette {
+            backdrop-filter: blur(10px);
+        }
+
+        @media (max-width: 640px) {
+            .kanban-column {
+                min-height: auto;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="app" class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] border-b border-[var(--tg-theme-secondary-bg-color)]">
+            <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="relative">
+                        <button id="menu-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div id="side-menu" class="hidden fixed top-0 left-0 h-full w-64 bg-[var(--tg-theme-bg-color)] shadow-lg z-20 border-r border-[var(--tg-theme-secondary-bg-color)]">
+                            <div class="p-4 border-b border-[var(--tg-theme-secondary-bg-color)] flex justify-between items-center">
+                                <h2 class="text-lg font-semibold">Меню</h2>
+                                <button id="close-menu" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="p-4">
+                                <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                    <i class="fas fa-user mr-2"></i> Профиль
+                                </button>
+                                <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                    <i class="fas fa-cog mr-2"></i> Настройки
+                                </button>
+                                <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                    <i class="fas fa-moon mr-2"></i> Тема
+                                </button>
+                                <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Выйти
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <h1 class="text-xl font-semibold">Планировщик задач</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="search-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button id="add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 container mx-auto px-4 py-4">
+            <!-- View Selector -->
+            <div class="flex justify-center mb-6">
+                <div class="inline-flex rounded-md shadow-sm" role="group">
+                    <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                        <i class="fas fa-list mr-2"></i> Список
+                    </button>
+                    <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-t border-b border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                        <i class="fas fa-columns mr-2"></i> Доска
+                    </button>
+                    <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                        <i class="fas fa-calendar-alt mr-2"></i> Календарь
+                    </button>
+                </div>
+            </div>
+
+            <!-- Project Selector -->
+            <div class="mb-4 flex items-center">
+                <select id="project-selector" class="bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                    <option value="all">Все проекты</option>
+                    <option value="work">Работа</option>
+                    <option value="personal">Личное</option>
+                    <option value="team">Команда</option>
+                </select>
+                <button id="add-project-button" class="ml-2 p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- List View -->
+            <div id="list-view" class="view-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Задачи</h2>
+                    <div class="flex space-x-2">
+                        <button id="filter-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                            <i class="fas fa-filter mr-1"></i> Фильтр
+                        </button>
+                        <button id="sort-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                            <i class="fas fa-sort mr-1"></i> Сортировка
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <!-- Task Item -->
+                    <div class="task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 cursor-pointer">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start space-x-3">
+                                <div class="mt-1">
+                                    <input type="checkbox" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Complete project proposal</h3>
+                                    <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">Due tomorrow at 3:00 PM</p>
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        <span class="priority-high text-xs px-2 py-1 rounded-full">High</span>
+                                        <span class="status-in-progress text-xs px-2 py-1 rounded-full">In Progress</span>
+                                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Work</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)] task-menu-button">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="task-menu hidden absolute right-0 mt-2 w-48 bg-[var(--tg-theme-bg-color)] rounded-md shadow-lg z-10 border border-[var(--tg-theme-secondary-bg-color)]">
+                                    <div class="py-1">
+                                        <button class="delete-task block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                            <i class="fas fa-trash mr-2"></i> Удалить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task Item -->
+                    <div class="task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 cursor-pointer">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start space-x-3">
+                                <div class="mt-1">
+                                    <input type="checkbox" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Team meeting</h3>
+                                    <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">Today at 10:00 AM</p>
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        <span class="priority-medium text-xs px-2 py-1 rounded-full">Medium</span>
+                                        <span class="status-backlog text-xs px-2 py-1 rounded-full">Backlog</span>
+                                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Team</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Task Item -->
+                    <div class="task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 cursor-pointer">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start space-x-3">
+                                <div class="mt-1">
+                                    <input type="checkbox" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Buy groceries</h3>
+                                    <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">No due date</p>
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        <span class="priority-low text-xs px-2 py-1 rounded-full">Low</span>
+                                        <span class="status-backlog text-xs px-2 py-1 rounded-full">Backlog</span>
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Personal</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanban View -->
+            <div id="kanban-view" class="view-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Backlog Column -->
+                    <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-medium">Backlog</h3>
+                            <span class="text-xs bg-gray-200 text-gray-800 rounded-full px-2 py-1">3</span>
+                        </div>
+                        <div class="space-y-3">
+                            <!-- Task Card -->
+                            <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
+                                <h4 class="font-medium">Research competitors</h4>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="priority-medium text-xs px-2 py-1 rounded-full">Medium</span>
+                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Work</span>
+                                </div>
+                            </div>
+
+                            <!-- Task Card -->
+                            <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
+                                <h4 class="font-medium">Update portfolio</h4>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="priority-low text-xs px-2 py-1 rounded-full">Low</span>
+                                    <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Team</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- In Progress Column -->
+                    <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-medium">In Progress</h3>
+                            <span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-1">2</span>
+                        </div>
+                        <div class="space-y-3">
+                            <!-- Task Card -->
+                            <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
+                                <h4 class="font-medium">Complete project proposal</h4>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="priority-high text-xs px-2 py-1 rounded-full">High</span>
+                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Work</span>
+                                </div>
+                            </div>
+
+                            <!-- Task Card -->
+                            <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
+                                <h4 class="font-medium">Design new logo</h4>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="priority-medium text-xs px-2 py-1 rounded-full">Medium</span>
+                                    <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Team</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Review Column -->
+                    <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-medium">Review</h3>
+                            <span class="text-xs bg-purple-200 text-purple-800 rounded-full px-2 py-1">1</span>
+                        </div>
+                        <div class="space-y-3">
+                            <!-- Task Card -->
+                            <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move">
+                                <h4 class="font-medium">Review PR #42</h4>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="priority-critical text-xs px-2 py-1 rounded-full">Critical</span>
+                                    <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Team</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Done Column -->
+                    <div class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-medium">Done</h3>
+                            <span class="text-xs bg-green-200 text-green-800 rounded-full px-2 py-1">2</span>
+                        </div>
+                        <div class="space-y-3">
+                            <!-- Task Card -->
+                            <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move opacity-70">
+                                <h4 class="font-medium line-through">Setup CI/CD pipeline</h4>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="priority-high text-xs px-2 py-1 rounded-full">High</span>
+                                    <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Team</span>
+                                </div>
+                            </div>
+
+                            <!-- Task Card -->
+                            <div class="task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move opacity-70">
+                                <h4 class="font-medium line-through">Write documentation</h4>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="priority-medium text-xs px-2 py-1 rounded-full">Medium</span>
+                                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Work</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendar-view" class="view-content hidden">
+                <div class="mb-4 flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <button id="prev-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2 class="text-lg font-semibold">June 2023</h2>
+                        <button id="next-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <button id="today-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                            Today
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1 mb-1">
+                    <div class="text-center text-sm font-medium py-2">Sun</div>
+                    <div class="text-center text-sm font-medium py-2">Mon</div>
+                    <div class="text-center text-sm font-medium py-2">Tue</div>
+                    <div class="text-center text-sm font-medium py-2">Wed</div>
+                    <div class="text-center text-sm font-medium py-2">Thu</div>
+                    <div class="text-center text-sm font-medium py-2">Fri</div>
+                    <div class="text-center text-sm font-medium py-2">Sat</div>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1">
+                    <!-- Calendar Day (empty) -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">28</div>
+                    </div>
+                    
+                    <!-- Calendar Day (empty) -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">29</div>
+                    </div>
+                    
+                    <!-- Calendar Day (empty) -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">30</div>
+                    </div>
+                    
+                    <!-- Calendar Day (empty) -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">31</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">1</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">2</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">3</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">4</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">5</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">6</div>
+                        <div class="text-xs truncate px-1 py-0.5 bg-blue-100 text-blue-800 rounded mb-1">Team meeting</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">7</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">8</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">9</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">10</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">11</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">12</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">13</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">14</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">15</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">16</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">17</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">18</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">19</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">20</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">21</div>
+                    </div>
+                    
+                    <!-- Calendar Day (Today) -->
+                    <div class="calendar-day today border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1 font-bold">22</div>
+                        <div class="text-xs truncate px-1 py-0.5 bg-red-100 text-red-800 rounded mb-1">Project deadline</div>
+                        <div class="text-xs truncate px-1 py-0.5 bg-green-100 text-green-800 rounded mb-1">Buy groceries</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">23</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">24</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">25</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">26</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">27</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">28</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">29</div>
+                    </div>
+                    
+                    <!-- Calendar Day -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">30</div>
+                    </div>
+                    
+                    <!-- Calendar Day (empty) -->
+                    <div class="calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1">
+                        <div class="text-right text-sm mb-1">1</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation (Mobile) -->
+        <nav class="md:hidden sticky bottom-0 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
+            <div class="flex justify-around py-2">
+                <button data-view="list" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                    <i class="fas fa-list text-lg"></i>
+                </button>
+                <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                    <i class="fas fa-columns text-lg"></i>
+                </button>
+                <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                    <i class="fas fa-calendar-alt text-lg"></i>
+                </button>
+                <button id="mobile-add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">
+                    <i class="fas fa-plus text-lg"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Task Modal -->
+        <div id="task-modal" class="fixed inset-0 z-50 hidden">
+            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
+                    <h2 class="text-xl font-semibold">New Task</h2>
+                    <button id="close-task-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="mb-4">
+                        <input type="text" id="task-title" placeholder="Task title" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Priority</label>
+                            <select id="task-priority" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Status</label>
+                            <select id="task-status" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                                <option value="backlog">Backlog</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="review">Review</option>
+                                <option value="done">Done</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Project</label>
+                            <select id="task-project" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                                <option value="work">Work</option>
+                                <option value="personal">Personal</option>
+                                <option value="team">Team</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Due Date</label>
+                            <input type="date" id="task-due-date" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Description</label>
+                        <textarea id="task-description" rows="3" placeholder="Add details..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]"></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Subtasks</label>
+                        <div class="space-y-2">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="subtask1" class="subtask-checkbox rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+                                <label for="subtask1" class="subtask-label ml-2">Research competitors</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="subtask2" class="subtask-checkbox rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+                                <label for="subtask2" class="subtask-label ml-2">Outline proposal structure</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="subtask3" class="subtask-checkbox rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+                                <label for="subtask3" class="subtask-label ml-2">Write first draft</label>
+                            </div>
+                        </div>
+                        <button class="mt-2 text-sm text-[var(--tg-theme-link-color)] flex items-center">
+                            <i class="fas fa-plus mr-1"></i> Add subtask
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Tags</label>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="inline-flex items-center bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                Work
+                                <button class="ml-1 text-blue-500 hover:text-blue-700">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </span>
+                            <span class="inline-flex items-center bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                Important
+                                <button class="ml-1 text-green-500 hover:text-green-700">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </span>
+                            <button class="text-sm text-[var(--tg-theme-link-color)] flex items-center">
+                                <i class="fas fa-plus mr-1"></i> Add tag
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Reminder</label>
+                        <select id="task-reminder" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                            <option value="">No reminder</option>
+                            <option value="5min">5 minutes before</option>
+                            <option value="15min">15 minutes before</option>
+                            <option value="30min">30 minutes before</option>
+                            <option value="1hour">1 hour before</option>
+                            <option value="1day">1 day before</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button id="cancel-task" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                            Cancel
+                        </button>
+                        <button id="save-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">
+                            Save Task
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Modal -->
+        <div id="project-modal" class="fixed inset-0 z-50 hidden">
+            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[70vh] overflow-y-auto">
+                <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
+                    <h2 class="text-xl font-semibold">New Project</h2>
+                    <button id="close-project-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="mb-4">
+                        <input type="text" id="project-name" placeholder="Project name" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Color</label>
+                        <div class="flex space-x-2">
+                            <button class="w-8 h-8 rounded-full bg-blue-500 border-2 border-blue-700"></button>
+                            <button class="w-8 h-8 rounded-full bg-green-500 border-2 border-transparent"></button>
+                            <button class="w-8 h-8 rounded-full bg-purple-500 border-2 border-transparent"></button>
+                            <button class="w-8 h-8 rounded-full bg-red-500 border-2 border-transparent"></button>
+                            <button class="w-8 h-8 rounded-full bg-yellow-500 border-2 border-transparent"></button>
+                            <button class="w-8 h-8 rounded-full bg-pink-500 border-2 border-transparent"></button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Description</label>
+                        <textarea id="project-description" rows="3" placeholder="Add project description..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]"></textarea>
+                    </div>
+
+                    <div class="flex justify-between mt-6">
+                        <button id="delete-project" class="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50">
+                            <i class="fas fa-trash mr-1"></i> Удалить
+                        </button>
+                        <div class="flex space-x-2">
+                            <button id="cancel-project" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                                Отмена
+                            </button>
+                            <button id="save-project" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">
+                                Сохранить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Command Palette -->
+        <div id="command-palette" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div class="relative w-full max-w-md mx-4">
+                <div class="command-palette bg-[var(--tg-theme-bg-color)] rounded-lg shadow-xl overflow-hidden">
+                    <div class="p-4 border-b border-[var(--tg-theme-secondary-bg-color)]">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-[var(--tg-theme-hint-color)]"></i>
+                            </div>
+                            <input type="text" id="command-input" placeholder="Type a command or search..." class="w-full pl-10 pr-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)]">
+                        </div>
+                    </div>
+                    <div class="max-h-96 overflow-y-auto">
+                        <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Tasks</div>
+                        <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-full bg-blue-100 text-blue-800 mr-3">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Create new task</div>
+                                    <div class="text-xs text-[var(--tg-theme-hint-color)]">Add a new task to your list</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-full bg-purple-100 text-purple-800 mr-3">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Search tasks</div>
+                                    <div class="text-xs text-[var(--tg-theme-hint-color)]">Find tasks by name or description</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Projects</div>
+                        <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-full bg-green-100 text-green-800 mr-3">
+                                    <i class="fas fa-folder-plus"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Create new project</div>
+                                    <div class="text-xs text-[var(--tg-theme-hint-color)]">Organize tasks into projects</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Views</div>
+                        <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3">
+                                    <i class="fas fa-list"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Switch to List view</div>
+                                    <div class="text-xs text-[var(--tg-theme-hint-color)]">View tasks as a simple list</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3">
+                                    <i class="fas fa-columns"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Switch to Board view</div>
+                                    <div class="text-xs text-[var(--tg-theme-hint-color)]">Kanban-style task management</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Switch to Calendar view</div>
+                                    <div class="text-xs text-[var(--tg-theme-hint-color)]">View tasks on a calendar</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-2 text-xs text-center text-[var(--tg-theme-hint-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
+                        Press Esc to close
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-12">
+            <div class="w-24 h-24 bg-[var(--tg-theme-secondary-bg-color)] rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-tasks text-3xl text-[var(--tg-theme-hint-color)]"></i>
+            </div>
+            <h3 class="text-lg font-medium mb-2">No tasks yet</h3>
+            <p class="text-sm text-[var(--tg-theme-hint-color)] mb-4 text-center max-w-md px-4">Get started by creating your first task. Click the "+" button or press "N" on your keyboard.</p>
+            <button id="empty-state-add-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">
+                Add Task
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Burger menu functionality
+            const menuButton = document.getElementById('menu-button');
+            const sideMenu = document.getElementById('side-menu');
+            const closeMenu = document.getElementById('close-menu');
+            
+            menuButton.addEventListener('click', () => {
+                sideMenu.classList.remove('hidden');
+            });
+            
+            closeMenu.addEventListener('click', () => {
+                sideMenu.classList.add('hidden');
+            });
+            
+            // Task menu functionality
+            document.querySelectorAll('.task-menu-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const menu = button.nextElementSibling;
+                    document.querySelectorAll('.task-menu').forEach(m => {
+                        if (m !== menu) m.classList.add('hidden');
+                    });
+                    menu.classList.toggle('hidden');
+                });
+            });
+            
+            // Delete task functionality
+            document.querySelectorAll('.delete-task').forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskCard = this.closest('.task-card');
+                    if (confirm('Вы уверены, что хотите удалить эту задачу?')) {
+                        taskCard.remove();
+                    }
+                });
+            });
+            
+            // Close menus when clicking outside
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.task-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            });
+            // Initialize Telegram WebApp
+            const tg = window.Telegram.WebApp;
+            
+            // Set theme based on Telegram
+            if (tg.colorScheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            
+            // Expand the WebApp to full view
+            tg.expand();
+            
+            // Get user data
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                console.log('User ID:', user.id);
+                console.log('First Name:', user.first_name);
+                console.log('Last Name:', user.last_name);
+                console.log('Username:', user.username);
+            }
+            
+            // View management
+            const viewContents = document.querySelectorAll('.view-content');
+            const viewSelectors = document.querySelectorAll('.view-selector');
+            let currentView = 'list';
+            
+            function showView(view) {
+                viewContents.forEach(content => {
+                    content.classList.add('hidden');
+                    if (content.id === `${view}-view`) {
+                        content.classList.remove('hidden');
+                    }
+                });
+                
+                viewSelectors.forEach(selector => {
+                    selector.classList.remove('bg-[var(--tg-theme-button-color)]', 'text-[var(--tg-theme-button-text-color)]');
+                    if (selector.dataset.view === view) {
+                        selector.classList.add('bg-[var(--tg-theme-button-color)]', 'text-[var(--tg-theme-button-text-color)]');
+                    }
+                });
+                
+                currentView = view;
+            }
+            
+            viewSelectors.forEach(selector => {
+                selector.addEventListener('click', () => {
+                    showView(selector.dataset.view);
+                });
+            });
+            
+            // Show list view by default
+            showView('list');
+            
+            // Task modal management
+            const taskModal = document.getElementById('task-modal');
+            const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
+            const closeTaskModal = document.getElementById('close-task-modal');
+            const cancelTask = document.getElementById('cancel-task');
+            
+            function openTaskModal() {
+                taskModal.classList.remove('hidden');
+            }
+            
+            function closeTaskModalFunc() {
+                taskModal.classList.add('hidden');
+            }
+            
+            addTaskButtons.forEach(button => {
+                button.addEventListener('click', openTaskModal);
+            });
+            
+            closeTaskModal.addEventListener('click', closeTaskModalFunc);
+            cancelTask.addEventListener('click', closeTaskModalFunc);
+            
+            // Project modal management
+            const projectModal = document.getElementById('project-modal');
+            const addProjectButton = document.getElementById('add-project-button');
+            const closeProjectModal = document.getElementById('close-project-modal');
+            const cancelProject = document.getElementById('cancel-project');
+            
+            function openProjectModal() {
+                projectModal.classList.remove('hidden');
+            }
+            
+            function closeProjectModalFunc() {
+                projectModal.classList.add('hidden');
+            }
+            
+            addProjectButton.addEventListener('click', openProjectModal);
+            closeProjectModal.addEventListener('click', closeProjectModalFunc);
+            cancelProject.addEventListener('click', closeProjectModalFunc);
+            
+            // Command palette
+            const commandPalette = document.getElementById('command-palette');
+            const commandInput = document.getElementById('command-input');
+            const commandOptions = document.querySelectorAll('.command-option');
+            
+            function openCommandPalette() {
+                commandPalette.classList.remove('hidden');
+                commandInput.focus();
+            }
+            
+            function closeCommandPalette() {
+                commandPalette.classList.add('hidden');
+            }
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Cmd+K or Ctrl+K to open command palette
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    openCommandPalette();
+                }
+                
+                // N to create new task
+                if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                    e.preventDefault();
+                    openTaskModal();
+                }
+                
+                // Escape to close modals
+                if (e.key === 'Escape') {
+                    if (!commandPalette.classList.contains('hidden')) {
+                        closeCommandPalette();
+                    } else if (!taskModal.classList.contains('hidden')) {
+                        closeTaskModalFunc();
+                    } else if (!projectModal.classList.contains('hidden')) {
+                        closeProjectModalFunc();
+                    }
+                }
+            });
+            
+            // Close command palette when clicking outside
+            commandPalette.addEventListener('click', (e) => {
+                if (e.target === commandPalette) {
+                    closeCommandPalette();
+                }
+            });
+            
+            // Command option selection
+            commandOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const action = option.querySelector('.font-medium').textContent;
+                    console.log(`Action selected: ${action}`);
+                    closeCommandPalette();
+                    
+                    // Handle different actions
+                    if (action.includes('Create new task')) {
+                        openTaskModal();
+                    } else if (action.includes('Create new project')) {
+                        openProjectModal();
+                    } else if (action.includes('List view')) {
+                        showView('list');
+                    } else if (action.includes('Board view')) {
+                        showView('kanban');
+                    } else if (action.includes('Calendar view')) {
+                        showView('calendar');
+                    }
+                });
+            });
+            
+            // Calendar navigation
+            const prevMonth = document.getElementById('prev-month');
+            const nextMonth = document.getElementById('next-month');
+            const todayButton = document.getElementById('today-button');
+            
+            prevMonth.addEventListener('click', () => {
+                console.log('Previous month');
+            });
+            
+            nextMonth.addEventListener('click', () => {
+                console.log('Next month');
+            });
+            
+            todayButton.addEventListener('click', () => {
+                console.log('Go to today');
+            });
+            
+            // Save task
+            const saveTask = document.getElementById('save-task');
+            const saveProject = document.getElementById('save-project');
+            
+            saveTask.addEventListener('click', () => {
+                const title = document.getElementById('task-title').value;
+                const priority = document.getElementById('task-priority').value;
+                const status = document.getElementById('task-status').value;
+                const project = document.getElementById('task-project').value;
+                const dueDate = document.getElementById('task-due-date').value;
+                const description = document.getElementById('task-description').value;
+                const reminder = document.getElementById('task-reminder').value;
+                
+                console.log('Task saved:', {
+                    title,
+                    priority,
+                    status,
+                    project,
+                    dueDate,
+                    description,
+                    reminder
+                });
+                
+                closeTaskModalFunc();
+                
+                // Hide empty state if it's visible
+                document.getElementById('empty-state').classList.add('hidden');
+            });
+            
+            // Project deletion
+            document.getElementById('delete-project').addEventListener('click', () => {
+                const projectName = document.getElementById('project-name').value;
+                if (confirm(`Вы уверены, что хотите удалить проект "${projectName}"?`)) {
+                    const projectSelector = document.getElementById('project-selector');
+                    const options = projectSelector.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].value === projectName.toLowerCase()) {
+                            projectSelector.remove(i);
+                            break;
+                        }
+                    }
+                    closeProjectModalFunc();
+                }
+            });
+
+            saveProject.addEventListener('click', () => {
+                const name = document.getElementById('project-name').value;
+                const description = document.getElementById('project-description').value;
+                
+                console.log('Project saved:', {
+                    name,
+                    description
+                });
+                
+                closeProjectModalFunc();
+                
+                // Add new project to selector
+                const projectSelector = document.getElementById('project-selector');
+                const option = document.createElement('option');
+                option.value = name.toLowerCase();
+                option.textContent = name;
+                projectSelector.appendChild(option);
+            });
+            
+            // Task completion toggle
+            const taskCheckboxes = document.querySelectorAll('.task-card input[type="checkbox"]');
+            taskCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const taskCard = this.closest('.task-card');
+                    if (this.checked) {
+                        taskCard.classList.add('opacity-70');
+                        taskCard.querySelector('h3').classList.add('line-through');
+                    } else {
+                        taskCard.classList.remove('opacity-70');
+                        taskCard.querySelector('h3').classList.remove('line-through');
+                    }
+                });
+            });
+            
+            // Subtask completion toggle
+            const subtaskCheckboxes = document.querySelectorAll('.subtask-checkbox');
+            subtaskCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const label = this.nextElementSibling;
+                    if (this.checked) {
+                        label.classList.add('line-through', 'text-[var(--tg-theme-hint-color)]');
+                    } else {
+                        label.classList.remove('line-through', 'text-[var(--tg-theme-hint-color)]');
+                    }
+                });
+            });
+            
+            // Calendar day click
+            const calendarDays = document.querySelectorAll('.calendar-day');
+            calendarDays.forEach(day => {
+                day.addEventListener('click', function() {
+                    const dayNumber = this.querySelector('div').textContent.trim();
+                    console.log(`Day ${dayNumber} clicked`);
+                    
+                    // Open task modal with pre-filled date
+                    document.getElementById('task-due-date').value = `2023-06-${dayNumber.padStart(2, '0')}`;
+                    openTaskModal();
+                });
+            });
+            
+            // Show empty state if no tasks (for demo purposes)
+            setTimeout(() => {
+                // document.getElementById('empty-state').classList.remove('hidden');
+            }, 1000);
+            
+            // Initialize drag and drop for kanban (simplified)
+            const kanbanCards = document.querySelectorAll('.kanban-column .task-card');
+            kanbanCards.forEach(card => {
+                card.setAttribute('draggable', 'true');
+                
+                card.addEventListener('dragstart', () => {
+                    card.classList.add('opacity-50');
+                });
+                
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('opacity-50');
+                });
+            });
+            
+            const kanbanColumns = document.querySelectorAll('.kanban-column');
+            kanbanColumns.forEach(column => {
+                column.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    column.classList.add('bg-opacity-50');
+                });
+                
+                column.addEventListener('dragleave', () => {
+                    column.classList.remove('bg-opacity-50');
+                });
+                
+                column.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    column.classList.remove('bg-opacity-50');
+                    
+                    const draggedCard = document.querySelector('.task-card.opacity-50');
+                    if (draggedCard) {
+                        column.querySelector('.space-y-3').appendChild(draggedCard);
+                        
+                        // Update task status based on column
+                        let newStatus = 'backlog';
+                        if (column.querySelector('h3').textContent.includes('In Progress')) {
+                            newStatus = 'in-progress';
+                        } else if (column.querySelector('h3').textContent.includes('Review')) {
+                            newStatus = 'review';
+                        } else if (column.querySelector('h3').textContent.includes('Done')) {
+                            newStatus = 'done';
+                        }
+                        
+                        console.log(`Task moved to ${newStatus} status`);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
