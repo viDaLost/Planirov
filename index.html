@@ -89,11 +89,11 @@
     }
     /* 6) Olive (новая) */
     html[data-theme="olive"]{
-      --bg:#f7f9f2;              /* очень светлый оливковый фон */
+      --bg:#f7f9f2;
       --text:#1f2937;
       --hint:#6b7280;
-      --secondary:#eef3e2;       /* карточки с лёгким оливковым тоном */
-      --button:#6b8e23;          /* olive */
+      --secondary:#eef3e2;
+      --button:#6b8e23;
       --button-text:#ffffff;
       --ring:rgba(107,142,35,.35);
       --header-gradient:linear-gradient(90deg,#f0f5e4,#e3edd4,#f7f9f2);
@@ -594,8 +594,12 @@
 </div>
 <script>
 (() => {
-  /* ========= ПРОФИЛЬ / TELEGRAM ========= */
+  /* ========= ПРОФИЛЬ / TELEGRAM (мгновенный авто-вход) ========= */
   const TG = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+
+  // форсируем ready/expand сразу, как в старых версиях
+  try { TG && TG.ready && TG.ready(); } catch(e){}
+  try { TG && TG.expand && TG.expand(); } catch(e){}
 
   // Текущий профиль (guest по умолчанию)
   let profile = {
@@ -607,40 +611,71 @@
     isTelegram: false
   };
 
-  // Сохраняем последний активный userId, чтобы вне TG восстановить профиль
   const LS_LAST_UID = 'tp_last_uid';
 
-  function tryAutoLoginFromTelegram(){
+  // разбор initData-строки (и tgWebAppData из URL)
+  function parseInitDataUser(str){
+    if (!str) return null;
+    try{
+      const params = new URLSearchParams(str);
+      const userStr = params.get('user');
+      if (!userStr) return null;
+      return JSON.parse(userStr);
+    }catch(e){ return null; }
+  }
+
+  function resolveTelegramUser(){
+    // 1) initDataUnsafe.user — самый надёжный путь
+    const unsafe = TG?.initDataUnsafe?.user;
+    if (unsafe?.id) return unsafe;
+
+    // 2) initData (строка с query_id&, user=JSON, auth_date, hash)
+    const fromInitData = TG?.initData ? parseInitDataUser(TG.initData) : null;
+    if (fromInitData?.id) return fromInitData;
+
+    // 3) Старые клиенты могли класть tgWebAppData в URL ?tgWebAppData=...
+    const qs = new URLSearchParams(location.search);
+    const fromUrl = parseInitDataUser(qs.get('tgWebAppData') || '');
+    if (fromUrl?.id) return fromUrl;
+
+    return null;
+  }
+
+  function initTelegramAuth(){
     if (!TG) return false;
+    // цветовую схему подхватим сразу (старое поведение)
     try {
-      const u = TG.initDataUnsafe?.user;
-      if (u && u.id) {
-        profile = {
-          userId: String(u.id),
-          first_name: u.first_name || '',
-          last_name: u.last_name || '',
-          username: u.username || '',
-          photo_url: u.photo_url || '',
-          isTelegram: true
-        };
-        localStorage.setItem(LS_LAST_UID, profile.userId);
-        return true;
-      }
-    } catch(e){ console.warn('TG auto-login failed', e); }
+      TG.setHeaderColor && TG.setHeaderColor('secondary_bg_color');
+      TG.setBackgroundColor && TG.setBackgroundColor('secondary_bg_color');
+      TG.MainButton && TG.MainButton.hide && TG.MainButton.hide();
+    } catch(e){}
+
+    const u = resolveTelegramUser();
+    if (u?.id){
+      profile = {
+        userId: String(u.id),
+        first_name: u.first_name || '',
+        last_name:  u.last_name  || '',
+        username:   u.username   || '',
+        photo_url:  u.photo_url  || '',
+        isTelegram: true
+      };
+      localStorage.setItem(LS_LAST_UID, profile.userId);
+      return true;
+    }
     return false;
   }
 
   function loginAsGuestOrLast(){
     const last = localStorage.getItem(LS_LAST_UID) || 'guest';
     if (last !== 'guest') {
-      // восстановим упрощённый профиль (локальный)
       profile = { userId: last, first_name: 'Пользователь', last_name:'', username:'', photo_url:'', isTelegram:false };
     } else {
       profile = { userId:'guest', first_name:'Гость', last_name:'', username:'', photo_url:'', isTelegram:false };
     }
   }
 
-  const auto = tryAutoLoginFromTelegram();
+  const auto = initTelegramAuth();
   if (!auto) loginAsGuestOrLast();
 
   /* ========= КОНСТАНТЫ / КЛЮЧИ ХРАНИЛИЩА ========= */
@@ -675,7 +710,7 @@
       { id:'personal', name:'Личное',   color:'#10b981' },
       { id:'team',     name:'Команда',  color:'#8b5cf6' }
     ],
-    pinned: ['work','personal','team'], // до 6
+    pinned: ['work','personal','team'],
     tasks: [
       { id: uid(), title:'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], subtasksDone:[false,false], completed:false, createdAt: nowISO() },
       { id: uid(), title:'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], subtasksDone:[], completed:false, createdAt: nowISO() },
@@ -696,9 +731,23 @@
   function setTheme(id){
     document.documentElement.setAttribute('data-theme', id);
     localStorage.setItem(LS_THEME, id);
-    // дублируем как "последнюю использованную вообще", чтобы на госте тоже была приятная тема
     localStorage.setItem(LS_THEME_BASE, id);
   }
+
+  // синхронизация с темой Telegram (как раньше — сразу после ready)
+  try{
+    if (TG?.colorScheme && (TG.colorScheme==='dark' || TG.colorScheme==='light')){
+      // если для юзера темы ещё нет — подстроимся под Telegram
+      const hasUserTheme = !!localStorage.getItem(LS_THEME);
+      if (!hasUserTheme) setTheme(TG.colorScheme);
+    }
+    TG?.onEvent && TG.onEvent('themeChanged', ()=>{
+      if (TG?.colorScheme && (TG.colorScheme==='dark' || TG.colorScheme==='light')){
+        setTheme(TG.colorScheme);
+        buildThemeCards();
+      }
+    });
+  }catch(e){}
 
   /* ========= UI-ЭЛЕМЕНТЫ ========= */
   const sideMenu = el('#side-menu');
@@ -815,20 +864,15 @@
       pinned: state.pinned,
       tasks: state.tasks
     }));
-    // запоминаем последнего активного юзера
     localStorage.setItem(LS_LAST_UID, NS());
     updateAppBadge();
   }
 
   function switchProfile(newProfile){
     profile = newProfile;
-    // Переключаем ключи
     updateProfileUI();
-    // Применим тему профиля (fallback на глобальную)
     const theme = localStorage.getItem(key(LS_THEME_BASE)) || localStorage.getItem(LS_THEME_BASE) || 'light';
     document.documentElement.setAttribute('data-theme', theme);
-    // Перезагрузим данные
-    // Сбросим в начальное состояние и затем load()
     state.projects = [
       { id:'work',     name:'Работа',   color:'#3b82f6' },
       { id:'personal', name:'Личное',   color:'#10b981' },
@@ -843,8 +887,8 @@
     hydrateProjectSelector();
     hydrateTaskProjectSelect();
     renderPinnedStrip();
-    load();       // загрузим, если были сохранённые данные у этого профиля
-    renderAll();  // перерисуем
+    load();
+    renderAll();
   }
 
   /* ========= ИНИЦИАЛИЗАЦИЯ ========= */
@@ -857,17 +901,6 @@
   updateAppBadge();
   buildThemeCards();
   updateProfileUI();
-
-  // Если Telegram WebApp — красиво разворачиваем и выставляем цвет кнопок
-  if (TG){
-    try {
-      TG.expand && TG.expand();
-      TG.setHeaderColor && TG.setHeaderColor('secondary_bg_color');
-      TG.setBackgroundColor && TG.setBackgroundColor('secondary_bg_color');
-      // Кнопка главная TG (не обязательно)
-      TG.MainButton.hide();
-    } catch(e){}
-  }
 
   /* ========= МЕНЮ ========= */
   menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
@@ -884,7 +917,7 @@
     if (!p) return 'Гость';
     const n = [p.first_name, p.last_name].filter(Boolean).join(' ').trim();
     return n || p.username || (p.userId === 'guest' ? 'Гость' : `User ${p.userId}`);
-    }
+  }
 
   function updateProfileUI(){
     if (!profileInfo) return;
@@ -900,16 +933,22 @@
   if (btnLoginTg){
     btnLoginTg.addEventListener('click', ()=>{
       if (TG){
-        // Повторная попытка считывания юзера из TG
-        const ok = tryAutoLoginFromTelegram();
-        if (ok){
-          switchProfile(profile);
-          alert('Вход через Telegram выполнен. Данные теперь привязаны к вашему профилю.');
+        const u = resolveTelegramUser();
+        if (u?.id){
+          switchProfile({
+            userId: String(u.id),
+            first_name: u.first_name || '',
+            last_name:  u.last_name  || '',
+            username:   u.username   || '',
+            photo_url:  u.photo_url  || '',
+            isTelegram: true
+          });
+          localStorage.setItem(LS_LAST_UID, String(u.id));
+          alert('Вход через Telegram выполнен. Данные привязаны к вашему профилю.');
           return;
         }
-        alert('Не удалось получить данные Telegram. Попробуйте открыть приложение внутри Telegram как Web App.');
+        alert('Не удалось получить данные Telegram. Откройте приложение внутри Telegram как Web App.');
       } else {
-        // В браузере: позволим создать локальный "псевдо-профиль" (ручная привязка ID)
         const manual = prompt('Введите ваш Telegram ID (число) для локальной привязки:\n(В браузере это только локальная привязка без проверки)');
         if (manual && /^\d{5,}$/.test(manual.trim())){
           const np = { userId: manual.trim(), first_name:'Пользователь', last_name:'', username:'', photo_url:'', isTelegram:false };
@@ -956,7 +995,7 @@
       `;
       card.addEventListener('click', ()=>{
         setTheme(t.id);
-        buildThemeCards(); // перерисовать галочки
+        buildThemeCards();
       });
       themeGrid.appendChild(card);
     });
@@ -1152,6 +1191,7 @@
   document.addEventListener('click', ()=>{ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); });
 
   /* ========= БЫСТРОЕ ДОБАВЛЕНИЕ ========= */
+  const quickAddInput = document.getElementById('quick-add-input');
   quickAddInput.addEventListener('keydown', (e)=>{
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -1735,7 +1775,7 @@
     }
   });
 
-  /* ========= PWA Badging (не обязательно) ========= */
+  /* ========= PWA Badging ========= */
   function updateAppBadge(){
     const remain = state.tasks.filter(t=>!t.completed).length;
     if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
