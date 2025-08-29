@@ -455,7 +455,7 @@
   <!-- Project Modal -->
   <div id="project-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
     <div class="modal-backdrop" id="project-backdrop"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-h-[80vh] overflow-y-auto">
+    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-х-[80vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--bg)] p-4 flex justify-between items-center border-b border-secondary">
         <h2 class="text-xl font-semibold">Новый проект</h2>
         <button id="close-project-modal" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Закрыть">
@@ -491,14 +491,14 @@
   <!-- Settings Modal -->
   <div id="settings-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
     <div class="modal-backdrop" id="settings-backdrop"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-h-[85vh] overflow-y-auto">
+    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-т-3xl shadow-xl max-h-[85vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--bg)] p-4 flex justify-between items-center border-b border-secondary">
         <h2 class="text-xl font-semibold">Настройки</h2>
         <button id="close-settings" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Закрыть">
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <div class="p-4 space-y-6">
+      <div class="п-4 space-y-6">
         <div>
           <div class="text-sm font-medium mb-2">Тема оформления</div>
           <div id="theme-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -559,7 +559,7 @@
           <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
             <div class="flex items-center">
               <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3"><i class="fas fa-list"></i></div>
-              <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-hинt">Простой список задач</div></div>
+              <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-hint">Простой список задач</div></div>
             </div>
           </div>
           <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
@@ -575,7 +575,7 @@
             </div>
           </div>
         </div>
-        <div class="p-2 text-xs text-center text-hint border-t border-secondary">
+        <div class="p-2 text-xs text-center text-hint border-т border-secondary">
           Esc — закрыть • N — новая задача • Ctrl/Cmd+K — палитра • F — поиск • 1/2/3 — виды • Del — удалить
         </div>
       </div>
@@ -593,8 +593,6 @@
   </div>
 </div>
 <script>
-(() => {
-  /* ========= ПРОФИЛЬ / TELEGRAM (мгновенный авто-вход) ========= */
   const TG = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 
   // форсируем ready/expand сразу, как в старых версиях
