@@ -121,7 +121,8 @@
   </header>
 
   <main class="flex-1 container mx-auto px-4 py-4">
-      <!-- View Selector -->
+
+    <!-- View Selector -->
     <div class="flex justify-center mb-4">
       <div class="inline-flex rounded-md shadow-sm" role="group">
         <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
@@ -178,7 +179,7 @@
               <option value="medium">Средний</option>
               <option value="low">Низкий</option>
             </select>
-            <label class="block text-sm mb-1">Статус</label>
+            <label class="block text см mb-1">Статус</label>
             <select id="filter-status" class="w-full px-3 py-2 rounded bg-[var(--tg-theme-secondary-bg-color)] ring-focus">
               <option value="all">Все</option>
               <option value="backlog">Бэклог</option>
@@ -345,7 +346,7 @@
           <textarea id="task-description" rows="3" placeholder="Подробности..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
         </div>
         <div class="mb-4">
-          <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Подзадачи (через Enter)</label>
+          <label class="block text-sm text-[var(--tg-theme-hинt-color)] mb-1">Подзадачи (через Enter)</label>
           <textarea id="task-subtasks" rows="2" placeholder="Напр.: Исследовать конкурентов&#10;Сделать план" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
         </div>
         <div class="mb-4">
@@ -478,65 +479,38 @@
     <button id="empty-state-add-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Добавить задачу</button>
   </div>
 
-  <!-- NEW: Export JSON Modal (Telegram-friendly) -->
-  <div id="export-json-modal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-backdrop" data-close="export-json-modal"></div>
+  <!-- I/O Modal (совместимый с Telegram) -->
+  <div id="io-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="modal-backdrop" id="io-backdrop"></div>
     <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[85vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
-        <h2 class="text-lg font-semibold">Экспорт данных (JSON)</h2>
-        <button class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" data-close="export-json-modal" aria-label="Закрыть">
+        <h2 id="io-title" class="text-xl font-semibold">Экспорт / Импорт</h2>
+        <button id="io-close" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть">
           <i class="fas fa-times"></i>
         </button>
       </div>
       <div class="p-4 space-y-3">
-        <p class="text-sm text-[var(--tg-theme-hint-color)]">В Telegram WebApp иногда блокируется авто-скачивание. Скопируйте JSON или нажмите «Скачать» ниже.</p>
-        <textarea id="export-json-text" class="w-full h-48 px-3 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus" readonly></textarea>
-        <div class="flex gap-2">
-          <button id="export-json-copy" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Скопировать</button>
-          <a id="export-json-download" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Скачать</a>
+        <div id="io-hint" class="text-sm text-[var(--tg-theme-hint-color)]"></div>
+        <textarea id="io-text" class="w-full h-56 rounded-lg p-3 bg-[var(--tg-theme-secondary-bg-color)] ring-focus" placeholder=""></textarea>
+        <div class="flex flex-wrap gap-2 justify-end">
+          <button id="io-share" class="hidden px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+            <i class="fas fa-paper-plane mr-1"></i>Поделиться в «Избранном»
+          </button>
+          <button id="io-copy" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+            <i class="fas fa-copy mr-1"></i>Скопировать
+          </button>
+          <button id="io-apply" class="hidden px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">
+            Импортировать
+          </button>
         </div>
+        <div id="io-footnote" class="text-xs text-[var(--tg-theme-hint-color)]"></div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- NEW: Import JSON Modal (Telegram-friendly) -->
-  <div id="import-json-modal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-backdrop" data-close="import-json-modal"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[85vh] overflow-y-auto">
-      <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
-        <h2 class="text-lg font-semibold">Импорт данных (вставьте JSON)</h2>
-        <button class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" data-close="import-json-modal" aria-label="Закрыть">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="p-4 space-y-3">
-        <textarea id="import-json-text" class="w-full h-48 px-3 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus" placeholder='Вставьте сюда содержимое файла planner-data.json'></textarea>
-        <div class="flex justify-end gap-2">
-          <button class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]" data-close="import-json-modal">Отмена</button>
-          <button id="import-json-apply" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Импортировать</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- NEW: File Link Modal (for DOCX / Telegram) -->
-  <div id="file-link-modal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-backdrop" data-close="file-link-modal"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl">
-      <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
-        <h2 class="text-lg font-semibold">Скачать файл</h2>
-        <button class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" data-close="file-link-modal" aria-label="Закрыть">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="p-4 space-y-3">
-        <p class="text-sm text-[var(--tg-theme-hint-color)]">Нажмите по ссылке, чтобы сохранить файл. Если ссылка не открывается, нажмите и удерживайте, затем выберите «Открыть».</p>
-        <a id="file-link-href" class="block w-full text-center px-4 py-3 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]" download>Скачать</a>
-      </div>
-    </div>
-  </div>
-  <script>
-(() => {
+<script>
+  (() => {
   // --- Telegram + тема ---
   const tg = window.Telegram?.WebApp;
   const inTelegram = !!tg?.initDataUnsafe || !!tg?.initData;
@@ -626,30 +600,78 @@
   const weekdayRow = document.getElementById('weekday-row');
   const calendarGrid = document.getElementById('calendar-grid');
 
-  // NEW: Модалки для Telegram-импорта/экспорта
-  const exportJsonModal = document.getElementById('export-json-modal');
-  const exportJsonText = document.getElementById('export-json-text');
-  const exportJsonCopy = document.getElementById('export-json-copy');
-  const exportJsonDownload = document.getElementById('export-json-download');
-
-  const importJsonModal = document.getElementById('import-json-modal');
-  const importJsonText = document.getElementById('import-json-text');
-  const importJsonApply = document.getElementById('import-json-apply');
-
-  const fileLinkModal = document.getElementById('file-link-modal');
-  const fileLinkHref = document.getElementById('file-link-href');
-
   const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints>0;
 
-  // Утилиты модалок
-  function openModal(el){ el?.classList?.remove('hidden'); }
-  function closeModal(el){ el?.classList?.add('hidden'); }
-  document.querySelectorAll('[data-close]').forEach(btn=>{
-    btn.addEventListener('click', ()=> {
-      const id = btn.getAttribute('data-close');
-      const m = document.getElementById(id);
-      closeModal(m);
-    });
+  // --- I/O Modal (для Telegram-совместимых операций экспорта/импорта) ---
+  const ioModal = document.getElementById('io-modal');
+  const ioBackdrop = document.getElementById('io-backdrop');
+  const ioClose = document.getElementById('io-close');
+  const ioTitle = document.getElementById('io-title');
+  const ioHint = document.getElementById('io-hint');
+  const ioText = document.getElementById('io-text');
+  const ioCopy = document.getElementById('io-copy');
+  const ioShare = document.getElementById('io-share');
+  const ioApply = document.getElementById('io-apply');
+  const ioFootnote = document.getElementById('io-footnote');
+
+  let ioApplyHandler = null;
+
+  function openIOModal(opts){
+    const {
+      title='Экспорт / Импорт',
+      hint='',
+      text='',
+      showApply=false,
+      showShare=false,
+      footnote=''
+    } = opts || {};
+    ioTitle.textContent = title;
+    ioHint.textContent = hint;
+    ioText.value = text || '';
+    ioApply.classList.toggle('hidden', !showApply);
+    ioShare.classList.toggle('hidden', !showShare);
+    ioFootnote.textContent = footnote || '';
+    ioModal.classList.remove('hidden');
+    setTimeout(()=> ioText.focus(), 50);
+  }
+  function closeIOModal(){
+    ioModal.classList.add('hidden');
+    ioApplyHandler = null;
+  }
+  ioClose.addEventListener('click', closeIOModal);
+  ioBackdrop.addEventListener('click', closeIOModal);
+
+  ioCopy.addEventListener('click', async ()=>{
+    try{
+      await navigator.clipboard.writeText(ioText.value || '');
+      alert('Скопировано в буфер обмена');
+    }catch(e){
+      // Фолбэк: выделим текст
+      ioText.select(); document.execCommand?.('copy');
+      alert('Текст выделен — нажмите Копировать ещё раз или используйте жест копирования');
+    }
+  });
+
+  ioShare.addEventListener('click', ()=>{
+    const txt = ioText.value || '';
+    // 1) Если доступен Web Share API
+    if (navigator.share && !inTelegram){
+      navigator.share({ text: txt }).catch(()=>{});
+      return;
+    }
+    // 2) В Telegram: открываем deep-link «Поделиться»
+    const shareUrl = 'https://t.me/share/url?text=' + encodeURIComponent(txt.slice(0,4096));
+    if (inTelegram && tg?.openTelegramLink){
+      tg.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
+  });
+
+  ioApply.addEventListener('click', ()=>{
+    if (typeof ioApplyHandler === 'function'){
+      ioApplyHandler(ioText.value);
+    }
   });
 
   // --- Модель/состояние ---
@@ -787,7 +809,7 @@
   renderAll();
   updateAppBadge();
 
-  // --- Меню/темы ---
+  // --- Меню/темы/импорт/экспорт/восстановление ---
   menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
   closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
   if (inTelegram) {
@@ -800,44 +822,50 @@
     });
   }
 
-  // --- Экспорт JSON (двухрежимный) ---
+  // === ЭКСПОРТ JSON (Telegram-совместимый) ===
   btnExport.addEventListener('click', ()=>{
-    const json = localStorage.getItem(STORAGE_KEY) || '{}';
-
-    if (inTelegram) {
-      exportJsonText.value = json;
-      // Генерируем data: URL (надёжно для вебвью)
-      const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
-      exportJsonDownload.setAttribute('href', dataUrl);
-      exportJsonDownload.setAttribute('download', 'planner-data.json');
-      openModal(exportJsonModal);
+    const payload = localStorage.getItem(STORAGE_KEY) || '{}';
+    if (inTelegram){
+      ioApplyHandler = null;
+      openIOModal({
+        title: 'Экспорт данных (JSON)',
+        hint: 'Скопируйте JSON и сохраните его где удобно. В Telegram WebApp прямое скачивание файла ограничено.',
+        text: payload,
+        showApply: false,
+        showShare: true,
+        footnote: 'Кнопка «Поделиться» откроет окно отправки в «Избранное» или чат.'
+      });
     } else {
-      // Классический Blob + клик по якорю (якорь добавляем в DOM)
-      const blob = new Blob([json], {type:'application/json'});
+      const blob = new Blob([payload], {type:'application/json'});
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'planner-data.json';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+      const a = document.createElement('a'); a.href = url; a.download = 'planner-data.json'; a.click();
+      URL.revokeObjectURL(url);
     }
   });
 
-  exportJsonCopy?.addEventListener('click', async ()=>{
-    try {
-      await navigator.clipboard.writeText(exportJsonText.value || '');
-      if (tg?.showPopup) tg.showPopup({ message:'Скопировано!', buttons:[{type:'ok'}] });
-      else alert('Скопировано!');
-    } catch {
-      alert('Не удалось скопировать');
-    }
-  });
-
-  // --- Импорт JSON (двухрежимный) ---
+  // === ИМПОРТ JSON (Telegram-совместимый) ===
   btnImport.addEventListener('click', ()=>{
-    if (inTelegram) {
-      importJsonText.value = '';
-      openModal(importJsonModal);
+    if (inTelegram){
+      ioApplyHandler = (txt)=>{
+        try{
+          const data = JSON.parse(txt || '{}');
+          if (data.projects) state.projects = data.projects;
+          if (data.tasks) state.tasks = data.tasks;
+          save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll();
+          alert('Импортировано успешно');
+          closeIOModal();
+        }catch(err){
+          alert('Ошибка импорта: неверный JSON');
+        }
+      };
+      openIOModal({
+        title: 'Импорт данных (JSON)',
+        hint: 'Вставьте сюда ранее экспортированный JSON и нажмите «Импортировать».',
+        text: '',
+        showApply: true,
+        showShare: false,
+        footnote: 'Данные текущего пользователя будут перезаписаны.'
+      });
     } else {
       const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
       inp.onchange = (e)=>{
@@ -858,22 +886,7 @@
     }
   });
 
-  importJsonApply?.addEventListener('click', ()=>{
-    try{
-      const data = JSON.parse(importJsonText.value || '{}');
-      if (data.projects) state.projects = data.projects;
-      if (data.tasks) state.tasks = data.tasks;
-      save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll();
-      closeModal(importJsonModal);
-      if (tg?.showPopup) tg.showPopup({ message:'Импортировано успешно', buttons:[{type:'ok'}] });
-      else alert('Импортировано успешно');
-    } catch(e){
-      if (tg?.showPopup) tg.showPopup({ message:'Ошибка импорта', buttons:[{type:'ok'}] });
-      else alert('Ошибка импорта');
-    }
-  });
-
-  // --- Бэкап из IndexedDB ---
+  // === ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ===
   btnRestore.addEventListener('click', async ()=>{
     const last = await getLatestBackup();
     if (!last) { alert('Бэкапов пока нет'); return; }
@@ -887,12 +900,738 @@
       }catch(e){ alert('Не удалось восстановить'); }
     }
   });
-    // --- Экспорт DOCX ---
-  if (btnExportDocx) {
-    btnExportDocx.addEventListener('click', exportDocx);
+
+  // --- Виды ---
+  function showView(view){
+    state.view = view;
+    viewContents.forEach(el=> el.classList.toggle('hidden', el.id !== `${view}-view`));
+    viewSelectors.forEach(btn=>{
+      btn.classList.remove('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
+      if (btn.dataset.view === view) btn.classList.add('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
+    });
+    if (view==='calendar') renderCalendar();
+    if (view==='kanban') renderKanban();
+    if (view==='list') renderList();
+  }
+  viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
+
+  // --- Поиск ---
+  searchButton.addEventListener('click', ()=> { openCommandPalette(); commandInput.value=''; commandInput.placeholder='Введите текст для поиска...'; });
+  if (searchInput) {
+    searchInput.addEventListener('input', ()=>{ state.search = searchInput.value.trim().toLowerCase(); renderAll(); });
   }
 
+  // --- Фильтры + сортировка ---
+  filterButton.addEventListener('click', (e)=>{
+    filterPanel.style.left = 'auto';
+    filterPanel.style.right = '0';
+    filterPanel.classList.toggle('hidden');
+    sortPanel.classList.add('hidden');
+    e.stopPropagation();
+  });
+  [filterDue, filterPriority, filterStatus].forEach(el=>{
+    el.addEventListener('change', ()=>{ state.filters.due=filterDue.value; state.filters.priority=filterPriority.value; state.filters.status=filterStatus.value; renderAll(); });
+  });
+  sortButton.addEventListener('click', (e)=>{
+    sortPanel.style.left = 'auto';
+    sortPanel.style.right = '0';
+    sortPanel.classList.toggle('hidden');
+    filterPanel.classList.add('hidden');
+    e.stopPropagation();
+  });
+  sortSelect.addEventListener('change', ()=>{ state.sort = sortSelect.value; renderAll(); });
+  document.addEventListener('click', ()=>{ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); });
+
+  // --- Проекты ---
+  addProjectButton.addEventListener('click', openProjectModal);
+
+  deleteProjectButton.addEventListener('click', ()=>{
+    const id = projectSelector.value;
+    if (id==='all'){ alert('Сначала выберите конкретный проект.'); return; }
+    const name = projectName(id);
+    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
+      state.projects = state.projects.filter(p=>p.id!==id);
+      state.tasks.forEach(t=>{ if (t.project===id) t.project=''; });
+      hydrateProjectSelector(); hydrateTaskProjectSelect();
+      projectSelector.value = 'all';
+      save(); renderAll();
+    }
+  });
+
+  function hydrateProjectSelector(){
+    projectSelector.innerHTML = '<option value="all">Все проекты</option>';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      projectSelector.appendChild(opt);
+    });
+  }
+  function hydrateTaskProjectSelect(){
+    const sel = document.getElementById('task-project');
+    sel.innerHTML = '';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+  }
+  projectSelector.addEventListener('change', renderAll);
+
+  function openProjectModal(){
+    projectModal.classList.remove('hidden');
+    projectNameInput.value = '';
+    projectColorInput.value = '#3b82f6';
+    document.getElementById('project-id').value='';
+    document.getElementById('project-description').value='';
+  }
+  function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
+
+  [closeProjectModal, cancelProject, projectBackdrop].forEach(el=>{
+    el.addEventListener('click', ()=> closeProjectModalFunc());
+  });
+
+  saveProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const color = projectColorInput.value || '#3b82f6';
+    if(!name){ alert('Введите название проекта'); return; }
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    const existing = state.projects.find(p=>p.id===id);
+    if(!existing){
+      state.projects.push({ id, name, color });
+    }else{
+      existing.name = name; existing.color = color;
+    }
+    save();
+    hydrateProjectSelector();
+    hydrateTaskProjectSelect();
+    closeProjectModalFunc();
+  });
+
+  deleteProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    if(!id){ alert('Укажите название проекта для удаления'); return; }
+    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
+      state.projects = state.projects.filter(p=>p.id!==id);
+      state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
+      save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll(); closeProjectModalFunc();
+    }
+  });
+
+  // --- Задачи: модалка ---
+  addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
+  function openTaskModal(task=null, prefillDate=null){
+    taskModal.classList.remove('hidden');
+    taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
+    document.getElementById('task-id').value = task?.id || '';
+    document.getElementById('task-title').value = task?.title || '';
+    document.getElementById('task-priority').value = task?.priority || 'medium';
+    document.getElementById('task-status').value = task?.status || 'backlog';
+    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
+    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
+    document.getElementById('task-description').value = task?.description || '';
+    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
+    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
+  }
+  function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
+
+  [closeTaskModal, cancelTask, taskBackdrop].forEach(el=>{
+    el.addEventListener('click', ()=> closeTaskModalFunc());
+  });
+
+  saveTaskBtn.addEventListener('click', ()=>{
+    const id = document.getElementById('task-id').value;
+    const title = document.getElementById('task-title').value.trim();
+    if(!title){ alert('Введите название задачи'); return; }
+    const priority = document.getElementById('task-priority').value;
+    const status = document.getElementById('task-status').value;
+    const project = document.getElementById('task-project').value;
+    const dueDate = document.getElementById('task-due-date').value;
+    const description = document.getElementById('task-description').value.trim();
+    const subtasksRaw = document.getElementById('task-subtasks').value;
+    const tagsRaw = document.getElementById('task-tags').value;
+
+    const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
+    let subtasksDone = subtasks.map(()=>false);
+
+    if(id){
+      const t = state.tasks.find(t=>t.id===id);
+      if(t){
+        const mapPrev = new Map((t.subtasks||[]).map((s,i)=>[s, (t.subtasksDone||[])[i] || false]));
+        subtasksDone = subtasks.map(s=> mapPrev.get(s) || false);
+        Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,subtasksDone,completed: status==='done', completedAt: status==='done'? (t.completedAt||nowISO()): undefined});
+      }
+    } else {
+      state.tasks.unshift({
+        id: uid(), title, priority, status, project, dueDate, description, tags: tagsRaw.split(',').map(s=>s.trim()).filter(Boolean),
+        subtasks, subtasksDone,
+        completed: status==='done', createdAt: nowISO(), completedAt: status==='done'? nowISO(): undefined
+      });
+    }
+    save(); closeTaskModalFunc(); renderAll();
+  });
+
+  // --- Быстрое добавление ---
+  quickAddInput.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const raw = quickAddInput.value.trim();
+      if (!raw) return;
+      const parsed = parseQuickAdd(raw);
+      state.tasks.unshift({
+        id: uid(),
+        title: parsed.title || 'Без названия',
+        priority: parsed.priority || 'medium',
+        status: 'backlog',
+        project: parsed.project || (state.projects[0]?.id || ''),
+        dueDate: parsed.dueDate || '',
+        description: '',
+        tags: parsed.tags || [],
+        subtasks: [],
+        subtasksDone: [],
+        completed: false,
+        createdAt: nowISO()
+      });
+      save();
+      quickAddInput.value = '';
+      renderAll();
+    }
+  });
+
+  function parseQuickAdd(text){
+    let t = ' ' + text + ' ';
+    const res = { title:'', priority:'medium', dueDate:'', project:'', tags:[] };
+
+    const tagRe = /#([\p{L}\p{N}_-]+)/giu;
+    const tags = [];
+    t = t.replace(tagRe, (_,m)=>{ tags.push(m); return ' '; });
+    res.tags = tags;
+
+    const projRe = /@([\p{L}\p{N}\s_-]+)/giu;
+    let projName = '';
+    t = t.replace(projRe, (_,m)=>{ projName = m.trim(); return ' '; });
+    if (projName) {
+      let proj = state.projects.find(p=>p.name.toLowerCase()===projName.toLowerCase());
+      if (!proj) {
+        const id = projName.toLowerCase().replace(/\s+/g,'-');
+        const color = '#f59e0b';
+        proj = { id, name: projName, color };
+        state.projects.push(proj);
+        hydrateProjectSelector();
+        hydrateTaskProjectSelect();
+      }
+      res.project = proj.id;
+    }
+
+    const low = t.toLowerCase();
+    if (low.includes('/сегодня')) { res.dueDate = todayISO(0); t = t.replace('/сегодня',' '); }
+    if (low.includes('/завтра')) { res.dueDate = todayISO(1); t = t.replace('/завтра',' '); }
+    ['/пн','/вт','/ср','/чт','/пт','/сб','/вс'].forEach(tok=>{
+      if (low.includes(tok)) {
+        const idx = parseRussianWeekdayToken(tok);
+        if (idx!==null) res.dueDate = nextWeekdayISO(idx);
+        t = t.replace(tok,' ');
+      }
+    });
+
+    if (low.includes('/критично')) { res.priority = 'critical'; t = t.replace('/критично',' '); }
+    if (low.includes('/высокий') || low.includes('/важно')) { res.priority = 'high'; t = t.replace('/высокий',' ').replace('/важно',' '); }
+    if (low.includes('/средний')) { res.priority = 'medium'; t = t.replace('/средний',' '); }
+    if (low.includes('/низкий')) { res.priority = 'low'; t = t.replace('/низкий',' '); }
+
+    res.title = t.replace(/\s+/g,' ').trim();
+    return res;
+  }
+
+  // --- Командная палитра ---
+  function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
+  function closeCommandPalette(){ commandPalette.classList.add('hidden'); }
+  commandOptions.forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      const label = opt.querySelector('.font-medium').textContent;
+      closeCommandPalette();
+      if(label.includes('Создать задачу')) openTaskModal();
+      else if(label.includes('Создать проект')) openProjectModal();
+      else if(label.includes('Список')) showView('list');
+      else if(label.includes('Доску')) showView('kanban');
+      else if(label.includes('Календарь')) showView('calendar');
+      else if(label.includes('Поиск')) { if (searchInput) searchInput.focus(); }
+    });
+  });
+  commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
+
+  // --- Фильтрация/сортировка/поиск ---
+  function getFilteredTasks(){
+    const q = state.search;
+    const proj = projectSelector.value;
+    const { due, priority, status } = state.filters;
+
+    let arr = state.tasks.filter(t=>{
+      if (proj!=='all' && t.project!==proj) return false;
+      if (q) {
+        const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (due!=='all') {
+        const today = new Date(todayISO(0)+'T00:00:00');
+        const d = t.dueDate ? new Date(t.dueDate+'T00:00:00') : null;
+        if (due==='today' && (!d || d.toDateString()!==today.toDateString())) return false;
+        if (due==='week') {
+          const s = startOfWeek(today), e = endOfWeek(today);
+          if (!d || d<s || d>e) return false;
+        }
+        if (due==='overdue') {
+          if (!t.dueDate) return false;
+          if (t.completed) return false;
+          if (new Date(t.dueDate+'T00:00:00') >= today) return false;
+        }
+      }
+      if (priority!=='all' && t.priority!==priority) return false;
+      if (status!=='all' && t.status!==status) return false;
+      return true;
+    });
+
+    const prRank = { critical:3, high:2, medium:1, low:0 };
+    const stRank = { 'backlog':0,'in-progress':1,'review':2,'done':3 };
+    const cmp = {
+      'due-asc': (a,b)=> (a.dueDate||'9999') < (b.dueDate||'9999') ? -1 : (a.dueDate||'9999') > (b.dueDate||'9999') ? 1 : 0,
+      'due-desc': (a,b)=> (a.dueDate||'0000') > (b.dueDate||'0000') ? -1 : (a.dueDate||'0000') < (b.dueDate||'0000') ? 1 : 0,
+      'priority-desc': (a,b)=> prRank[b.priority]-prRank[a.priority],
+      'priority-asc': (a,b)=> prRank[a.priority]-prRank[b.priority],
+      'project-asc': (a,b)=> projectName(a.project).localeCompare(projectName(b.project),'ru'),
+      'status-asc': (a,b)=> stRank[a.status]-stRank[b.status],
+      'title-asc': (a,b)=> a.title.localeCompare(b.title,'ru')
+    }[state.sort] || (()=>0);
+
+    arr.sort(cmp);
+    return arr;
+  }
+
+  // --- Статистика ---
+  function renderStats(){
+    const total = state.tasks.length;
+    const todayStr = todayISO(0);
+    const doneToday = state.tasks.filter(t=> t.completed && (t.completedAt||'').slice(0,10)===todayStr).length;
+    const sWeek = startOfWeek(); const eWeek = endOfWeek();
+    const doneWeek = state.tasks.filter(t=>{
+      if (!t.completedAt) return false;
+      const d = new Date(t.completedAt);
+      return d>=sWeek && d<=eWeek;
+    }).length;
+    const overdue = state.tasks.filter(t=> t.dueDate && !t.completed && t.dueDate < todayStr).length;
+
+    statsBar.innerHTML = '';
+    [
+      { label:'Всего задач', value: total, icon:'fa-list' },
+      { label:'Выполнено сегодня', value: doneToday, icon:'fa-check-circle' },
+      { label:'Выполнено за неделю', value: doneWeek, icon:'fa-calendar-check' },
+      { label:'Просрочено', value: overdue, icon:'fa-clock' },
+    ].forEach(s=>{
+      const el = document.createElement('div');
+      el.className = 'bg-[var(--tg-theme-secondary-bg-color)] rounded-xl p-3 md:p-4 flex items-center gap-3';
+      el.innerHTML = `
+        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--tg-theme-bg-color)] border border-[var(--tg-theme-secondary-bg-color)]">
+          <i class="fas ${s.icon}"></i>
+        </div>
+        <div><div class="text-xs text-[var(--tg-theme-hint-color)]">${s.label}</div><div class="text-lg font-semibold">${s.value}</div></div>
+      `;
+      statsBar.appendChild(el);
+    });
+  }
+
+  // --- Рендер списка ---
+  function renderList(){
+    const tasks = getFilteredTasks();
+    listContainer.innerHTML = '';
+    if (tasks.length===0){ emptyState.classList.remove('hidden'); return; }
+    emptyState.classList.add('hidden');
+
+    tasks.forEach(t=>{
+      const project = projectById(t.project);
+      const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+      const doneSub = (t.subtasksDone||[]).filter(Boolean).length;
+      const totalSub = (t.subtasks||[]).length;
+      const progressPct = totalSub ? Math.round(doneSub/totalSub*100) : 0;
+
+      const card = document.createElement('div');
+      card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 relative';
+      card.dataset.id = t.id;
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-start gap-3">
+            <div class="mt-1">
+              <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+            </div>
+            <div class="w-full">
+              <h3 class="font-medium ${t.completed?'line-through opacity-70':''}" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h3>
+              <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">${t.dueDate?('Срок: '+fmtDateHuman(t.dueDate)):'Без срока'}</p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                <span class="${statusClass(t.status)} text-xs px-2 py-1 rounded-full">${statusRu(t.status)}</span>
+                ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
+                ${(t.tags||[]).map(tag=>`<span class="bg-[var(--tg-theme-bg-color)] border border-[var(--tg-theme-secondary-bg-color)] text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
+              </div>
+              ${ totalSub ? `
+                <div class="mt-3">
+                  <div class="progress-wrap" aria-label="Прогресс подзадач">
+                    <div class="progress-bar" style="width:${progressPct}%"></div>
+                  </div>
+                  <div class="text-xs text-[var(--tg-theme-hint-color)] mt-1">${doneSub}/${totalSub} выполнено</div>
+                  <div class="mt-2 space-y-1">
+                    ${t.subtasks.map((s,i)=>`
+                      <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" class="subtask-checkbox" data-act="toggle-subtask" data-id="${t.id}" data-idx="${i}" ${t.subtasksDone?.[i]?'checked':''}>
+                        <span class="subtask-label">${escapeHtml(s)}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : '' }
+            </div>
+          </div>
+
+          <div class="flex flex-col items-end gap-1">
+            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+            <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+      `;
+      listContainer.appendChild(card);
+
+      if (isTouch) attachSwipeHandlers(card, t.id);
+    });
+
+    listContainer.querySelectorAll('.task-card').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        if (e.target.closest('button, input, textarea, select, .subtask-checkbox')) return;
+        listContainer.querySelectorAll('.task-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.selectedTaskId = card.dataset.id;
+      });
+    });
+
+    listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
+      inp.addEventListener('click', e=> e.stopPropagation());
+      inp.addEventListener('change', ()=>{
+        const t = state.tasks.find(x=>x.id===inp.dataset.id);
+        if (t){
+          t.completed = inp.checked;
+          if (t.completed){ t.status='done'; t.completedAt = nowISO(); }
+          else { if (t.status==='done') t.status='backlog'; t.completedAt = undefined; }
+          save(); renderAll();
+        }
+      });
+    });
+
+    listContainer.querySelectorAll('[data-act="inline-title"]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const id = el.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t) return;
+        if (el.querySelector('input')) return;
+        const input = document.createElement('input');
+        input.type='text';
+        input.value = t.title;
+        input.className = 'title-input';
+        el.replaceWith(input);
+        input.focus();
+        input.select();
+        const commit = ()=>{
+          const newTitle = input.value.trim() || t.title;
+          t.title = newTitle;
+          save(); renderList();
+        };
+        input.addEventListener('keydown', (e)=>{
+          if (e.key==='Enter') commit();
+          if (e.key==='Escape') renderList();
+        });
+        input.addEventListener('blur', commit);
+      });
+    });
+
+    listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t) openTaskModal(t);
+    }));
+
+    listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+    }));
+
+    listContainer.querySelectorAll('[data-act="toggle-subtask"]').forEach(ch=>{
+      ch.addEventListener('change', ()=>{
+        const id = ch.dataset.id;
+        const idx = +ch.dataset.idx;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t) return;
+        if (!Array.isArray(t.subtasksDone)) t.subtasksDone = [];
+        t.subtasksDone[idx] = ch.checked;
+        save(); renderList();
+      });
+    });
+  }
+
+  function attachSwipeHandlers(card, id){
+    let startX=0, currentX=0, swiping=false;
+    card.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; swiping=true; card.style.transition='transform .0s, opacity .0s'; }, {passive:true});
+    card.addEventListener('touchmove', (e)=>{
+      if(!swiping) return;
+      currentX = e.touches[0].clientX;
+      const dx = currentX - startX;
+      card.style.transform = `translateX(${dx}px)`;
+      card.style.opacity = `${Math.max(0.5, 1 - Math.abs(dx)/280)}`;
+    }, {passive:true});
+    card.addEventListener('touchend', ()=>{
+      if(!swiping) return;
+      const dx = currentX - startX;
+      card.style.transition='transform .18s, opacity .18s';
+      card.style.transform='translateX(0)';
+      card.style.opacity='1';
+      swiping=false;
+      if (dx > 80){
+        const t = state.tasks.find(x=>x.id===id);
+        if (t){ t.completed = true; t.status='done'; t.completedAt = nowISO(); save(); renderAll(); }
+      } else if (dx < -80){
+        const t = state.tasks.find(x=>x.id===id);
+        if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); renderAll(); }
+      }
+    });
+  }
+
+  function priorityClass(p){ return ({low:'priority-low',medium:'priority-medium',high:'priority-high',critical:'priority-critical'})[p]; }
+  function statusClass(s){ return ({'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'})[s]; }
+
+  // --- Kanban ---
+  function renderKanban(){
+    const columns = document.querySelectorAll('.kanban-column');
+    columns.forEach(col=>{
+      const body = col.querySelector('.column-body');
+      body.innerHTML = '';
+      const status = col.getAttribute('data-col');
+      const tasks = getFilteredTasks().filter(t=>t.status===status);
+      tasks.forEach(t=>{
+        const project = projectById(t.project);
+        const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+        const card = document.createElement('div');
+        card.className='task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move';
+        card.draggable=true;
+        card.dataset.id = t.id;
+        card.innerHTML = `
+          <div class="flex justify-between gap-2">
+            <div class="${t.completed?'line-through opacity-70':''}">
+              <h4 class="font-medium" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h4>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
+              </div>
+              <div class="text-xs text-[var(--tg-theme-hint-color)] mt-1">${t.dueDate? 'Срок: '+fmtDateHuman(t.dueDate):'Без срока'}</div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+              <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+        body.appendChild(card);
+      });
+    });
+    ['backlog','in-progress','review','done'].forEach(s=>{
+      document.getElementById('cnt-'+s).textContent = state.tasks.filter(t=>t.status===s).length;
+    });
+
+    document.querySelectorAll('.kanban-column .task-card').forEach(card=>{
+      card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
+      card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
+    });
+    document.querySelectorAll('.kanban-column').forEach(col=>{
+      col.addEventListener('dragover', (e)=>{ e.preventDefault(); col.classList.add('bg-opacity-50'); });
+      col.addEventListener('dragleave', ()=> col.classList.remove('bg-opacity-50'));
+      col.addEventListener('drop', (e)=>{
+        e.preventDefault(); col.classList.remove('bg-opacity-50');
+        const dragged = document.querySelector('.kanban-column .task-card.opacity-50');
+        const status = col.getAttribute('data-col');
+        if(!dragged) return;
+        const id = dragged.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if(t){ t.status = status; if(status==='done'){ t.completed=true; t.completedAt=nowISO(); } else { t.completed=false; t.completedAt=undefined; } save(); renderKanban(); renderList(); renderCalendar(); }
+      });
+    });
+
+    document.querySelectorAll('#kanban-view [data-act="inline-title"]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const id = el.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t || el.querySelector('input')) return;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = t.title;
+        input.className = 'title-input';
+        el.replaceWith(input);
+        input.focus(); input.select();
+        const commit = ()=>{ t.title = input.value.trim() || t.title; save(); renderKanban(); };
+        input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') commit(); if (e.key==='Escape') renderKanban(); });
+        input.addEventListener('blur', commit);
+      });
+    });
+
+    document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t) openTaskModal(t);
+    }));
+    document.querySelectorAll('#kanban-view [data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+    }));
+  }
+
+  // --- Календарь ---
+  const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+  function renderCalendar(){
+    weekdayRow.innerHTML = '';
+    WEEKDAYS.forEach(w=>{
+      const div = document.createElement('div');
+      div.className = 'text-center text-sm font-medium py-2';
+      div.textContent = w;
+      weekdayRow.appendChild(div);
+    });
+
+    const d = new Date(state.currentMonth);
+    d.setDate(1);
+    const month = d.getMonth();
+    const year = d.getFullYear();
+    monthTitle.textContent = `${MONTHS_NOM[month]} ${year}`;
+
+    let startIdx = (d.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    calendarGrid.innerHTML = '';
+    for(let i=0;i<startIdx;i++){
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1 opacity-50';
+      calendarGrid.appendChild(cell);
+    }
+    const todayStr = todayISO(0);
+    for(let day=1; day<=daysInMonth; day++){
+      const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1';
+      cell.dataset.date = iso;
+      if (iso===todayStr) cell.classList.add('today');
+
+      cell.innerHTML = `<div class="text-right text-sm mb-1 ${iso===todayStr?'font-bold':''}">${day}</div>`;
+
+      const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
+      tasks.slice(0,6).forEach(t=>{
+        const badge = document.createElement('div');
+        badge.className = `text-xs truncate px-1 py-0.5 rounded mb-1 ${t.status==='done'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}`;
+        badge.textContent = t.title;
+        badge.draggable = true;
+        badge.dataset.id = t.id;
+        badge.addEventListener('dragstart', (e)=>{
+          e.dataTransfer.setData('text/task-id', t.id);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        cell.appendChild(badge);
+      });
+      if (tasks.length>6){
+        const more = document.createElement('div');
+        more.className='text-[var(--tg-theme-hint-color)] text-xs px-1';
+        more.textContent = `+ ещё ${tasks.length-6}`;
+        cell.appendChild(more);
+      }
+
+      cell.addEventListener('dragover', (e)=>{ e.preventDefault(); cell.classList.add('dragover'); });
+      cell.addEventListener('dragleave', ()=> cell.classList.remove('dragover'));
+      cell.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        cell.classList.remove('dragover');
+        const id = e.dataTransfer.getData('text/task-id');
+        if(!id) return;
+        const t = state.tasks.find(x=>x.id===id);
+        if(!t) return;
+        t.dueDate = cell.dataset.date || '';
+        save(); renderCalendar(); renderList();
+      });
+
+      cell.addEventListener('click', (ev)=>{
+        if (ev.target && ev.target.getAttribute('draggable') === 'true') return;
+        openTaskModal(null, iso);
+      });
+      calendarGrid.appendChild(cell);
+    }
+  }
+  prevMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()-1); state.currentMonth=d; renderCalendar(); });
+  nextMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()+1); state.currentMonth=d; renderCalendar(); });
+  todayButton.addEventListener('click', ()=>{ state.currentMonth = new Date(); renderCalendar(); });
+
+  // --- Горячие клавиши ---
+  document.addEventListener('keydown', (e)=>{
+    const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+    const typing = ['input','textarea'].includes(activeTag) && document.activeElement?.type!=='button';
+
+    if ((e.key==='n' || e.key==='N') && !e.ctrlKey && !e.metaKey && !typing){
+      e.preventDefault(); openTaskModal(); return;
+    }
+    if ((e.key.toLowerCase()==='k') && (e.ctrlKey || e.metaKey)){
+      e.preventDefault(); openCommandPalette(); return;
+    }
+    if ((e.key==='f' || e.key==='F') && !e.ctrlKey && !e.metaKey){
+      if (searchInput && !typing){ e.preventDefault(); searchInput.focus(); }
+      return;
+    }
+    if (!typing && (e.key==='1' || e.key==='2' || e.key==='3')){
+      e.preventDefault();
+      const map = { '1':'list', '2':'kanban', '3':'calendar' };
+      showView(map[e.key]);
+      return;
+    }
+    if (e.key==='Delete' && !typing){
+      if (state.selectedTaskId){
+        const t = state.tasks.find(x=>x.id===state.selectedTaskId);
+        if (t && confirm(`Удалить «${t.title}»?`)){
+          state.tasks = state.tasks.filter(x=>x.id!==t.id);
+          state.selectedTaskId = null;
+          save(); renderAll();
+        }
+      }
+    }
+    if (e.key==='Escape'){
+      closeCommandPalette();
+    }
+  });
+
+  // --- PWA Badging API ---
+  function updateAppBadge(){
+    const remain = state.tasks.filter(t=>!t.completed).length;
+    if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
+      if (remain>0) { navigator.setAppBadge(remain).catch(()=>{}); }
+      else { navigator.clearAppBadge().catch(()=>{}); }
+    }
+  }
+
+  // === ЭКСПОРТ В DOCX (в Telegram -> текстовый отчёт) ===
   async function exportDocx(){
+    // Если Telegram WebApp — показываем текстовый отчёт в I/O-модалке:
+    if (inTelegram){
+      const txt = buildPlainReport();
+      ioApplyHandler = null;
+      openIOModal({
+        title: 'Экспорт отчёта (текст)',
+        hint: 'В Telegram WebApp скачивание .docx ограничено. Скопируйте/поделитесь текстовым отчётом.',
+        text: txt,
+        showApply: false,
+        showShare: true,
+        footnote: 'Откройте приложение в браузере вне Telegram, чтобы скачать DOCX.'
+      });
+      return;
+    }
+
     if (!window.docx) { alert('Библиотека DOCX не загружена.'); return; }
     const {
       Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType
@@ -900,6 +1639,7 @@
 
     const tasks = [...state.tasks];
     const projectsById = Object.fromEntries(state.projects.map(p => [p.id, p]));
+
     tasks.sort((a, b) => {
       const pa = projectsById[a.project]?.name || '';
       const pb = projectsById[b.project]?.name || '';
@@ -910,6 +1650,7 @@
       if (da !== db) return da < db ? -1 : 1;
       return (a.title || '').localeCompare(b.title || '', 'ru');
     });
+
     const groups = {};
     for (const t of tasks) {
       const key = projectsById[t.project]?.name || 'Без проекта';
@@ -922,6 +1663,7 @@
     const overdue = tasks.filter(t => t.dueDate && !t.completed && t.dueDate < today).length;
 
     const docChildren = [];
+
     docChildren.push(new Paragraph({ text: 'Экспорт задач — Планировщик', heading: HeadingLevel.TITLE }));
     docChildren.push(new Paragraph(new TextRun({ text: new Date().toLocaleString('ru-RU'), italic: true })));
     docChildren.push(new Paragraph(' '));
@@ -932,21 +1674,24 @@
 
     for (const [projName, arr] of Object.entries(groups)) {
       docChildren.push(new Paragraph({ text: projName, heading: HeadingLevel.HEADING_2 }));
+
       if (!arr.length) {
         docChildren.push(new Paragraph({ text: 'Нет задач' }));
         docChildren.push(new Paragraph(' '));
         continue;
       }
+
       const header = new TableRow({
         children: [
-          new TableCell({ children:[new Paragraph('Задача')] }),
-          new TableCell({ children:[new Paragraph('Срок')] }),
-          new TableCell({ children:[new Paragraph('Приоритет')] }),
-          new TableCell({ children:[new Paragraph('Статус')] }),
-          new TableCell({ children:[new Paragraph('Метки')] }),
-          new TableCell({ children:[new Paragraph('Подзадачи')] }),
+          new TableCell({ children:[new Paragraph({ text:'Задача' })] }),
+          new TableCell({ children:[new Paragraph({ text:'Срок' })] }),
+          new TableCell({ children:[new Paragraph({ text:'Приоритет' })] }),
+          new TableCell({ children:[new Paragraph({ text:'Статус' })] }),
+          new TableCell({ children:[new Paragraph({ text:'Метки' })] }),
+          new TableCell({ children:[new Paragraph({ text:'Подзадачи' })] }),
         ]
       });
+
       const rows = arr.map(t => {
         const tags = (t.tags || []).join(', ');
         const due = t.dueDate ? t.dueDate.split('-').reverse().join('.') : '—';
@@ -954,6 +1699,7 @@
           const done = Array.isArray(t.subtasksDone) ? !!t.subtasksDone[i] : false;
           return `${done ? '[x]' : '[ ]'} ${s}`;
         }).join('\n');
+
         return new TableRow({
           children: [
             new TableCell({ children:[new Paragraph(t.title || '—')] }),
@@ -961,49 +1707,112 @@
             new TableCell({ children:[new Paragraph(priorityRu(t.priority || 'medium'))] }),
             new TableCell({ children:[new Paragraph(statusRu(t.status || 'backlog'))] }),
             new TableCell({ children:[new Paragraph(tags || '—')] }),
-            new TableCell({ children:[new Paragraph(subtasks || '—')] }),
+            new TableCell({ children:[new Paragraph({ text: subtasks || '—' })] }),
           ]
         });
       });
+
       const table = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         alignment: AlignmentType.CENTER,
         rows: [header, ...rows]
       });
+
       docChildren.push(table);
       docChildren.push(new Paragraph(' '));
     }
 
-    const doc = new Document({ sections: [{ children: docChildren }] });
-    const blob = await Packer.toBlob(doc);
+    const doc = new Document({
+      creator: 'Planner',
+      title: 'Экспорт задач',
+      description: 'Экспорт задач и проектов из веб-планировщика',
+      sections: [{ children: docChildren }]
+    });
 
-    if (inTelegram) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result;
-        fileLinkHref.href = dataUrl;
-        fileLinkHref.download = `tasks-export-${new Date().toISOString().slice(0,10)}.docx`;
-        openModal(fileLinkModal);
-      };
-      reader.readAsDataURL(blob);
-    } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `tasks-export-${new Date().toISOString().slice(0,10)}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0);
-    }
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks-export-${new Date().toISOString().slice(0,10)}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
-  // --- Общий рендер и др. функции здесь (renderList, renderKanban, renderCalendar и т.д.) ---
-  // (оставил их без изменений, кроме вызова save()/renderAll)
+  // Текстовый отчёт (для Telegram)
+  function buildPlainReport(){
+    const projectsById = Object.fromEntries(state.projects.map(p => [p.id, p.name]));
+    const lines = [];
+    const total = state.tasks.length;
+    const done = state.tasks.filter(t=>t.completed).length;
+    const today = new Date().toISOString().slice(0,10);
+    const overdue = state.tasks.filter(t=> t.dueDate && !t.completed && t.dueDate < today).length;
 
-  // Пользователь
+    lines.push('Экспорт задач — Планировщик');
+    lines.push(new Date().toLocaleString('ru-RU'));
+    lines.push('');
+    lines.push(`Всего задач: ${total}`);
+    lines.push(`Выполнено: ${done}`);
+    lines.push(`Просрочено: ${overdue}`);
+    lines.push('');
+
+    const grouped = {};
+    for (const t of state.tasks){
+      const k = projectsById[t.project] || 'Без проекта';
+      (grouped[k] ||= []).push(t);
+    }
+    const orderedProjects = Object.keys(grouped).sort((a,b)=> a.localeCompare(b,'ru'));
+
+    for (const pname of orderedProjects){
+      lines.push(`== ${pname} ==`);
+      const arr = grouped[pname].slice().sort((a,b)=>{
+        const da = a.dueDate || '9999-12-31';
+        const db = b.dueDate || '9999-12-31';
+        return da.localeCompare(db) || (a.title||'').localeCompare(b.title||'','ru');
+      });
+      if (!arr.length){ lines.push('Нет задач'); lines.push(''); continue; }
+      for (const t of arr){
+        const due = t.dueDate ? t.dueDate.split('-').reverse().join('.') : '—';
+        const tags = (t.tags||[]).join(', ') || '—';
+        const pr = priorityRu(t.priority||'medium');
+        const st = statusRu(t.status||'backlog');
+        lines.push(`• ${t.title}`);
+        lines.push(`  Срок: ${due} | Приоритет: ${pr} | Статус: ${st} | Метки: ${tags}`);
+        if ((t.subtasks||[]).length){
+          for (let i=0;i<t.subtasks.length;i++){
+            const mark = (t.subtasksDone||[])[i] ? '[x]' : '[ ]';
+            lines.push(`  ${mark} ${t.subtasks[i]}`);
+          }
+        }
+      }
+      lines.push('');
+    }
+    return lines.join('\n');
+  }
+
+  // --- Общий рендер ---
+  function renderAll(){
+    renderStats();
+    if (state.view==='list') renderList();
+    if (state.view==='kanban') renderKanban();
+    if (state.view==='calendar') renderCalendar();
+    emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
+    save();
+  }
+
+  // --- Вне меню/поповеров ---
+  document.addEventListener('click', (e)=>{
+    if (sideMenu && !sideMenu.classList.contains('hidden')){
+      const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
+      if (!inside) sideMenu.classList.add('hidden');
+    }
+  });
+
+  // Пользователь в меню
   const menuUser = document.getElementById('menu-user');
   if (user) menuUser.textContent = `${user.first_name || 'Профиль'}${user.last_name?' '+user.last_name:''} (@${user.username || 'id:'+user.id})`;
 
+  // Кнопка DOCX (оставляем обработчик в конце, чтобы была видна функция)
+  if (btnExportDocx) btnExportDocx.addEventListener('click', exportDocx);
 })();
 </script>
 </body>
