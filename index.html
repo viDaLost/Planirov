@@ -1,1011 +1,1335 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Планировщик задач</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --tg-theme-bg-color: #ffffff;
-            --tg-theme-text-color: #000000;
-            --tg-theme-hint-color: #707579;
-            --tg-theme-link-color: #3390ec;
-            --tg-theme-button-color: #3390ec;
-            --tg-theme-button-text-color: #ffffff;
-            --tg-theme-secondary-bg-color: #f4f4f5;
-            --ring: rgba(51,144,236,.35);
-        }
-        .dark {
-            --tg-theme-bg-color: #1c1c1d;
-            --tg-theme-text-color: #ffffff;
-            --tg-theme-hint-color: #aaaaaa;
-            --tg-theme-link-color: #5d9ce6;
-            --tg-theme-button-color: #5d9ce6;
-            --tg-theme-button-text-color: #ffffff;
-            --tg-theme-secondary-bg-color: #2c2c2e;
-            --ring: rgba(93,156,230,.35);
-        }
-        * { box-sizing: border-box; }
-        html, body { height: 100%; }
-        body {
-            background-color: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
-            transition: background-color .25s, color .25s;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Inter', system-ui, sans-serif;
-        }
-        .task-card { transition: transform .15s, box-shadow .15s; }
-        .task-card:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgb(0 0 0 / .08); }
-        .priority-low{background:rgba(52,211,153,.12);color:rgb(16,185,129)}
-        .priority-medium{background:rgba(96,165,250,.12);color:rgb(59,130,246)}
-        .priority-high{background:rgba(251,191,36,.12);color:rgb(234,179,8)}
-        .priority-critical{background:rgba(239,68,68,.12);color:rgb(239,68,68)}
-        .status-backlog{background:rgba(156,163,175,.12);color:rgb(156,163,175)}
-        .status-in-progress{background:rgba(59,130,246,.12);color:rgb(59,130,246)}
-        .status-review{background:rgba(168,85,247,.12);color:rgb(168,85,247)}
-        .status-done{background:rgba(16,185,129,.12);color:rgb(16,185,129)}
-        .kanban-column{min-height:60vh}
-        .calendar-day{min-height:100px}
-        .calendar-day.today{outline:2px solid var(--ring); outline-offset: -2px; background: rgba(59,130,246,.06);}
-        .subtask-checkbox:checked + .subtask-label { text-decoration: line-through; color: var(--tg-theme-hint-color); }
-        .command-palette{backdrop-filter: blur(10px);}
-        .ring-focus:focus{outline:none; box-shadow: 0 0 0 3px var(--ring)}
-        @media (max-width: 640px){
-            .kanban-column{min-height:auto;max-height:60vh;overflow-y:auto}
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Планировщик задач</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <style>
+    :root{
+      --tg-theme-bg-color:#ffffff;
+      --tg-theme-text-color:#000000;
+      --tg-theme-hint-color:#707579;
+      --tg-theme-link-color:#3390ec;
+      --tg-theme-button-color:#3390ec;
+      --tg-theme-button-text-color:#ffffff;
+      --tg-theme-secondary-bg-color:#f4f4f5;
+      --ring:rgba(51,144,236,.35)
+    }
+    /* Используем .dark только ВНЕ Telegram. Внутри Telegram тема приходит из клиента. */
+    .dark{
+      --tg-theme-bg-color:#1c1c1d;
+      --tg-theme-text-color:#fff;
+      --tg-theme-hint-color:#aaa;
+      --tg-theme-link-color:#5d9ce6;
+      --tg-theme-button-color:#5d9ce6;
+      --tg-theme-button-text-color:#fff;
+      --tg-theme-secondary-bg-color:#2c2c2e;
+      --ring:rgba(93,156,230,.35)
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      background:var(--tg-theme-bg-color);
+      color:var(--tg-theme-text-color);
+      transition:background-color .25s,color .25s;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Inter',system-ui,sans-serif
+    }
+    .ring-focus:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
+    .task-card{transition:transform .15s,box-shadow .15s}
+    .task-card:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgb(0 0 0 /.08)}
+    .priority-low{background:rgba(52,211,153,.12);color:rgb(16,185,129)}
+    .priority-medium{background:rgba(96,165,250,.12);color:rgb(59,130,246)}
+    .priority-high{background:rgba(251,191,36,.12);color:rgb(234,179,8)}
+    .priority-critical{background:rgba(239,68,68,.12);color:rgb(239,68,68)}
+    .status-backlog{background:rgba(156,163,175,.12);color:rgb(156,163,175)}
+    .status-in-progress{background:rgba(59,130,246,.12);color:rgb(59,130,246)}
+    .status-review{background:rgba(168,85,247,.12);color:rgb(168,85,247)}
+    .status-done{background:rgba(16,185,129,.12);color:rgb(16,185,129)}
+    .kanban-column{min-height:60vh}
+    .calendar-day{min-height:100px}
+    .calendar-day.today{outline:2px solid var(--ring);outline-offset:-2px;background:rgba(59,130,246,.06)}
+    .command-palette{backdrop-filter:blur(10px)}
+    .subtask-checkbox:checked+.subtask-label{text-decoration:line-through;color:var(--tg-theme-hint-color)}
+    @media (max-width:640px){
+      .kanban-column{min-height:auto;max-height:60vh;overflow-y:auto}
+    }
+    /* Простые поповеры */
+    .popover{position:absolute;z-index:30;background:var(--tg-theme-bg-color);border:1px solid var(--tg-theme-secondary-bg-color);box-shadow:0 8px 24px rgb(0 0 0 / .12);border-radius:.75rem;min-width:240px}
+  </style>
 </head>
 <body class="min-h-screen">
 <div id="app" class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] border-b border-[var(--tg-theme-secondary-bg-color)]">
-        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="relative">
-                    <button id="menu-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Открыть меню">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <!-- Side menu -->
-                    <aside id="side-menu" class="hidden fixed top-0 left-0 h-full w-72 bg-[var(--tg-theme-bg-color)] shadow-xl z-20 border-r border-[var(--tg-theme-secondary-bg-color)]">
-                        <div class="p-4 border-b border-[var(--tg-theme-secondary-bg-color)] flex justify-between items-center">
-                            <h2 class="text-lg font-semibold">Меню</h2>
-                            <button id="close-menu" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть меню">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="p-3 space-y-1">
-                            <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                                <i class="fas fa-user mr-2"></i><span id="menu-user">Профиль</span>
-                            </button>
-                            <button id="btn-theme-toggle" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                                <i class="fas fa-moon mr-2"></i><span>Переключить тему</span>
-                            </button>
-                            <button id="btn-export" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                                <i class="fas fa-file-export mr-2"></i>Экспортировать данные
-                            </button>
-                            <button id="btn-import" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                                <i class="fas fa-file-import mr-2"></i>Импортировать данные
-                            </button>
-                        </div>
-                    </aside>
-                </div>
-                <h1 class="text-xl font-semibold">Планировщик задач</h1>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="search-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Поиск">
-                    <i class="fas fa-search"></i>
-                </button>
-                <button id="add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] ring-focus" aria-label="Новая задача">
-                    <i class="fas fa-plus"></i>
-                </button>
-            </div>
-        </div>
-    </header>
 
-    <!-- Main -->
-    <main class="flex-1 container mx-auto px-4 py-4">
-        <!-- View Selector -->
-        <div class="flex justify-center mb-6">
-            <div class="inline-flex rounded-md shadow-sm" role="group">
-                <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                    <i class="fas fa-list mr-2"></i> Список
-                </button>
-                <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-y border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                    <i class="fas fa-columns mr-2"></i> Доска
-                </button>
-                <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                    <i class="fas fa-calendar-alt mr-2"></i> Календарь
-                </button>
+  <!-- Header -->
+  <header class="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] border-b border-[var(--tg-theme-secondary-bg-color)]">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="relative">
+          <button id="menu-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Открыть меню">
+            <i class="fas fa-bars"></i>
+          </button>
+          <!-- Side menu -->
+          <aside id="side-menu" class="hidden fixed top-0 left-0 h-full w-72 bg-[var(--tg-theme-bg-color)] shadow-xl z-20 border-r border-[var(--tg-theme-secondary-bg-color)]">
+            <div class="p-4 border-b border-[var(--tg-theme-secondary-bg-color)] flex justify-between items-center">
+              <h2 class="text-lg font-semibold">Меню</h2>
+              <button id="close-menu" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть меню">
+                <i class="fas fa-times"></i>
+              </button>
             </div>
+            <div class="p-3 space-y-1">
+              <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                <i class="fas fa-user mr-2"></i><span id="menu-user">Профиль</span>
+              </button>
+              <!-- Тумблер темы показываем только вне Telegram -->
+              <button id="btn-theme-toggle" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                <i class="fas fa-moon mr-2"></i><span>Переключить тему</span>
+              </button>
+              <button id="btn-export" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                <i class="fas fa-file-export mr-2"></i>Экспортировать данные
+              </button>
+              <button id="btn-import" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                <i class="fas fa-file-import mr-2"></i>Импортировать данные
+              </button>
+            </div>
+          </aside>
         </div>
+        <h1 class="text-xl font-semibold">Планировщик задач</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="search-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Поиск">
+          <i class="fas fa-search"></i>
+        </button>
+        <button id="add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] ring-focus" aria-label="Новая задача">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+  </header>
 
-        <!-- Project Selector -->
-        <div class="mb-4 flex items-center">
-            <select id="project-selector" class="bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] rounded-lg px-4 py-2 ring-focus">
-                <option value="all">Все проекты</option>
+  <main class="flex-1 container mx-auto px-4 py-4">
+
+    <!-- View Selector -->
+    <div class="flex justify-center mb-4">
+      <div class="inline-flex rounded-md shadow-sm" role="group">
+        <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+          <i class="fas fa-list mr-2"></i> Список
+        </button>
+        <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-y border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+          <i class="fas fa-columns mr-2"></i> Доска
+        </button>
+        <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+          <i class="fas fa-calendar-alt mr-2"></i> Календарь
+        </button>
+      </div>
+    </div>
+
+    <!-- Mini dashboard (средняя фича) -->
+    <div id="stats-bar" class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4">
+      <!-- Заполним через JS -->
+    </div>
+
+    <!-- Project Selector + delete (средняя фича) -->
+    <div class="mb-4 flex items-center gap-2">
+      <select id="project-selector" class="bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] rounded-lg px-4 py-2 ring-focus">
+        <option value="all">Все проекты</option>
+      </select>
+      <button id="add-project-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Новый проект">
+        <i class="fas fa-folder-plus"></i>
+      </button>
+      <button id="delete-project-button" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" title="Удалить выбранный проект">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+
+    <!-- List View -->
+    <section id="list-view" class="view-content">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-semibold">Задачи</h2>
+        <div class="relative flex items-center gap-2">
+          <input id="search-input" placeholder="Поиск..." class="hidden md:block px-3 py-2 rounded-lg bg-[var(--tg-theme-secondary-bg-color)] ring-focus"/>
+          <button id="filter-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+            <i class="fas fa-filter mr-1"></i> Фильтр
+          </button>
+          <div id="filter-panel" class="popover hidden p-3 right-0 top-10">
+            <div class="text-sm font-semibold mb-2">Фильтры</div>
+            <label class="block text-sm mb-1">По сроку</label>
+            <select id="filter-due" class="w-full mb-2 px-3 py-2 rounded bg-[var(--tg-theme-secondary-bg-color)] ring-focus">
+              <option value="all">Все</option>
+              <option value="today">Сегодня</option>
+              <option value="week">Эта неделя</option>
+              <option value="overdue">Просроченные</option>
             </select>
-            <button id="add-project-button" class="ml-2 p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Новый проект">
-                <i class="fas fa-folder-plus"></i>
-            </button>
+            <label class="block text-sm mb-1">Приоритет</label>
+            <select id="filter-priority" class="w-full mb-2 px-3 py-2 rounded bg-[var(--tg-theme-secondary-bg-color)] ring-focus">
+              <option value="all">Все</option>
+              <option value="critical">Критичный</option>
+              <option value="high">Высокий</option>
+              <option value="medium">Средний</option>
+              <option value="low">Низкий</option>
+            </select>
+            <label class="block text-sm mb-1">Статус</label>
+            <select id="filter-status" class="w-full px-3 py-2 rounded bg-[var(--tg-theme-secondary-bg-color)] ring-focus">
+              <option value="all">Все</option>
+              <option value="backlog">Бэклог</option>
+              <option value="in-progress">В работе</option>
+              <option value="review">Проверка</option>
+              <option value="done">Готово</option>
+            </select>
+          </div>
+
+          <button id="sort-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+            <i class="fas fa-sort mr-1"></i> Сортировка
+          </button>
+          <div id="sort-panel" class="popover hidden p-3 right-0 top-10">
+            <div class="text-sm font-semibold mb-2">Сортировать по</div>
+            <select id="sort-select" class="w-full mb-2 px-3 py-2 rounded bg-[var(--tg-theme-secondary-bg-color)] ring-focus">
+              <option value="due-asc">Сроку (раньше → позже)</option>
+              <option value="due-desc">Сроку (позже → раньше)</option>
+              <option value="priority-desc">Приоритету (высокий → низкий)</option>
+              <option value="priority-asc">Приоритету (низкий → высокий)</option>
+              <option value="project-asc">Проекту (А→Я)</option>
+              <option value="status-asc">Статусу</option>
+              <option value="title-asc">Названию (А→Я)</option>
+            </select>
+          </div>
         </div>
+      </div>
 
-        <!-- List View -->
-        <section id="list-view" class="view-content">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold">Задачи</h2>
-                <div class="flex gap-2">
-                    <input id="search-input" placeholder="Поиск..." class="hidden md:block px-3 py-2 rounded-lg bg-[var(--tg-theme-secondary-bg-color)] ring-focus" />
-                    <button id="filter-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                        <i class="fas fa-filter mr-1"></i> Фильтр
-                    </button>
-                    <button id="sort-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                        <i class="fas fa-sort mr-1"></i> Сортировка
-                    </button>
-                </div>
-            </div>
-            <div id="list-container" class="space-y-3"></div>
-        </section>
-
-        <!-- Kanban View -->
-        <section id="kanban-view" class="view-content hidden">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div data-col="backlog" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium">Бэклог</h3>
-                        <span class="text-xs bg-gray-200 text-gray-800 rounded-full px-2 py-1" id="cnt-backlog">0</span>
-                    </div>
-                    <div class="space-y-3 column-body"></div>
-                </div>
-                <div data-col="in-progress" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium">В работе</h3>
-                        <span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-1" id="cnt-in-progress">0</span>
-                    </div>
-                    <div class="space-y-3 column-body"></div>
-                </div>
-                <div data-col="review" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium">Проверка</h3>
-                        <span class="text-xs bg-purple-200 text-purple-800 rounded-full px-2 py-1" id="cnt-review">0</span>
-                    </div>
-                    <div class="space-y-3 column-body"></div>
-                </div>
-                <div data-col="done" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium">Готово</h3>
-                        <span class="text-xs bg-green-200 text-green-800 rounded-full px-2 py-1" id="cnt-done">0</span>
-                    </div>
-                    <div class="space-y-3 column-body"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Calendar View -->
-        <section id="calendar-view" class="view-content hidden">
-            <div class="mb-4 flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <button id="prev-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Предыдущий месяц">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h2 id="month-title" class="text-lg font-semibold">Месяц ГГГГ</h2>
-                    <button id="next-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Следующий месяц">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                <div>
-                    <button id="today-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
-                        Сегодня
-                    </button>
-                </div>
-            </div>
-            <div id="weekday-row" class="grid grid-cols-7 gap-1 mb-1"></div>
-            <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
-        </section>
-    </main>
-
-    <!-- Bottom Navigation (Mobile) -->
-    <nav class="md:hidden sticky bottom-0 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
-        <div class="flex justify-around py-2">
-            <button data-view="list" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Список">
-                <i class="fas fa-list text-lg"></i>
-            </button>
-            <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Доска">
-                <i class="fas fa-columns text-lg"></i>
-            </button>
-            <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Календарь">
-                <i class="fas fa-calendar-alt text-lg"></i>
-            </button>
-            <button id="mobile-add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]" aria-label="Новая задача">
-                <i class="fas fa-plus text-lg"></i>
-            </button>
+      <!-- Быстрое добавление (быстрая фича) -->
+      <div class="mb-3">
+        <input id="quick-add-input"
+               class="w-full px-4 py-3 rounded-lg bg-[var(--tg-theme-secondary-bg-color)] ring-focus"
+               placeholder="Быстро добавить задачу… Поддерживает: /сегодня /завтра /пн…/вс /высокий /критично, #теги, @Проект"/>
+        <div class="text-xs text-[var(--tg-theme-hint-color)] mt-1">
+          Примеры: «Созвон с клиентом /завтра @Работа #важно», «Купить молоко /сегодня #дом»
         </div>
-    </nav>
+      </div>
 
-    <!-- Task Modal -->
-    <div id="task-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
-        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
-                <h2 id="task-modal-title" class="text-xl font-semibold">Новая задача</h2>
-                <button id="close-task-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <input type="hidden" id="task-id">
-                <div class="mb-4">
-                    <input type="text" id="task-title" placeholder="Название задачи" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
-                </div>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Приоритет</label>
-                        <select id="task-priority" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
-                            <option value="low">Низкий</option>
-                            <option value="medium" selected>Средний</option>
-                            <option value="high">Высокий</option>
-                            <option value="critical">Критичный</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Статус</label>
-                        <select id="task-status" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
-                            <option value="backlog">Бэклог</option>
-                            <option value="in-progress">В работе</option>
-                            <option value="review">Проверка</option>
-                            <option value="done">Готово</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Проект</label>
-                        <select id="task-project" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></select>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Срок</label>
-                        <input type="date" id="task-due-date" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Описание</label>
-                    <textarea id="task-description" rows="3" placeholder="Подробности..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Подзадачи (через Enter)</label>
-                    <textarea id="task-subtasks" rows="2" placeholder="Например: Исследовать конкурентов\nСделать план" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Метки (через запятую)</label>
-                    <input id="task-tags" placeholder="Работа, Важно" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
-                </div>
-                <div class="flex justify-end gap-2 mt-6">
-                    <button id="cancel-task" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Отмена</button>
-                    <button id="save-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Сохранить</button>
-                </div>
-            </div>
+      <div id="list-container" class="space-y-3"></div>
+    </section>
+
+    <!-- Kanban View -->
+    <section id="kanban-view" class="view-content hidden">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div data-col="backlog" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">Бэклог</h3>
+            <span class="text-xs bg-gray-200 text-gray-800 rounded-full px-2 py-1" id="cnt-backlog">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
         </div>
+        <div data-col="in-progress" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">В работе</h3>
+            <span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-1" id="cnt-in-progress">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
+        </div>
+        <div data-col="review" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">Проверка</h3>
+            <span class="text-xs bg-purple-200 text-purple-800 rounded-full px-2 py-1" id="cnt-review">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
+        </div>
+        <div data-col="done" class="kanban-column bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">Готово</h3>
+            <span class="text-xs bg-green-200 text-green-800 rounded-full px-2 py-1" id="cnt-done">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Calendar View -->
+    <section id="calendar-view" class="view-content hidden">
+      <div class="mb-4 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+          <button id="prev-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Предыдущий месяц">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <h2 id="month-title" class="text-lg font-semibold">Месяц ГГГГ</h2>
+          <button id="next-month" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Следующий месяц">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+        <div>
+          <button id="today-button" class="px-3 py-1 text-sm rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">
+            Сегодня
+          </button>
+        </div>
+      </div>
+      <div id="weekday-row" class="grid grid-cols-7 gap-1 mb-1"></div>
+      <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation (Mobile) -->
+  <nav class="md:hidden sticky bottom-0 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
+    <div class="flex justify-around py-2">
+      <button data-view="list" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Список">
+        <i class="fas fa-list text-lg"></i>
+      </button>
+      <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Доска">
+        <i class="fas fa-columns text-lg"></i>
+      </button>
+      <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)]" aria-label="Календарь">
+        <i class="fas fa-calendar-alt text-lg"></i>
+      </button>
+      <button id="mobile-add-task-button" class="p-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]" aria-label="Новая задача">
+        <i class="fas fa-plus text-lg"></i>
+      </button>
     </div>
+  </nav>
 
-    <!-- Project Modal -->
-    <div id="project-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
-        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[75vh] overflow-y-auto">
-            <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
-                <h2 class="text-xl font-semibold">Новый проект</h2>
-                <button id="close-project-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-4">
-                <input type="hidden" id="project-id">
-                <div class="mb-4">
-                    <input type="text" id="project-name" placeholder="Название проекта" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Описание</label>
-                    <textarea id="project-description" rows="3" placeholder="Короткое описание..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
-                </div>
-                <div class="flex justify-between mt-6">
-                    <button id="delete-project" class="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50/10">
-                        <i class="fas fa-trash mr-1"></i>Удалить
-                    </button>
-                    <div class="flex gap-2">
-                        <button id="cancel-project" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Отмена</button>
-                        <button id="save-project" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Сохранить</button>
-                    </div>
-                </div>
-            </div>
+  <!-- Task Modal -->
+  <div id="task-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
+        <h2 id="task-modal-title" class="text-xl font-semibold">Новая задача</h2>
+        <button id="close-task-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="p-4">
+        <input type="hidden" id="task-id"/>
+        <div class="mb-4">
+          <input type="text" id="task-title" placeholder="Название задачи" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"/>
         </div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Приоритет</label>
+            <select id="task-priority" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
+              <option value="low">Низкий</option>
+              <option value="medium" selected>Средний</option>
+              <option value="high">Высокий</option>
+              <option value="critical">Критичный</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Статус</label>
+            <select id="task-status" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
+              <option value="backlog">Бэклог</option>
+              <option value="in-progress">В работе</option>
+              <option value="review">Проверка</option>
+              <option value="done">Готово</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Проект</label>
+            <select id="task-project" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></select>
+          </div>
+          <div>
+            <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Срок</label>
+            <input type="date" id="task-due-date" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"/>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Описание</label>
+          <textarea id="task-description" rows="3" placeholder="Подробности..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Подзадачи (через Enter)</label>
+          <textarea id="task-subtasks" rows="2" placeholder="Например: Исследовать конкурентов&#10;Сделать план" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Метки (через запятую)</label>
+          <input id="task-tags" placeholder="Работа, Важно" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"/>
+        </div>
+        <div class="flex justify-end gap-2 mt-6">
+          <button id="cancel-task" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Отмена</button>
+          <button id="save-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Сохранить</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Command Palette -->
-    <div id="command-palette" class="fixed inset-0 z-50 hidden flex items-center justify-center">
-        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-        <div class="relative w-full max-w-md mx-4">
-            <div class="command-palette bg-[var(--tg-theme-bg-color)] rounded-lg shadow-xl overflow-hidden">
-                <div class="p-4 border-b border-[var(--tg-theme-secondary-bg-color)]">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-[var(--tg-theme-hint-color)]"></i>
-                        </div>
-                        <input type="text" id="command-input" placeholder="Команда или поиск..." class="w-full pl-10 pr-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus">
-                    </div>
-                </div>
-                <div class="max-h-96 overflow-y-auto">
-                    <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Задачи</div>
-                    <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
-                        <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-blue-100 text-blue-800 mr-3">
-                                <i class="fas fa-plus"></i>
-                            </div>
-                            <div>
-                                <div class="font-medium">Создать задачу</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Добавить новую задачу</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
-                        <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-purple-100 text-purple-800 mr-3">
-                                <i class="fas fa-search"></i>
-                            </div>
-                            <div>
-                                <div class="font-medium">Поиск задач</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Искать по названию/описанию</div>
-                            </div>
-                        </div>
-                    </div>
+  <!-- Project Modal -->
+  <div id="project-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[80vh] overflow-y-auto">
+      <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
+        <h2 class="text-xl font-semibold">Новый проект</h2>
+        <button id="close-project-modal" class="p-2 rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] ring-focus" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="p-4">
+        <input type="hidden" id="project-id"/>
+        <div class="mb-4">
+          <input type="text" id="project-name" placeholder="Название проекта" class="w-full px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"/>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Цвет</label>
+          <input type="color" id="project-color" value="#3b82f6" class="w-16 h-10 p-1 bg-[var(--tg-theme-secondary-bg-color)] rounded ring-focus"/>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Описание</label>
+          <textarea id="project-description" rows="3" placeholder="Короткое описание..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
+        </div>
+        <div class="flex justify-between mt-6">
+          <button id="delete-project" class="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50/10">
+            <i class="fas fa-trash mr-1"></i>Удалить
+          </button>
+          <div class="flex gap-2">
+            <button id="cancel-project" class="px-4 py-2 rounded-lg border border-[var(--tg-theme-secondary-bg-color)] hover:bg-[var(--tg-theme-secondary-bg-color)]">Отмена</button>
+            <button id="save-project" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-                    <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Проекты</div>
-                    <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
-                        <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-green-100 text-green-800 mr-3">
-                                <i class="fas fa-folder-plus"></i>
-                            </div>
-                            <div>
-                                <div class="font-medium">Создать проект</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Организовать задачи по проектам</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Виды</div>
-                    <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
-                        <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3">
-                                <i class="fas fa-list"></i>
-                            </div>
-                            <div>
-                                <div class="font-medium">Переключить на Список</div>
-                                <div class="text-xs text-[var(--tg-theme-hинt-color)]">Простой список задач</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
-                        <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3">
-                                <i class="fas fa-columns"></i>
-                            </div>
-                            <div>
-                                <div class="font-medium">Переключить на Доску</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Канбан</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
-                        <div class="flex items-center">
-                            <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3">
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
-                            <div>
-                                <div class="font-medium">Переключить на Календарь</div>
-                                <div class="text-xs text-[var(--tg-theme-hint-color)]">Показ задач по датам</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-2 text-xs text-center text-[var(--tg-theme-hint-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
-                    Esc — закрыть • N — новая задача • Ctrl/Cmd+K — палитра
-                </div>
+  <!-- Command Palette -->
+  <div id="command-palette" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+    <div class="relative w-full max-w-md mx-4">
+      <div class="command-palette bg-[var(--tg-theme-bg-color)] rounded-lg shadow-xl overflow-hidden">
+        <div class="p-4 border-b border-[var(--tg-theme-secondary-bg-color)]">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-search text-[var(--tg-theme-hint-color)]"></i>
             </div>
+            <input type="text" id="command-input" placeholder="Команда или поиск..." class="w-full pl-10 pr-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"/>
+          </div>
         </div>
-    </div>
+        <div class="max-h-96 overflow-y-auto">
+          <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Задачи</div>
+          <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-blue-100 text-blue-800 mr-3"><i class="fas fa-plus"></i></div>
+              <div>
+                <div class="font-medium">Создать задачу</div>
+                <div class="text-xs text-[var(--tg-theme-hint-color)]">Добавить новую задачу</div>
+              </div>
+            </div>
+          </div>
+          <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-purple-100 text-purple-800 mr-3"><i class="fas fa-search"></i></div>
+              <div>
+                <div class="font-medium">Поиск задач</div>
+                <div class="text-xs text-[var(--tg-theme-hint-color)]">Искать по названию/описанию</div>
+              </div>
+            </div>
+          </div>
 
-    <!-- Empty State -->
-    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-12">
-        <div class="w-24 h-24 bg-[var(--tg-theme-secondary-bg-color)] rounded-full flex items-center justify-center mb-4">
-            <i class="fas fa-tasks text-3xl text-[var(--tg-theme-hint-color)]"></i>
+          <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Проекты</div>
+          <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-green-100 text-green-800 mr-3"><i class="fas fa-folder-plus"></i></div>
+              <div>
+                <div class="font-medium">Создать проект</div>
+                <div class="text-xs text-[var(--tg-theme-hint-color)]">Организовать задачи по проектам</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-2 text-sm text-[var(--tg-theme-hint-color)]">Виды</div>
+          <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3"><i class="fas fa-list"></i></div>
+              <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-[var(--tg-theme-hint-color)]">Простой список задач</div></div>
+            </div>
+          </div>
+          <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3"><i class="fas fa-columns"></i></div>
+              <div><div class="font-medium">Переключить на Доску</div><div class="text-xs text-[var(--tg-theme-hint-color)]">Канбан</div></div>
+            </div>
+          </div>
+          <div class="command-option px-4 py-3 hover:bg-[var(--tg-theme-secondary-bg-color)] cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3"><i class="fas fa-calendar-alt"></i></div>
+              <div><div class="font-medium">Переключить на Календарь</div><div class="text-xs text-[var(--tg-theme-hint-color)]">Показ задач по датам</div></div>
+            </div>
+          </div>
         </div>
-        <h3 class="text-lg font-medium mb-2">Пока нет задач</h3>
-        <p class="text-sm text-[var(--tg-theme-hint-color)] mb-4 text-center max-w-md px-4">
-            Создайте первую задачу — нажмите «+» или клавишу N.
-        </p>
-        <button id="empty-state-add-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Добавить задачу</button>
+        <div class="p-2 text-xs text-center text-[var(--tg-theme-hint-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
+          Esc — закрыть • N — новая задача • Ctrl/Cmd+K — палитра
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="empty-state" class="hidden flex flex-col items-center justify-center py-12">
+    <div class="w-24 h-24 bg-[var(--tg-theme-secondary-bg-color)] rounded-full flex items-center justify-center mb-4">
+      <i class="fas fa-tasks text-3xl text-[var(--tg-theme-hint-color)]"></i>
+    </div>
+    <h3 class="text-lg font-medium mb-2">Пока нет задач</h3>
+    <p class="text-sm text-[var(--tg-theme-hint-color)] mb-4 text-center max-w-md px-4">Создайте первую задачу — нажмите «+» или клавишу N.</p>
+    <button id="empty-state-add-task" class="px-4 py-2 rounded-lg bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]">Добавить задачу</button>
+  </div>
 </div>
 
 <script>
 (() => {
-    // --- Telegram + Тема ---
-    const tg = window.Telegram?.WebApp;
-    if (tg?.expand) tg.expand();
-    const user = tg?.initDataUnsafe?.user || null;
-    const themeFromTg = tg?.colorScheme === 'dark' ? 'dark' : 'light';
-    const LS_THEME = 'tp_theme';
-    const LS_DATA_PREFIX = 'tp_data_';
-    const STORAGE_KEY = LS_DATA_PREFIX + (user?.id || 'default');
+  // --- Telegram + тема ---
+  const tg = window.Telegram?.WebApp;
+  const inTelegram = !!tg?.initDataUnsafe || !!tg?.initData;
+  if (tg?.expand) tg.expand();
 
-    const applyTheme = (t) => {
-        document.documentElement.classList.toggle('dark', t === 'dark');
-        localStorage.setItem(LS_THEME, t);
+  const user = tg?.initDataUnsafe?.user || null;
+  const LS_THEME = 'tp_theme';
+  const LS_DATA_PREFIX = 'tp_data_';
+  const STORAGE_KEY = LS_DATA_PREFIX + (user?.id || 'default');
+
+  // Привязываем тему: внутри Telegram полагаемся на их переменные + события themeChanged
+  const applyTheme = (mode) => {
+    if (inTelegram) {
+      // Внутри Telegram не трогаем .dark, чтобы не перебивать стили клиента
+      localStorage.setItem(LS_THEME, mode); // просто запомним предпочитаемую для standalone
+      return;
     }
-    const savedTheme = localStorage.getItem(LS_THEME) || themeFromTg;
-    applyTheme(savedTheme);
+    document.documentElement.classList.toggle('dark', mode === 'dark');
+    localStorage.setItem(LS_THEME, mode);
+  };
+  const initialMode = inTelegram ? (tg?.colorScheme === 'dark' ? 'dark' : 'light')
+                                 : (localStorage.getItem(LS_THEME) || 'light');
+  applyTheme(initialMode);
 
-    // --- Элементы ---
-    const sideMenu = document.getElementById('side-menu');
-    const menuBtn = document.getElementById('menu-button');
-    const closeMenu = document.getElementById('close-menu');
-    const themeToggle = document.getElementById('btn-theme-toggle');
-    const btnExport = document.getElementById('btn-export');
-    const btnImport = document.getElementById('btn-import');
+  // Реакция на смену темы в Telegram WebApp
+  if (inTelegram && tg?.onEvent) {
+    tg.onEvent('themeChanged', () => {
+      // Просто перерендерим, переменные --tg-theme-* Telegram уже обновит
+      renderAll();
+    });
+  }
 
-    const viewContents = document.querySelectorAll('.view-content');
-    const viewSelectors = document.querySelectorAll('.view-selector');
-    const listContainer = document.getElementById('list-container');
-    const projectSelector = document.getElementById('project-selector');
-    const addProjectButton = document.getElementById('add-project-button');
-    const searchButton = document.getElementById('search-button');
-    const searchInput = document.getElementById('search-input');
+  // --- Элементы ---
+  const sideMenu = document.getElementById('side-menu');
+  const menuBtn = document.getElementById('menu-button');
+  const closeMenu = document.getElementById('close-menu');
+  const themeToggle = document.getElementById('btn-theme-toggle');
+  const btnExport = document.getElementById('btn-export');
+  const btnImport = document.getElementById('btn-import');
 
-    const taskModal = document.getElementById('task-modal');
-    const taskModalTitle = document.getElementById('task-modal-title');
-    const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
-    const closeTaskModal = document.getElementById('close-task-modal');
-    const cancelTask = document.getElementById('cancel-task');
-    const saveTaskBtn = document.getElementById('save-task');
+  const viewContents = document.querySelectorAll('.view-content');
+  const viewSelectors = document.querySelectorAll('.view-selector');
 
-    const projectModal = document.getElementById('project-modal');
-    const closeProjectModal = document.getElementById('close-project-modal');
-    const cancelProject = document.getElementById('cancel-project');
-    const saveProject = document.getElementById('save-project');
-    const deleteProject = document.getElementById('delete-project');
+  const statsBar = document.getElementById('stats-bar');
 
-    const commandPalette = document.getElementById('command-palette');
-    const commandInput = document.getElementById('command-input');
-    const commandOptions = document.querySelectorAll('.command-option');
+  const listContainer = document.getElementById('list-container');
+  const projectSelector = document.getElementById('project-selector');
+  const addProjectButton = document.getElementById('add-project-button');
+  const deleteProjectButton = document.getElementById('delete-project-button');
 
-    const emptyState = document.getElementById('empty-state');
+  const searchButton = document.getElementById('search-button');
+  const searchInput = document.getElementById('search-input');
+  const quickAddInput = document.getElementById('quick-add-input');
 
-    // Календарь
-    const prevMonth = document.getElementById('prev-month');
-    const nextMonth = document.getElementById('next-month');
-    const todayButton = document.getElementById('today-button');
-    const monthTitle = document.getElementById('month-title');
-    const weekdayRow = document.getElementById('weekday-row');
-    const calendarGrid = document.getElementById('calendar-grid');
+  const filterButton = document.getElementById('filter-button');
+  const filterPanel = document.getElementById('filter-panel');
+  const filterDue = document.getElementById('filter-due');
+  const filterPriority = document.getElementById('filter-priority');
+  const filterStatus = document.getElementById('filter-status');
 
-    // --- Данные/Модель ---
-    const state = {
-        projects: [
-            { id: 'work', name: 'Работа' },
-            { id: 'personal', name: 'Личное' },
-            { id: 'team', name: 'Команда' }
-        ],
-        tasks: [
-            // Примерные данные
-            { id: uid(), title: 'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], completed:false },
-            { id: uid(), title: 'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], completed:false },
-            { id: uid(), title: 'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], completed:false },
-            { id: uid(), title: 'Настроить CI/CD', priority:'high', status:'done', project:'team', dueDate: todayISO(-3), description:'GitHub Actions', tags:['DevOps'], subtasks:[], completed:true },
-        ],
-        view: 'list',
-        search: '',
-        currentMonth: new Date(), // первый рендер календаря
+  const sortButton = document.getElementById('sort-button');
+  const sortPanel = document.getElementById('sort-panel');
+  const sortSelect = document.getElementById('sort-select');
+
+  const taskModal = document.getElementById('task-modal');
+  const taskModalTitle = document.getElementById('task-modal-title');
+  const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
+  const closeTaskModal = document.getElementById('close-task-modal');
+  const cancelTask = document.getElementById('cancel-task');
+  const saveTaskBtn = document.getElementById('save-task');
+
+  const projectModal = document.getElementById('project-modal');
+  const closeProjectModal = document.getElementById('close-project-modal');
+  const cancelProject = document.getElementById('cancel-project');
+  const saveProject = document.getElementById('save-project');
+  const deleteProject = document.getElementById('delete-project');
+
+  const projectNameInput = document.getElementById('project-name');
+  const projectColorInput = document.getElementById('project-color');
+
+  const commandPalette = document.getElementById('command-palette');
+  const commandInput = document.getElementById('command-input');
+  const commandOptions = document.querySelectorAll('.command-option');
+
+  const emptyState = document.getElementById('empty-state');
+
+  // Календарь
+  const prevMonth = document.getElementById('prev-month');
+  const nextMonth = document.getElementById('next-month');
+  const todayButton = document.getElementById('today-button');
+  const monthTitle = document.getElementById('month-title');
+  const weekdayRow = document.getElementById('weekday-row');
+  const calendarGrid = document.getElementById('calendar-grid');
+
+  // --- Модель/состояние ---
+  const state = {
+    projects: [
+      { id: 'work', name: 'Работа', color: '#3b82f6' },
+      { id: 'personal', name: 'Личное', color: '#10b981' },
+      { id: 'team', name: 'Команда', color: '#8b5cf6' }
+    ],
+    tasks: [
+      { id: uid(), title: 'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], completed:false, createdAt: nowISO() },
+      { id: uid(), title: 'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], completed:false, createdAt: nowISO() },
+      { id: uid(), title: 'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], completed:false, createdAt: nowISO() },
+      { id: uid(), title: 'Настроить CI/CD', priority:'high', status:'done', project:'team', dueDate: todayISO(-3), description:'GitHub Actions', tags:['DevOps'], subtasks:[], completed:true, completedAt: todayISO(-2)+'T10:00:00Z', createdAt: nowISO() },
+    ],
+    view: 'list',
+    search: '',
+    filters: { due:'all', priority:'all', status:'all' },
+    sort: 'due-asc',
+    currentMonth: new Date()
+  };
+
+  // --- Загрузка/Сохранение ---
+  const load = () => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.projects)) state.projects = parsed.projects;
+      if (Array.isArray(parsed.tasks)) state.tasks = parsed.tasks;
+    } catch(e){ console.warn('Ошибка загрузки:', e); }
+  };
+  const save = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      projects: state.projects,
+      tasks: state.tasks
+    }));
+  };
+
+  // --- Утилиты ---
+  function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+  function todayISO(shift=0){ const d=new Date(); d.setDate(d.getDate()+shift); return d.toISOString().slice(0,10); }
+  function nowISO(){ return new Date().toISOString(); }
+  function fmtDateHuman(iso){
+    if(!iso) return 'Без срока';
+    const d = new Date(iso+'T00:00:00');
+    return d.toLocaleDateString('ru-RU',{ day:'2-digit', month:'long' });
+  }
+  function projectById(id){ return state.projects.find(p=>p.id===id) || null; }
+  function projectName(id){ return (projectById(id)?.name) || 'Без проекта'; }
+  function priorityRu(p){ return ({low:'Низкий', medium:'Средний', high:'Высокий', critical:'Критичный'})[p] || p; }
+  function statusRu(s){ return ({'backlog':'Бэклог','in-progress':'В работе','review':'Проверка','done':'Готово'})[s] || s; }
+  function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
+  function hexToRgb(hex){
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+    return m ? { r:parseInt(m[1],16), g:parseInt(m[2],16), b:parseInt(m[3],16) } : {r:59,g:130,b:246};
+  }
+  function rgba(hex, a){ const {r,g,b}=hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+  function textColorForBg(hex){
+    const {r,g,b} = hexToRgb(hex);
+    const yiq = (r*299 + g*587 + b*114)/1000;
+    return yiq >= 128 ? '#111827' : '#f9fafb';
+  }
+  function startOfWeek(d=new Date()){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-wd); return x; }
+  function endOfWeek(d=new Date()){ const x=startOfWeek(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
+  function parseRussianWeekdayToken(tok){
+    const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 };
+    return map[tok] ?? null;
+  }
+  function nextWeekdayISO(target){
+    const d = new Date(); const today = d.getDay(); // 0..6 (Вс..Сб)
+    // нам нужно следующее целевое с Пн=1..Вс=0
+    let delta = (target - today + 7) % 7;
+    if (delta === 0) delta = 7;
+    d.setDate(d.getDate() + delta);
+    return d.toISOString().slice(0,10);
+  }
+
+  // --- Инициализация ---
+  load();
+  hydrateProjectSelector();
+  hydrateTaskProjectSelect();
+
+  showView('list');
+  renderAll();
+
+  // --- Меню/темы/импорт/экспорт ---
+  menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
+  closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
+  if (inTelegram) {
+    // Внутри Telegram — тумблер скрываем, тема управляется клиентом
+    themeToggle.style.display = 'none';
+  } else {
+    themeToggle.addEventListener('click', ()=>{
+      const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+      applyTheme(next);
+      renderAll();
+    });
+  }
+
+  btnExport.addEventListener('click', ()=>{
+    const blob = new Blob([localStorage.getItem(STORAGE_KEY) || '{}'], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'planner-data.json'; a.click();
+    URL.revokeObjectURL(url);
+  });
+  btnImport.addEventListener('click', ()=>{
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+    inp.onchange = (e)=>{
+      const f = e.target.files[0]; if(!f) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          const data = JSON.parse(reader.result);
+          if (data.projects) state.projects = data.projects;
+          if (data.tasks) state.tasks = data.tasks;
+          save(); renderAll();
+          alert('Импортировано успешно');
+        }catch(err){ alert('Ошибка импорта'); }
+      };
+      reader.readAsText(f);
     };
+    inp.click();
+  });
 
-    // Загрузка/Сохранение
-    const load = () => {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        try {
-            const parsed = JSON.parse(raw);
-            if (parsed.projects && Array.isArray(parsed.projects)) state.projects = parsed.projects;
-            if (parsed.tasks && Array.isArray(parsed.tasks)) state.tasks = parsed.tasks;
-        } catch(e){ console.warn('Ошибка загрузки:', e); }
-    };
-    const save = () => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            projects: state.projects,
-            tasks: state.tasks
-        }));
-    };
+  // --- Виды ---
+  function showView(view){
+    state.view = view;
+    viewContents.forEach(el=> el.classList.toggle('hidden', el.id !== `${view}-view`));
+    viewSelectors.forEach(btn=>{
+      btn.classList.remove('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
+      if (btn.dataset.view === view) btn.classList.add('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
+    });
+    if (view==='calendar') renderCalendar();
+    if (view==='kanban') renderKanban();
+    if (view==='list') renderList();
+  }
+  viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
 
-    // Утилиты
-    function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
-    function todayISO(shiftDays=0){ const d=new Date(); d.setDate(d.getDate()+shiftDays); return d.toISOString().slice(0,10); }
-    function fmtDateHuman(iso){
-        if(!iso) return 'Без срока';
-        const d = new Date(iso+'T00:00:00');
-        const fmt = d.toLocaleDateString('ru-RU',{ day:'2-digit', month:'long' });
-        return fmt;
+  // --- Поиск ---
+  searchButton.addEventListener('click', ()=> {
+    openCommandPalette();
+    commandInput.value = '';
+    commandInput.placeholder = 'Введите текст для поиска...';
+  });
+  if (searchInput) {
+    searchInput.addEventListener('input', ()=>{
+      state.search = searchInput.value.trim().toLowerCase();
+      renderAll();
+    });
+  }
+
+  // --- Фильтры + сортировка (быстрая/средняя фичи) ---
+  filterButton.addEventListener('click', (e)=>{
+    filterPanel.style.left = 'auto';
+    filterPanel.style.right = '0';
+    filterPanel.classList.toggle('hidden');
+    sortPanel.classList.add('hidden');
+    e.stopPropagation();
+  });
+  [filterDue, filterPriority, filterStatus].forEach(el=>{
+    el.addEventListener('change', ()=>{
+      state.filters.due = filterDue.value;
+      state.filters.priority = filterPriority.value;
+      state.filters.status = filterStatus.value;
+      renderAll();
+    });
+  });
+  sortButton.addEventListener('click', (e)=>{
+    sortPanel.style.left = 'auto';
+    sortPanel.style.right = '0';
+    sortPanel.classList.toggle('hidden');
+    filterPanel.classList.add('hidden');
+    e.stopPropagation();
+  });
+  sortSelect.addEventListener('change', ()=>{
+    state.sort = sortSelect.value;
+    renderAll();
+  });
+  document.addEventListener('click', ()=>{
+    filterPanel.classList.add('hidden');
+    sortPanel.classList.add('hidden');
+  });
+
+  // --- Проекты ---
+  addProjectButton.addEventListener('click', openProjectModal);
+  deleteProjectButton.addEventListener('click', ()=>{
+    const id = projectSelector.value;
+    if (id==='all' || ['work','personal','team'].includes(id)) {
+      alert('Нельзя удалить этот проект.');
+      return;
     }
-    const PRIORITY_BADGE = {
-        low:'priority-low', medium:'priority-medium', high:'priority-high', critical:'priority-critical'
-    };
-    const STATUS_BADGE = {
-        'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'
-    };
-    const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-    const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-    const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const name = projectName(id);
+    if (confirm(`Удалить проект «${name}»? Его задачи будут без проекта.`)) {
+      state.projects = state.projects.filter(p=>p.id!==id);
+      state.tasks.forEach(t=>{ if (t.project===id) t.project = ''; });
+      hydrateProjectSelector();
+      hydrateTaskProjectSelect();
+      projectSelector.value = 'all';
+      save(); renderAll();
+    }
+  });
 
-    // --- Инициализация ---
-    load();
+  closeProjectModal.addEventListener('click', closeProjectModalFunc);
+  cancelProject.addEventListener('click', closeProjectModalFunc);
+  saveProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const color = projectColorInput.value || '#3b82f6';
+    if(!name){ alert('Введите название проекта'); return; }
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    if(!state.projects.find(p=>p.id===id)){
+      state.projects.push({ id, name, color });
+      save();
+    }
     hydrateProjectSelector();
     hydrateTaskProjectSelect();
-    // Если нет задач — покажем пустое состояние позже
-    showView('list');
+    closeProjectModalFunc();
+  });
+  deleteProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    if(!id) return;
+    if (['work','personal','team'].includes(id)){
+      alert('Системные проекты удалить нельзя.');
+      return;
+    }
+    if (confirm(`Удалить проект «${name}»? Его задачи будут без проекта.`)) {
+      state.projects = state.projects.filter(p=>p.id!==id);
+      state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
+      save();
+      hydrateProjectSelector();
+      hydrateTaskProjectSelect();
+      renderAll();
+      closeProjectModalFunc();
+    }
+  });
+
+  function hydrateProjectSelector(){
+    projectSelector.innerHTML = '<option value="all">Все проекты</option>';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      projectSelector.appendChild(opt);
+    });
+  }
+  function hydrateTaskProjectSelect(){
+    const sel = document.getElementById('task-project');
+    sel.innerHTML = '';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+  }
+  projectSelector.addEventListener('change', renderAll);
+
+  function openProjectModal(){
+    projectModal.classList.remove('hidden');
+    projectNameInput.value = '';
+    projectColorInput.value = '#3b82f6';
+    document.getElementById('project-id').value='';
+    document.getElementById('project-description').value='';
+  }
+  function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
+
+  // --- Задачи: модалка ---
+  addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
+  closeTaskModal.addEventListener('click', closeTaskModalFunc);
+  cancelTask.addEventListener('click', closeTaskModalFunc);
+  saveTaskBtn.addEventListener('click', ()=>{
+    const id = document.getElementById('task-id').value;
+    const title = document.getElementById('task-title').value.trim();
+    if(!title){ alert('Введите название задачи'); return; }
+    const priority = document.getElementById('task-priority').value;
+    const status = document.getElementById('task-status').value;
+    const project = document.getElementById('task-project').value;
+    const dueDate = document.getElementById('task-due-date').value;
+    const description = document.getElementById('task-description').value.trim();
+    const subtasksRaw = document.getElementById('task-subtasks').value;
+    const tagsRaw = document.getElementById('task-tags').value;
+
+    const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
+    const tags = tagsRaw.split(',').map(s=>s.trim()).filter(Boolean);
+
+    if(id){
+      const t = state.tasks.find(t=>t.id===id);
+      if(t) Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,tags});
+    } else {
+      state.tasks.unshift({
+        id: uid(), title, priority, status, project, dueDate, description, tags, subtasks,
+        completed: status==='done', createdAt: nowISO(), completedAt: status==='done'? nowISO(): undefined
+      });
+    }
+    save();
+    closeTaskModalFunc();
     renderAll();
+  });
 
-    // --- Меню/Тема/Экспорт/Импорт ---
-    menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
-    closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
-    themeToggle.addEventListener('click', ()=>{
-        const t = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
-        applyTheme(t);
-    });
-    btnExport.addEventListener('click', ()=>{
-        const blob = new Blob([localStorage.getItem(STORAGE_KEY) || '{}'], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'planner-data.json'; a.click();
-        URL.revokeObjectURL(url);
-    });
-    btnImport.addEventListener('click', ()=>{
-        const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
-        inp.onchange = (e)=>{
-            const f = e.target.files[0]; if(!f) return;
-            const reader = new FileReader();
-            reader.onload = ()=>{
-                try{
-                    const data = JSON.parse(reader.result);
-                    if (data.projects) state.projects = data.projects;
-                    if (data.tasks) state.tasks = data.tasks;
-                    save(); renderAll();
-                    alert('Импортировано успешно');
-                }catch(err){ alert('Ошибка импорта'); }
-            };
-            reader.readAsText(f);
-        };
-        inp.click();
-    });
+  function openTaskModal(task=null, prefillDate=null){
+    taskModal.classList.remove('hidden');
+    taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
+    document.getElementById('task-id').value = task?.id || '';
+    document.getElementById('task-title').value = task?.title || '';
+    document.getElementById('task-priority').value = task?.priority || 'medium';
+    document.getElementById('task-status').value = task?.status || 'backlog';
+    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
+    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
+    document.getElementById('task-description').value = task?.description || '';
+    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
+    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
+  }
+  function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
 
-    // --- Виды / Переключение ---
-    function showView(view){
-        state.view = view;
-        viewContents.forEach(el=>{
-            el.classList.toggle('hidden', el.id !== `${view}-view`);
-        });
-        viewSelectors.forEach(btn=>{
-            btn.classList.remove('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
-            if (btn.dataset.view === view){
-                btn.classList.add('bg-[var(--tg-theme-button-color)]','text-[var(--tg-theme-button-text-color)]');
-            }
-        });
-        if(view==='calendar') renderCalendar();
-        if(view==='kanban') renderKanban();
-        if(view==='list') renderList();
+  // --- Быстрое добавление со слеш-командами ---
+  quickAddInput.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const raw = quickAddInput.value.trim();
+      if (!raw) return;
+      const parsed = parseQuickAdd(raw);
+      state.tasks.unshift({
+        id: uid(),
+        title: parsed.title || 'Без названия',
+        priority: parsed.priority || 'medium',
+        status: 'backlog',
+        project: parsed.project || (state.projects[0]?.id || ''),
+        dueDate: parsed.dueDate || '',
+        description: '',
+        tags: parsed.tags || [],
+        subtasks: [],
+        completed: false,
+        createdAt: nowISO()
+      });
+      save();
+      quickAddInput.value = '';
+      renderAll();
     }
-    viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
+  });
 
-    // --- Поиск ---
-    searchButton.addEventListener('click', ()=>{
-        openCommandPalette();
-        commandInput.value = '';
-        commandInput.placeholder = 'Введите текст для поиска...';
-    });
-    if (searchInput) {
-        searchInput.addEventListener('input', ()=>{
-            state.search = searchInput.value.trim().toLowerCase();
-            renderAll();
-        });
-    }
+  function parseQuickAdd(text){
+    let t = ' ' + text + ' '; // для удобной замены
+    const res = { title:'', priority:'medium', dueDate:'', project:'', tags:[] };
 
-    // --- Проекты ---
-    addProjectButton.addEventListener('click', openProjectModal);
-    closeProjectModal.addEventListener('click', closeProjectModalFunc);
-    cancelProject.addEventListener('click', closeProjectModalFunc);
-    saveProject.addEventListener('click', ()=>{
-        const name = document.getElementById('project-name').value.trim();
-        if(!name) { alert('Введите название проекта'); return; }
-        const id = name.toLowerCase().replace(/\s+/g,'-');
-        if(!state.projects.find(p=>p.id===id)){
-            state.projects.push({id, name});
-            save();
-        }
+    // Теги #tag (включая кириллицу)
+    const tagRe = /#([\p{L}\p{N}_-]+)/giu;
+    const tags = [];
+    t = t.replace(tagRe, (_,m)=>{ tags.push(m); return ' '; });
+    res.tags = tags;
+
+    // @Проект (последний встретившийся)
+    const projRe = /@([\p{L}\p{N}\s_-]+)/giu;
+    let projName = '';
+    t = t.replace(projRe, (_,m)=>{ projName = m.trim(); return ' '; });
+    if (projName) {
+      let proj = state.projects.find(p=>p.name.toLowerCase()===projName.toLowerCase());
+      if (!proj) {
+        // создадим проект на лету
+        const id = projName.toLowerCase().replace(/\s+/g,'-');
+        const color = '#f59e0b';
+        proj = { id, name: projName, color };
+        state.projects.push(proj);
         hydrateProjectSelector();
         hydrateTaskProjectSelect();
-        closeProjectModalFunc();
+      }
+      res.project = proj.id;
+    }
+
+    // Слэш-команды даты
+    const low = t.toLowerCase();
+    if (low.includes('/сегодня')) { res.dueDate = todayISO(0); t = t.replace('/сегодня',' '); }
+    if (low.includes('/завтра')) { res.dueDate = todayISO(1); t = t.replace('/завтра',' '); }
+    // /пн.. /вс
+    ['/пн','/вт','/ср','/чт','/пт','/сб','/вс'].forEach(tok=>{
+      if (low.includes(tok)) {
+        const idx = parseRussianWeekdayToken(tok);
+        if (idx!==null) res.dueDate = nextWeekdayISO(idx);
+        t = t.replace(tok,' ');
+      }
     });
-    deleteProject.addEventListener('click', ()=>{
-        const name = document.getElementById('project-name').value.trim();
-        const id = name.toLowerCase().replace(/\s+/g,'-');
-        if(!id) return;
-        if (['work','personal','team'].includes(id)){
-            alert('Системные проекты удалить нельзя.');
-            return;
+
+    // Приоритеты
+    if (low.includes('/критично')) { res.priority = 'critical'; t = t.replace('/критично',' '); }
+    if (low.includes('/высокий') || low.includes('/важно')) { res.priority = 'high'; t = t.replace('/высокий',' ').replace('/важно',' '); }
+    if (low.includes('/средний')) { res.priority = 'medium'; t = t.replace('/средний',' '); }
+    if (low.includes('/низкий')) { res.priority = 'low'; t = t.replace('/низкий',' '); }
+
+    res.title = t.replace(/\s+/g,' ').trim();
+    return res;
+  }
+
+  // --- Командная палитра ---
+  function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
+  function closeCommandPalette(){ commandPalette.classList.add('hidden'); }
+  commandOptions.forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      const label = opt.querySelector('.font-medium').textContent;
+      closeCommandPalette();
+      if(label.includes('Создать задачу')) openTaskModal();
+      else if(label.includes('Создать проект')) openProjectModal();
+      else if(label.includes('Список')) showView('list');
+      else if(label.includes('Доску')) showView('kanban');
+      else if(label.includes('Календарь')) showView('calendar');
+      else if(label.includes('Поиск')) { if (searchInput) searchInput.focus(); }
+    });
+  });
+  commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
+
+  // --- Клавиатура ---
+  document.addEventListener('keydown', (e)=>{
+    if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCommandPalette(); }
+    if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase()==='n'){ e.preventDefault(); openTaskModal(); }
+    if (e.key==='Escape'){
+      if (!commandPalette.classList.contains('hidden')) closeCommandPalette();
+      else if (!taskModal.classList.contains('hidden')) closeTaskModalFunc();
+      else if (!projectModal.classList.contains('hidden')) closeProjectModalFunc();
+    }
+  });
+
+  // --- Фильтрация/сортировка/поиск ---
+  function getFilteredTasks(){
+    const q = state.search;
+    const proj = projectSelector.value;
+    const { due, priority, status } = state.filters;
+
+    let arr = state.tasks.filter(t=>{
+      if (proj!=='all' && t.project!==proj) return false;
+      if (q) {
+        const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      // по сроку
+      if (due!=='all') {
+        const today = new Date(todayISO(0)+'T00:00:00');
+        const d = t.dueDate ? new Date(t.dueDate+'T00:00:00') : null;
+        if (due==='today' && (!d || d.toDateString()!==today.toDateString())) return false;
+        if (due==='week') {
+          const s = startOfWeek(today), e = endOfWeek(today);
+          if (!d || d<s || d>e) return false;
         }
-        state.projects = state.projects.filter(p=>p.id!==id);
-        // переназначим задачи этого проекта на "Без проекта" (покажем как пустую строку)
-        state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
-        save();
-        hydrateProjectSelector();
-        hydrateTaskProjectSelect();
-        renderAll();
-        closeProjectModalFunc();
-    });
-
-    function hydrateProjectSelector(){
-        // очистить и заполнить
-        projectSelector.innerHTML = '<option value="all">Все проекты</option>';
-        state.projects.forEach(p=>{
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.name;
-            projectSelector.appendChild(opt);
-        });
-    }
-    function hydrateTaskProjectSelect(){
-        const sel = document.getElementById('task-project');
-        sel.innerHTML = '';
-        state.projects.forEach(p=>{
-            const opt = document.createElement('option');
-            opt.value = p.id; opt.textContent = p.name;
-            sel.appendChild(opt);
-        });
-    }
-    projectSelector.addEventListener('change', renderAll);
-
-    // --- Задачи: модалка ---
-    addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
-    closeTaskModal.addEventListener('click', closeTaskModalFunc);
-    cancelTask.addEventListener('click', closeTaskModalFunc);
-    saveTaskBtn.addEventListener('click', ()=>{
-        const id = document.getElementById('task-id').value;
-        const title = document.getElementById('task-title').value.trim();
-        if(!title){ alert('Введите название задачи'); return; }
-        const priority = document.getElementById('task-priority').value;
-        const status = document.getElementById('task-status').value;
-        const project = document.getElementById('task-project').value;
-        const dueDate = document.getElementById('task-due-date').value;
-        const description = document.getElementById('task-description').value.trim();
-        const subtasksRaw = document.getElementById('task-subtasks').value;
-        const tagsRaw = document.getElementById('task-tags').value;
-
-        const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
-        const tags = tagsRaw.split(',').map(s=>s.trim()).filter(Boolean);
-
-        if(id){ // update
-            const t = state.tasks.find(t=>t.id===id);
-            if(t){
-                Object.assign(t,{title,priority,status,project,dueDate,description,subtasks, tags});
-            }
-        } else { // create
-            state.tasks.unshift({ id: uid(), title, priority, status, project, dueDate, description, tags, subtasks, completed:false });
+        if (due==='overdue') {
+          if (!t.dueDate) return false;
+          if (t.completed) return false;
+          if (new Date(t.dueDate+'T00:00:00') >= today) return false;
         }
-        save();
-        closeTaskModalFunc();
-        renderAll();
+      }
+      if (priority!=='all' && t.priority!==priority) return false;
+      if (status!=='all' && t.status!==status) return false;
+      return true;
     });
 
-    function openTaskModal(task=null, prefillDate=null){
-        taskModal.classList.remove('hidden');
-        taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
-        document.getElementById('task-id').value = task?.id || '';
-        document.getElementById('task-title').value = task?.title || '';
-        document.getElementById('task-priority').value = task?.priority || 'medium';
-        document.getElementById('task-status').value = task?.status || 'backlog';
-        document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
-        document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
-        document.getElementById('task-description').value = task?.description || '';
-        document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
-        document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
-    }
-    function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
+    // сортировка
+    const prRank = { critical:3, high:2, medium:1, low:0 };
+    const stRank = { 'backlog':0,'in-progress':1,'review':2,'done':3 };
+    const cmp = {
+      'due-asc': (a,b)=> (a.dueDate||'9999') < (b.dueDate||'9999') ? -1 : (a.dueDate||'9999') > (b.dueDate||'9999') ? 1 : 0,
+      'due-desc': (a,b)=> (a.dueDate||'0000') > (b.dueDate||'0000') ? -1 : (a.dueDate||'0000') < (b.dueDate||'0000') ? 1 : 0,
+      'priority-desc': (a,b)=> prRank[b.priority]-prRank[a.priority],
+      'priority-asc': (a,b)=> prRank[a.priority]-prRank[b.priority],
+      'project-asc': (a,b)=> projectName(a.project).localeCompare(projectName(b.project),'ru'),
+      'status-asc': (a,b)=> stRank[a.status]-stRank[b.status],
+      'title-asc': (a,b)=> a.title.localeCompare(b.title,'ru')
+    }[state.sort] || (()=>0);
 
-    function openProjectModal(){ projectModal.classList.remove('hidden'); document.getElementById('project-id').value=''; document.getElementById('project-name').value=''; document.getElementById('project-description').value=''; }
-    function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
+    arr.sort(cmp);
+    return arr;
+  }
 
-    // --- Командная палитра ---
-    function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
-    function closeCommandPalette(){ commandPalette.classList.add('hidden'); }
-    commandOptions.forEach(opt=>{
-        opt.addEventListener('click', ()=>{
-            const label = opt.querySelector('.font-medium').textContent;
-            closeCommandPalette();
-            if(label.includes('Создать задачу')) openTaskModal();
-            else if(label.includes('Создать проект')) openProjectModal();
-            else if(label.includes('Список')) showView('list');
-            else if(label.includes('Доску')) showView('kanban');
-            else if(label.includes('Календарь')) showView('calendar');
-            else if(label.includes('Поиск')) {
-                if (searchInput) searchInput.focus();
-            }
-        });
+  // --- Статистика (средняя фича) ---
+  function renderStats(){
+    const total = state.tasks.length;
+    const todayStr = todayISO(0);
+    const doneToday = state.tasks.filter(t=> t.completed && (t.completedAt||'').slice(0,10)===todayStr).length;
+    const sWeek = startOfWeek(); const eWeek = endOfWeek();
+    const doneWeek = state.tasks.filter(t=>{
+      if (!t.completedAt) return false;
+      const d = new Date(t.completedAt);
+      return d>=sWeek && d<=eWeek;
+    }).length;
+    const overdue = state.tasks.filter(t=> t.dueDate && !t.completed && t.dueDate < todayStr).length;
+
+    statsBar.innerHTML = '';
+    [
+      { label:'Всего задач', value: total, icon:'fa-list' },
+      { label:'Выполнено сегодня', value: doneToday, icon:'fa-check-circle' },
+      { label:'Выполнено за неделю', value: doneWeek, icon:'fa-calendar-check' },
+      { label:'Просрочено', value: overdue, icon:'fa-clock' },
+    ].forEach(s=>{
+      const el = document.createElement('div');
+      el.className = 'bg-[var(--tg-theme-secondary-bg-color)] rounded-xl p-3 md:p-4 flex items-center gap-3';
+      el.innerHTML = `
+        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--tg-theme-bg-color)] border border-[var(--tg-theme-secondary-bg-color)]">
+          <i class="fas ${s.icon}"></i>
+        </div>
+        <div><div class="text-xs text-[var(--tg-theme-hint-color)]">${s.label}</div><div class="text-lg font-semibold">${s.value}</div></div>
+      `;
+      statsBar.appendChild(el);
     });
-    commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
+  }
 
-    // --- Клавиатура ---
-    document.addEventListener('keydown', (e)=>{
-        if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCommandPalette(); }
-        if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase()==='n'){ e.preventDefault(); openTaskModal(); }
-        if (e.key==='Escape'){
-            if (!commandPalette.classList.contains('hidden')) closeCommandPalette();
-            else if (!taskModal.classList.contains('hidden')) closeTaskModalFunc();
-            else if (!projectModal.classList.contains('hidden')) closeProjectModalFunc();
+  // --- Рендер списка + свайпы (быстрая фича) ---
+  function renderList(){
+    const tasks = getFilteredTasks();
+    listContainer.innerHTML = '';
+    if (tasks.length===0){ emptyState.classList.remove('hidden'); return; }
+    emptyState.classList.add('hidden');
+
+    tasks.forEach(t=>{
+      const project = projectById(t.project);
+      const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+      const card = document.createElement('div');
+      card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 relative overflow-hidden';
+      card.dataset.id = t.id;
+      card.innerHTML = `
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-3">
+            <div class="mt-1">
+              <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
+            </div>
+            <div>
+              <h3 class="font-medium ${t.completed?'line-through opacity-70':''}">${escapeHtml(t.title)}</h3>
+              <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">${t.dueDate?('Срок: '+fmtDateHuman(t.dueDate)):'Без срока'}</p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                <span class="${statusClass(t.status)} text-xs px-2 py-1 rounded-full">${statusRu(t.status)}</span>
+                ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
+                ${(t.tags||[]).map(tag=>`<span class="bg-[var(--tg-theme-bg-color)] border border-[var(--tg-theme-secondary-bg-color)] text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="relative">
+            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="menu" aria-label="Меню" data-id="${t.id}">
+              <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div class="hidden absolute right-0 mt-2 w-44 bg-[var(--tg-theme-bg-color)] rounded-md shadow-lg z-10 border border-[var(--tg-theme-secondary-bg-color)]">
+              <button class="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="edit" data-id="${t.id}">
+                <i class="fas fa-pen mr-2"></i>Редактировать
+              </button>
+              <button class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="delete" data-id="${t.id}">
+                <i class="fas fa-trash mr-2"></i>Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      listContainer.appendChild(card);
+
+      // свайпы (мобайл)
+      attachSwipeHandlers(card, t.id);
+    });
+
+    // Меню карточек
+    listContainer.querySelectorAll('[data-act="menu"]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const menu = btn.nextElementSibling;
+        document.querySelectorAll('#list-container .relative > div').forEach(m=>{ if(m!==menu) m.classList.add('hidden'); });
+        menu.classList.toggle('hidden');
+      });
+    });
+    document.addEventListener('click', ()=> {
+      document.querySelectorAll('#list-container .relative > div').forEach(m=> m.classList.add('hidden'));
+    }, { once:true });
+
+    // Действия
+    listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const t = state.tasks.find(x=>x.id===inp.dataset.id);
+        if (t){
+          t.completed = inp.checked;
+          if (t.completed){ t.status='done'; t.completedAt = nowISO(); }
+          else { if (t.status==='done') t.status='backlog'; t.completedAt = undefined; }
+          save(); renderAll();
         }
+      });
+    });
+    listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t) openTaskModal(t);
+    }));
+    listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+    }));
+  }
+
+  function attachSwipeHandlers(card, id){
+    let startX=0, currentX=0, swiping=false;
+    card.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; swiping=true; card.style.transition='transform .0s'; });
+    card.addEventListener('touchmove', (e)=>{
+      if(!swiping) return;
+      currentX = e.touches[0].clientX;
+      const dx = currentX - startX;
+      card.style.transform = `translateX(${dx}px)`;
+      card.style.opacity = `${Math.max(0.4, 1 - Math.abs(dx)/300)}`;
+    }, {passive:true});
+    card.addEventListener('touchend', ()=>{
+      if(!swiping) return;
+      const dx = currentX - startX;
+      card.style.transition='transform .2s, opacity .2s';
+      card.style.transform='translateX(0)';
+      card.style.opacity='1';
+      swiping=false;
+      if (dx > 80){ // вправо — выполнено
+        const t = state.tasks.find(x=>x.id===id);
+        if (t){ t.completed = true; t.status='done'; t.completedAt = nowISO(); save(); renderAll(); }
+      } else if (dx < -80){ // влево — удалить
+        const t = state.tasks.find(x=>x.id===id);
+        if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); renderAll(); }
+      }
+    });
+  }
+
+  function priorityClass(p){ return ({low:'priority-low',medium:'priority-medium',high:'priority-high',critical:'priority-critical'})[p]; }
+  function statusClass(s){ return ({'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'})[s]; }
+
+  // --- Kanban ---
+  function renderKanban(){
+    const columns = document.querySelectorAll('.kanban-column');
+    columns.forEach(col=>{
+      const body = col.querySelector('.column-body');
+      body.innerHTML = '';
+      const status = col.getAttribute('data-col');
+      const tasks = getFilteredTasks().filter(t=>t.status===status);
+      tasks.forEach(t=>{
+        const project = projectById(t.project);
+        const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+        const card = document.createElement('div');
+        card.className='task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move';
+        card.draggable=true;
+        card.dataset.id = t.id;
+        card.innerHTML = `
+          <div class="flex justify-between gap-2">
+            <div class="${t.completed?'line-through opacity-70':''}">
+              <h4 class="font-medium">${escapeHtml(t.title)}</h4>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
+              </div>
+              <div class="text-xs text-[var(--tg-theme-hint-color)] mt-1">${t.dueDate? 'Срок: '+fmtDateHuman(t.dueDate):'Без срока'}</div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+              <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+        body.appendChild(card);
+      });
+    });
+    // Счётчики
+    ['backlog','in-progress','review','done'].forEach(s=>{
+      document.getElementById('cnt-'+s).textContent = state.tasks.filter(t=>t.status===s).length;
     });
 
-    // --- Рендеры ---
-    function getFilteredTasks(){
-        const q = state.search;
-        const proj = projectSelector.value;
-        return state.tasks.filter(t=>{
-            if (proj!=='all' && t.project!==proj) return false;
-            if (!q) return true;
-            const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
-            return hay.includes(q);
-        });
-    }
-
-    function renderList(){
-        const tasks = getFilteredTasks();
-        listContainer.innerHTML = '';
-        if (tasks.length===0){ emptyState.classList.remove('hidden'); return; }
-        emptyState.classList.add('hidden');
-
-        tasks.forEach(t=>{
-            const card = document.createElement('div');
-            card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4';
-            card.innerHTML = `
-                <div class="flex items-start justify-between">
-                    <div class="flex items-start gap-3">
-                        <div class="mt-1">
-                            <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
-                        </div>
-                        <div>
-                            <h3 class="font-medium ${t.completed?'line-through opacity-70':''}">${escapeHtml(t.title)}</h3>
-                            <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">
-                                ${t.dueDate? ('Срок: '+fmtDateHuman(t.dueDate)) : 'Без срока'}
-                            </p>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="${PRIORITY_BADGE[t.priority]} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
-                                <span class="${STATUS_BADGE[t.status]} text-xs px-2 py-1 rounded-full">${statusRu(t.status)}</span>
-                                ${t.project? `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${projectName(t.project)}</span>`:''}
-                                ${(t.tags||[]).map(tag=>`<span class="bg-[var(--tg-theme-bg-color)] border border-[var(--tg-theme-secondary-bg-color)] text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="relative">
-                        <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="menu" aria-label="Меню" data-id="${t.id}">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="hidden absolute right-0 mt-2 w-44 bg-[var(--tg-theme-bg-color)] rounded-md shadow-lg z-10 border border-[var(--tg-theme-secondary-bg-color)]">
-                            <button class="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="edit" data-id="${t.id}">
-                                <i class="fas fa-pen mr-2"></i>Редактировать
-                            </button>
-                            <button class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="delete" data-id="${t.id}">
-                                <i class="fas fa-trash mr-2"></i>Удалить
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-            listContainer.appendChild(card);
-        });
-
-        // Меню карточек
-        listContainer.querySelectorAll('[data-act="menu"]').forEach(btn=>{
-            btn.addEventListener('click', (e)=>{
-                e.stopPropagation();
-                const menu = btn.nextElementSibling;
-                document.querySelectorAll('#list-container .relative > div').forEach(m=>{ if(m!==menu) m.classList.add('hidden'); });
-                menu.classList.toggle('hidden');
-            });
-        });
-        document.addEventListener('click', ()=> {
-            document.querySelectorAll('#list-container .relative > div').forEach(m=> m.classList.add('hidden'));
-        }, { once:true });
-
-        // Действия
-        listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
-            inp.addEventListener('change', ()=>{
-                const t = state.tasks.find(x=>x.id===inp.dataset.id);
-                if (t){ t.completed = inp.checked; if (t.completed) t.status='done'; save(); renderAll(); }
-            });
-        });
-        listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
-            const t = state.tasks.find(x=>x.id===b.dataset.id);
-            if (t) openTaskModal(t);
-        }));
-        listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
-            const t = state.tasks.find(x=>x.id===b.dataset.id);
-            if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
-        }));
-    }
-
-    function renderKanban(){
-        const columns = document.querySelectorAll('.kanban-column');
-        columns.forEach(col=>{
-            const body = col.querySelector('.column-body');
-            body.innerHTML = '';
-            const status = col.getAttribute('data-col');
-            const tasks = getFilteredTasks().filter(t=>t.status===status);
-            tasks.forEach(t=>{
-                const card = document.createElement('div');
-                card.className='task-card bg-[var(--tg-theme-bg-color)] rounded-lg p-3 cursor-move';
-                card.draggable=true;
-                card.dataset.id = t.id;
-                card.innerHTML = `
-                    <div class="flex justify-between gap-2">
-                        <div class="${t.completed?'line-through opacity-70':''}">
-                            <h4 class="font-medium">${escapeHtml(t.title)}</h4>
-                            <div class="flex flex-wrap gap-2 mt-2">
-                                <span class="${PRIORITY_BADGE[t.priority]} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
-                                ${t.project? `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">${projectName(t.project)}</span>`:''}
-                            </div>
-                            <div class="text-xs text-[var(--tg-theme-hint-color)] mt-1">${t.dueDate? 'Срок: '+fmtDateHuman(t.dueDate):'Без срока'}</div>
-                        </div>
-                        <div class="flex flex-col items-end gap-1">
-                            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать">
-                                <i class="fas fa-pen"></i>
-                            </button>
-                            <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                body.appendChild(card);
-            });
-        });
-        // Счётчики
-        ['backlog','in-progress','review','done'].forEach(s=>{
-            document.getElementById('cnt-'+s).textContent = state.tasks.filter(t=>t.status===s).length;
-        });
-
-        // DnD
-        document.querySelectorAll('.kanban-column .task-card').forEach(card=>{
-            card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
-            card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
-        });
-        document.querySelectorAll('.kanban-column').forEach(col=>{
-            col.addEventListener('dragover', (e)=>{ e.preventDefault(); col.classList.add('bg-opacity-50'); });
-            col.addEventListener('dragleave', ()=> col.classList.remove('bg-opacity-50'));
-            col.addEventListener('drop', (e)=>{
-                e.preventDefault(); col.classList.remove('bg-opacity-50');
-                const dragged = document.querySelector('.kanban-column .task-card.opacity-50') || document.querySelector('.kanban-column .task-card[draggable="true"]:focus');
-                const status = col.getAttribute('data-col');
-                if(!dragged) return;
-                const id = dragged.dataset.id;
-                const t = state.tasks.find(x=>x.id===id);
-                if(t){ t.status = status; if(status==='done') t.completed=true; else t.completed=false; save(); renderKanban(); renderList(); renderCalendar(); }
-            });
-        });
-
-        // Actions
-        document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
-            const t = state.tasks.find(x=>x.id===b.dataset.id);
-            if (t) openTaskModal(t);
-        }));
-        document.querySelectorAll('#kanban-view [data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
-            const t = state.tasks.find(x=>x.id===b.dataset.id);
-            if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
-        }));
-    }
-
-    function renderCalendar(){
-        // Шапка дней
-        weekdayRow.innerHTML = '';
-        WEEKDAYS.forEach(w=>{
-            const div = document.createElement('div');
-            div.className = 'text-center text-sm font-medium py-2';
-            div.textContent = w;
-            weekdayRow.appendChild(div);
-        });
-
-        // Рассчёт сетки
-        const d = new Date(state.currentMonth);
-        d.setDate(1);
-        const month = d.getMonth();
-        const year = d.getFullYear();
-        monthTitle.textContent = `${MONTHS_NOM[month]} ${year}`;
-
-        // В JS неделя начинается с воскресенья (0), нам нужен понедельник (1)
-        let startIdx = (d.getDay() + 6) % 7; // 0..6 (Пн..Вс)
-        const daysInMonth = new Date(year, month+1, 0).getDate();
-
-        // Предыдущие дни
-        calendarGrid.innerHTML = '';
-        for(let i=0;i<startIdx;i++){
-            const cell = document.createElement('div');
-            cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1 opacity-50';
-            calendarGrid.appendChild(cell);
-        }
-        // Дни текущего месяца
-        const today = new Date(); const todayISOstr = today.toISOString().slice(0,10);
-        for(let day=1; day<=daysInMonth; day++){
-            const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-            const cell = document.createElement('div');
-            cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1';
-            if (iso===todayISOstr) cell.classList.add('today');
-
-            cell.innerHTML = `<div class="text-right text-sm mb-1 ${iso===todayISOstr?'font-bold':''}">${day}</div>`;
-
-            // Задачи на этот день
-            const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
-            tasks.slice(0,4).forEach(t=>{
-                const badge = document.createElement('div');
-                badge.className = `text-xs truncate px-1 py-0.5 rounded mb-1 ${t.status==='done'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}`;
-                badge.textContent = t.title;
-                cell.appendChild(badge);
-            });
-            if (tasks.length>4){
-                const more = document.createElement('div');
-                more.className='text-[var(--tg-theme-hint-color)] text-xs px-1';
-                more.textContent = `+ ещё ${tasks.length-4}`;
-                cell.appendChild(more);
-            }
-
-            // Клик по дню — новая задача с проставленной датой
-            cell.addEventListener('click', ()=>{
-                openTaskModal(null, iso);
-            });
-
-            calendarGrid.appendChild(cell);
-        }
-    }
-
-    prevMonth.addEventListener('click', ()=>{
-        const d = new Date(state.currentMonth); d.setMonth(d.getMonth()-1);
-        state.currentMonth = d; renderCalendar();
+    // DnD
+    document.querySelectorAll('.kanban-column .task-card').forEach(card=>{
+      card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
+      card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
     });
-    nextMonth.addEventListener('click', ()=>{
-        const d = new Date(state.currentMonth); d.setMonth(d.getMonth()+1);
-        state.currentMonth = d; renderCalendar();
-    });
-    todayButton.addEventListener('click', ()=>{
-        state.currentMonth = new Date(); renderCalendar();
+    document.querySelectorAll('.kanban-column').forEach(col=>{
+      col.addEventListener('dragover', (e)=>{ e.preventDefault(); col.classList.add('bg-opacity-50'); });
+      col.addEventListener('dragleave', ()=> col.classList.remove('bg-opacity-50'));
+      col.addEventListener('drop', (e)=>{
+        e.preventDefault(); col.classList.remove('bg-opacity-50');
+        const dragged = document.querySelector('.kanban-column .task-card.opacity-50');
+        const status = col.getAttribute('data-col');
+        if(!dragged) return;
+        const id = dragged.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if(t){ t.status = status; if(status==='done'){ t.completed=true; t.completedAt=nowISO(); } else { t.completed=false; t.completedAt=undefined; } save(); renderKanban(); renderList(); renderCalendar(); }
+      });
     });
 
-    // --- Вспомогательное ---
-    function projectName(id){ return (state.projects.find(p=>p.id===id)||{name:'Без проекта'}).name; }
-    function priorityRu(p){ return ({low:'Низкий', medium:'Средний', high:'Высокий', critical:'Критичный'})[p] || p; }
-    function statusRu(s){ return ({'backlog':'Бэклог','in-progress':'В работе','review':'Проверка','done':'Готово'})[s] || s; }
-    function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
+    // Actions
+    document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t) openTaskModal(t);
+    }));
+    document.querySelectorAll('#kanban-view [data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+    }));
+  }
 
-    // --- Общий рендер ---
-    function renderAll(){
-        renderList();
-        renderKanban();
-        if (state.view==='calendar') renderCalendar();
-        emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
-        save();
-    }
+  // --- Календарь ---
+  const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
-    // --- Слушатели внешние ---
-    // Боковое меню/клики вне меню
-    document.addEventListener('click', (e)=>{
-        if (sideMenu && !sideMenu.classList.contains('hidden')){
-            const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
-            if (!inside) sideMenu.classList.add('hidden');
-        }
+  function renderCalendar(){
+    // Дни недели
+    weekdayRow.innerHTML = '';
+    WEEKDAYS.forEach(w=>{
+      const div = document.createElement('div');
+      div.className = 'text-center text-sm font-medium py-2';
+      div.textContent = w;
+      weekdayRow.appendChild(div);
     });
 
-    // Пользователь в меню
-    const menuUser = document.getElementById('menu-user');
-    if (user) menuUser.textContent = `${user.first_name || 'Профиль'}${user.last_name?' '+user.last_name:''} (@${user.username || 'id:'+user.id})`;
+    const d = new Date(state.currentMonth);
+    d.setDate(1);
+    const month = d.getMonth();
+    const year = d.getFullYear();
+    monthTitle.textContent = `${MONTHS_NOM[month]} ${year}`;
+
+    let startIdx = (d.getDay() + 6) % 7; // Пн=0
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    calendarGrid.innerHTML = '';
+    for(let i=0;i<startIdx;i++){
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1 opacity-50';
+      calendarGrid.appendChild(cell);
+    }
+    const todayStr = todayISO(0);
+    for(let day=1; day<=daysInMonth; day++){
+      const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1';
+      if (iso===todayStr) cell.classList.add('today');
+
+      cell.innerHTML = `<div class="text-right text-sm mb-1 ${iso===todayStr?'font-bold':''}">${day}</div>`;
+
+      const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
+      tasks.slice(0,4).forEach(t=>{
+        const badge = document.createElement('div');
+        badge.className = `text-xs truncate px-1 py-0.5 rounded mb-1 ${t.status==='done'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}`;
+        badge.textContent = t.title;
+        cell.appendChild(badge);
+      });
+      if (tasks.length>4){
+        const more = document.createElement('div');
+        more.className='text-[var(--tg-theme-hint-color)] text-xs px-1';
+        more.textContent = `+ ещё ${tasks.length-4}`;
+        cell.appendChild(more);
+      }
+      cell.addEventListener('click', ()=> openTaskModal(null, iso));
+      calendarGrid.appendChild(cell);
+    }
+  }
+  prevMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()-1); state.currentMonth=d; renderCalendar(); });
+  nextMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()+1); state.currentMonth=d; renderCalendar(); });
+  todayButton.addEventListener('click', ()=>{ state.currentMonth = new Date(); renderCalendar(); });
+
+  // --- Общий рендер ---
+  function renderAll(){
+    renderStats();
+    if (state.view==='list') renderList();
+    if (state.view==='kanban') renderKanban();
+    if (state.view==='calendar') renderCalendar();
+    emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
+    save();
+  }
+
+  // --- Клики вне меню и поповеров ---
+  document.addEventListener('click', (e)=>{
+    if (sideMenu && !sideMenu.classList.contains('hidden')){
+      const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
+      if (!inside) sideMenu.classList.add('hidden');
+    }
+  });
+
+  // Пользователь
+  const menuUser = document.getElementById('menu-user');
+  if (user) menuUser.textContent = `${user.first_name || 'Профиль'}${user.last_name?' '+user.last_name:''} (@${user.username || 'id:'+user.id})`;
 
 })();
 </script>
