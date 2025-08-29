@@ -57,6 +57,8 @@
       .kanban-column{min-height:auto;max-height:60vh;overflow-y:auto}
     }
     .popover{position:absolute;z-index:30;background:var(--tg-theme-bg-color);border:1px solid var(--tg-theme-secondary-bg-color);box-shadow:0 8px 24px rgb(0 0 0 / .12);border-radius:.75rem;min-width:240px}
+    /* фикс кликов по модалкам */
+    .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
   </style>
 </head>
 <body class="min-h-screen">
@@ -285,7 +287,7 @@
 
   <!-- Task Modal -->
   <div id="task-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
-    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+    <div class="modal-backdrop" id="task-backdrop"></div>
     <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
         <h2 id="task-modal-title" class="text-xl font-semibold">Новая задача</h2>
@@ -350,7 +352,7 @@
 
   <!-- Project Modal -->
   <div id="project-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
-    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+    <div class="modal-backdrop" id="project-backdrop"></div>
     <div class="absolute bottom-0 left-0 right-0 bg-[var(--tg-theme-bg-color)] rounded-t-3xl shadow-xl max-h-[80vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--tg-theme-bg-color)] p-4 flex justify-between items-center border-b border-[var(--tg-theme-secondary-bg-color)]">
         <h2 class="text-xl font-semibold">Новый проект</h2>
@@ -525,6 +527,7 @@
   const sortSelect = document.getElementById('sort-select');
 
   const taskModal = document.getElementById('task-modal');
+  const taskBackdrop = document.getElementById('task-backdrop');
   const taskModalTitle = document.getElementById('task-modal-title');
   const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
   const closeTaskModal = document.getElementById('close-task-modal');
@@ -532,6 +535,7 @@
   const saveTaskBtn = document.getElementById('save-task');
 
   const projectModal = document.getElementById('project-modal');
+  const projectBackdrop = document.getElementById('project-backdrop');
   const closeProjectModal = document.getElementById('close-project-modal');
   const cancelProject = document.getElementById('cancel-project');
   const saveProject = document.getElementById('save-project');
@@ -553,6 +557,8 @@
   const monthTitle = document.getElementById('month-title');
   const weekdayRow = document.getElementById('weekday-row');
   const calendarGrid = document.getElementById('calendar-grid');
+
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints>0;
 
   // --- Модель/состояние ---
   const state = {
@@ -617,8 +623,6 @@
   renderAll();
 
   // --- Меню/темы/импорт/экспорт ---
-  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints>0;
-
   menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
   closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
   if (inTelegram) {
@@ -699,6 +703,8 @@
 
   // --- Проекты ---
   addProjectButton.addEventListener('click', openProjectModal);
+
+  // удаление выбранного проекта (выпадающий сверху селектор)
   deleteProjectButton.addEventListener('click', ()=>{
     const id = projectSelector.value;
     if (id==='all'){ alert('Сначала выберите конкретный проект.'); return; }
@@ -709,32 +715,6 @@
       hydrateProjectSelector(); hydrateTaskProjectSelect();
       projectSelector.value = 'all';
       save(); renderAll();
-    }
-  });
-
-  closeProjectModal.addEventListener('click', closeProjectModalFunc);
-  cancelProject.addEventListener('click', closeProjectModalFunc);
-  saveProject.addEventListener('click', ()=>{
-    const name = projectNameInput.value.trim();
-    const color = projectColorInput.value || '#3b82f6';
-    if(!name){ alert('Введите название проекта'); return; }
-    const id = name.toLowerCase().replace(/\s+/g,'-');
-    if(!state.projects.find(p=>p.id===id)){
-      state.projects.push({ id, name, color });
-      save();
-    }
-    hydrateProjectSelector();
-    hydrateTaskProjectSelect();
-    closeProjectModalFunc();
-  });
-  deleteProject.addEventListener('click', ()=>{
-    const name = projectNameInput.value.trim();
-    const id = name.toLowerCase().replace(/\s+/g,'-');
-    if(!id) return;
-    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
-      state.projects = state.projects.filter(p=>p.id!==id);
-      state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
-      save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll(); closeProjectModalFunc();
     }
   });
 
@@ -766,10 +746,62 @@
   }
   function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
 
+  // закрытие модалки проекта
+  [closeProjectModal, cancelProject, projectBackdrop].forEach(el=>{
+    el.addEventListener('click', ()=> closeProjectModalFunc());
+  });
+
+  saveProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const color = projectColorInput.value || '#3b82f6';
+    if(!name){ alert('Введите название проекта'); return; }
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    const existing = state.projects.find(p=>p.id===id);
+    if(!existing){
+      state.projects.push({ id, name, color });
+    }else{
+      existing.name = name; existing.color = color;
+    }
+    save();
+    hydrateProjectSelector();
+    hydrateTaskProjectSelect();
+    closeProjectModalFunc();
+  });
+
+  // удаление проекта из модалки (по имени)
+  deleteProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    if(!id){ alert('Укажите название проекта для удаления'); return; }
+    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
+      state.projects = state.projects.filter(p=>p.id!==id);
+      state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
+      save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll(); closeProjectModalFunc();
+    }
+  });
+
   // --- Задачи: модалка ---
   addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
-  closeTaskModal.addEventListener('click', closeTaskModalFunc);
-  cancelTask.addEventListener('click', closeTaskModalFunc);
+  function openTaskModal(task=null, prefillDate=null){
+    taskModal.classList.remove('hidden');
+    taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
+    document.getElementById('task-id').value = task?.id || '';
+    document.getElementById('task-title').value = task?.title || '';
+    document.getElementById('task-priority').value = task?.priority || 'medium';
+    document.getElementById('task-status').value = task?.status || 'backlog';
+    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
+    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
+    document.getElementById('task-description').value = task?.description || '';
+    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
+    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
+  }
+  function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
+  // закрытие модалки задачи (крестик, отмена, фон)
+  [closeTaskModal, cancelTask, taskBackdrop].forEach(el=>{
+    el.addEventListener('click', ()=> closeTaskModalFunc());
+  });
+
+  // сохранение задачи
   saveTaskBtn.addEventListener('click', ()=>{
     const id = document.getElementById('task-id').value;
     const title = document.getElementById('task-title').value.trim();
@@ -787,7 +819,7 @@
 
     if(id){
       const t = state.tasks.find(t=>t.id===id);
-      if(t) Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,tags});
+      if(t) Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,tags,completed: status==='done', completedAt: status==='done'? (t.completedAt||nowISO()): undefined});
     } else {
       state.tasks.unshift({
         id: uid(), title, priority, status, project, dueDate, description, tags, subtasks,
@@ -796,21 +828,6 @@
     }
     save(); closeTaskModalFunc(); renderAll();
   });
-
-  function openTaskModal(task=null, prefillDate=null){
-    taskModal.classList.remove('hidden');
-    taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
-    document.getElementById('task-id').value = task?.id || '';
-    document.getElementById('task-title').value = task?.title || '';
-    document.getElementById('task-priority').value = task?.priority || 'medium';
-    document.getElementById('task-status').value = task?.status || 'backlog';
-    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
-    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
-    document.getElementById('task-description').value = task?.description || '';
-    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
-    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
-  }
-  function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
 
   // --- Быстрое добавление ---
   quickAddInput.addEventListener('keydown', (e)=>{
@@ -979,7 +996,7 @@
     });
   }
 
-  // --- Рендер списка (фикс клика/коллапса + меню с переназначением) ---
+  // --- Рендер списка (только меню для правок/удаления) ---
   function renderList(){
     const tasks = getFilteredTasks();
     listContainer.innerHTML = '';
@@ -993,13 +1010,7 @@
       card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 relative';
       card.dataset.id = t.id;
 
-      // Главный клик — редактирование (исключая интерактивы)
-      card.addEventListener('click', (e)=>{
-        const target = e.target;
-        if (target.closest('[data-act="menu"]') || target.closest('select') || target.closest('button') || target.closest('input[type="checkbox"]')) return;
-        openTaskModal(t);
-      });
-
+      // Клик по карточке НЕ открывает редактирование — только меню (по требованию)
       const projectOptionsHtml = state.projects.map(p=>`<option value="${p.id}" ${p.id===t.project?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
 
       card.innerHTML = `
@@ -1047,7 +1058,7 @@
       `;
       listContainer.appendChild(card);
 
-      // Свайпы только на тач-устройствах (фикс “сворачивания” на десктопе)
+      // свайпы только на тач-устройствах
       if (isTouch) attachSwipeHandlers(card, t.id);
     });
 
@@ -1060,11 +1071,12 @@
         menu.classList.toggle('hidden');
       });
     });
+    // клик в пустоту — закрыть открытые меню
     document.addEventListener('click', ()=> {
       document.querySelectorAll('#list-container .relative > div').forEach(m=> m.classList.add('hidden'));
     }, { once:true });
 
-    // Действия
+    // Тоггл статуса (чекбокс)
     listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
       inp.addEventListener('click', e=> e.stopPropagation());
       inp.addEventListener('change', ()=>{
@@ -1077,16 +1089,22 @@
         }
       });
     });
+
+    // Редактирование из меню
     listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
       e.stopPropagation();
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t) openTaskModal(t);
     }));
+
+    // Удаление из меню
     listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', (e)=>{
       e.stopPropagation();
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
     }));
+
+    // Переназначение проекта
     listContainer.querySelectorAll('[data-act="reassign"]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         e.stopPropagation();
