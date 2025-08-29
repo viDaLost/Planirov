@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
   <style>
-    /* === ТЕМЫ (light/dark + 5 тёплых градиентных) === */
+    /* === ТЕМЫ (light/dark + тёплые + OLIVE) === */
     :root{
       --bg:#ffffff;
       --text:#111827;
@@ -87,6 +87,17 @@
       --ring:rgba(168,85,247,.35);
       --header-gradient:linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6);
     }
+    /* 6) Olive (новая) */
+    html[data-theme="olive"]{
+      --bg:#f7f9f2;              /* очень светлый оливковый фон */
+      --text:#1f2937;
+      --hint:#6b7280;
+      --secondary:#eef3e2;       /* карточки с лёгким оливковым тоном */
+      --button:#6b8e23;          /* olive */
+      --button-text:#ffffff;
+      --ring:rgba(107,142,35,.35);
+      --header-gradient:linear-gradient(90deg,#f0f5e4,#e3edd4,#f7f9f2);
+    }
 
     /* === БАЗОВЫЕ СТИЛИ === */
     *{box-sizing:border-box}
@@ -153,6 +164,23 @@
               </button>
             </div>
             <div class="p-3 space-y-1">
+              <!-- Блок профиля/авторизации -->
+              <div id="profile-card" class="mb-2 p-3 rounded-lg border border-secondary">
+                <div class="text-sm font-medium mb-1">Профиль</div>
+                <div id="profile-info" class="text-sm text-hint mb-2">Гость (не привязан)</div>
+                <div class="flex gap-2">
+                  <button id="btn-login-tg" class="px-3 py-1 text-sm rounded-lg btn-main">
+                    <i class="fa-brands fa-telegram mr-1"></i> Войти через Telegram
+                  </button>
+                  <button id="btn-logout" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary hidden">
+                    Выйти
+                  </button>
+                </div>
+                <div class="text-[11px] text-hint mt-2">
+                  Если открыто внутри Telegram как Web App — вход выполнится автоматически.
+                </div>
+              </div>
+
               <button id="btn-settings" class="w-full text-left px-4 py-2 rounded-lg hover:bg-secondary">
                 <i class="fas fa-gear mr-2"></i>Настройки
               </button>
@@ -531,7 +559,7 @@
           <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
             <div class="flex items-center">
               <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3"><i class="fas fa-list"></i></div>
-              <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-hint">Простой список задач</div></div>
+              <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-hинt">Простой список задач</div></div>
             </div>
           </div>
           <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
@@ -566,10 +594,66 @@
 </div>
 <script>
 (() => {
-  /* ========= КОНСТАНТЫ / ХРАНИЛИЩЕ ========= */
-  const LS_THEME = 'tp_theme_v2';
-  const LS_DATA = 'tp_data_default';
+  /* ========= ПРОФИЛЬ / TELEGRAM ========= */
+  const TG = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 
+  // Текущий профиль (guest по умолчанию)
+  let profile = {
+    userId: 'guest',
+    first_name: 'Гость',
+    last_name: '',
+    username: '',
+    photo_url: '',
+    isTelegram: false
+  };
+
+  // Сохраняем последний активный userId, чтобы вне TG восстановить профиль
+  const LS_LAST_UID = 'tp_last_uid';
+
+  function tryAutoLoginFromTelegram(){
+    if (!TG) return false;
+    try {
+      const u = TG.initDataUnsafe?.user;
+      if (u && u.id) {
+        profile = {
+          userId: String(u.id),
+          first_name: u.first_name || '',
+          last_name: u.last_name || '',
+          username: u.username || '',
+          photo_url: u.photo_url || '',
+          isTelegram: true
+        };
+        localStorage.setItem(LS_LAST_UID, profile.userId);
+        return true;
+      }
+    } catch(e){ console.warn('TG auto-login failed', e); }
+    return false;
+  }
+
+  function loginAsGuestOrLast(){
+    const last = localStorage.getItem(LS_LAST_UID) || 'guest';
+    if (last !== 'guest') {
+      // восстановим упрощённый профиль (локальный)
+      profile = { userId: last, first_name: 'Пользователь', last_name:'', username:'', photo_url:'', isTelegram:false };
+    } else {
+      profile = { userId:'guest', first_name:'Гость', last_name:'', username:'', photo_url:'', isTelegram:false };
+    }
+  }
+
+  const auto = tryAutoLoginFromTelegram();
+  if (!auto) loginAsGuestOrLast();
+
+  /* ========= КОНСТАНТЫ / КЛЮЧИ ХРАНИЛИЩА ========= */
+  const NS = () => profile.userId || 'guest';
+  const key = (base) => `${base}__${NS()}`;
+  const LS_THEME_BASE = 'tp_theme_v2';
+  const LS_DATA_BASE  = 'tp_data_default';
+
+  // Ключи для текущего пользователя
+  const LS_THEME = key(LS_THEME_BASE);
+  const LS_DATA  = key(LS_DATA_BASE);
+
+  /* ========= ТЕМЫ ========= */
   const THEMES = [
     { id:'light',  name:'Светлая',  grad:'linear-gradient(90deg,#ffffff,#f9fafb)' },
     { id:'dark',   name:'Тёмная',   grad:'linear-gradient(90deg,#0f1115,#171a21)' },
@@ -578,12 +662,13 @@
     { id:'sand',   name:'Sand',     grad:'linear-gradient(90deg,#f5eede,#f1ebe2,#fde68a)' },
     { id:'coral',  name:'Coral',    grad:'linear-gradient(90deg,#ffd1c7,#ffe0d5,#fff0e5)' },
     { id:'plum',   name:'Plum',     grad:'linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6)' },
+    { id:'olive',  name:'Olive',    grad:'linear-gradient(90deg,#f0f5e4,#e3edd4,#f7f9f2)' }, // новая
   ];
 
   const el = (sel) => document.querySelector(sel);
   const els = (sel) => document.querySelectorAll(sel);
 
-  /* ========= СОСТОЯНИЕ ========= */
+  /* ========= СОСТОЯНИЕ ПРИЛОЖЕНИЯ ========= */
   const state = {
     projects: [
       { id:'work',     name:'Работа',   color:'#3b82f6' },
@@ -605,20 +690,30 @@
     selectedTaskId:null
   };
 
-  /* ========= ПРИМЕНЕНИЕ ТЕМЫ ========= */
-  const savedTheme = localStorage.getItem(LS_THEME) || 'light';
+  /* ========= ТЕМА: загрузка/применение по профилю ========= */
+  const savedTheme = localStorage.getItem(LS_THEME) || localStorage.getItem(LS_THEME_BASE) || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
-
   function setTheme(id){
     document.documentElement.setAttribute('data-theme', id);
     localStorage.setItem(LS_THEME, id);
+    // дублируем как "последнюю использованную вообще", чтобы на госте тоже была приятная тема
+    localStorage.setItem(LS_THEME_BASE, id);
   }
 
-  /* ========= ЭЛЕМЕНТЫ UI ========= */
+  /* ========= UI-ЭЛЕМЕНТЫ ========= */
   const sideMenu = el('#side-menu');
   const menuBtn = el('#menu-button');
   const closeMenu = el('#close-menu');
+
+  const profileInfo = el('#profile-info');
+  const btnLoginTg = el('#btn-login-tg');
+  const btnLogout = el('#btn-logout');
+
   const btnSettings = el('#btn-settings');
+  const settingsModal = el('#settings-modal');
+  const settingsBackdrop = el('#settings-backdrop');
+  const closeSettings = el('#close-settings');
+  const themeGrid = el('#theme-grid');
 
   const statsBar = el('#stats-bar');
   const projectSelector = el('#project-selector');
@@ -662,12 +757,6 @@
   const projectNameInput = el('#project-name');
   const projectColorInput = el('#project-color');
 
-  // Настройки (темы)
-  const settingsModal = el('#settings-modal');
-  const settingsBackdrop = el('#settings-backdrop');
-  const closeSettings = el('#close-settings');
-  const themeGrid = el('#theme-grid');
-
   // Командная палитра
   const commandPalette = el('#command-palette');
   const commandInput = el('#command-input');
@@ -702,7 +791,7 @@
   function parseRussianWeekdayToken(tok){ const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 }; return map[tok] ?? null; }
   function nextWeekdayISO(target){ const d=new Date(); const today=d.getDay(); let delta=(target-today+7)%7; if(delta===0) delta=7; d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); }
 
-  /* ========= ЗАГРУЗКА/СОХРАНЕНИЕ ========= */
+  /* ========= ЗАГРУЗКА/СОХРАНЕНИЕ С УЧЁТОМ ПРОФИЛЯ ========= */
   function load(){
     const raw = localStorage.getItem(LS_DATA);
     if(!raw) return;
@@ -726,7 +815,36 @@
       pinned: state.pinned,
       tasks: state.tasks
     }));
+    // запоминаем последнего активного юзера
+    localStorage.setItem(LS_LAST_UID, NS());
     updateAppBadge();
+  }
+
+  function switchProfile(newProfile){
+    profile = newProfile;
+    // Переключаем ключи
+    updateProfileUI();
+    // Применим тему профиля (fallback на глобальную)
+    const theme = localStorage.getItem(key(LS_THEME_BASE)) || localStorage.getItem(LS_THEME_BASE) || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    // Перезагрузим данные
+    // Сбросим в начальное состояние и затем load()
+    state.projects = [
+      { id:'work',     name:'Работа',   color:'#3b82f6' },
+      { id:'personal', name:'Личное',   color:'#10b981' },
+      { id:'team',     name:'Команда',  color:'#8b5cf6' }
+    ];
+    state.pinned = ['work','personal','team'];
+    state.tasks = [
+      { id: uid(), title:'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], subtasksDone:[false,false], completed:false, createdAt: nowISO() },
+      { id: uid(), title:'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], subtasksDone:[], completed:false, createdAt: nowISO() },
+      { id: uid(), title:'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], subtasksDone:[false], completed:false, createdAt: nowISO() },
+    ];
+    hydrateProjectSelector();
+    hydrateTaskProjectSelect();
+    renderPinnedStrip();
+    load();       // загрузим, если были сохранённые данные у этого профиля
+    renderAll();  // перерисуем
   }
 
   /* ========= ИНИЦИАЛИЗАЦИЯ ========= */
@@ -738,6 +856,18 @@
   renderAll();
   updateAppBadge();
   buildThemeCards();
+  updateProfileUI();
+
+  // Если Telegram WebApp — красиво разворачиваем и выставляем цвет кнопок
+  if (TG){
+    try {
+      TG.expand && TG.expand();
+      TG.setHeaderColor && TG.setHeaderColor('secondary_bg_color');
+      TG.setBackgroundColor && TG.setBackgroundColor('secondary_bg_color');
+      // Кнопка главная TG (не обязательно)
+      TG.MainButton.hide();
+    } catch(e){}
+  }
 
   /* ========= МЕНЮ ========= */
   menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
@@ -749,17 +879,68 @@
     }
   });
 
-  /* ========= НАСТРОЙКИ (Тема) ========= */
-  btnSettings.addEventListener('click', ()=> openSettings());
-  closeSettings.addEventListener('click', closeSettingsModal);
-  settingsBackdrop.addEventListener('click', closeSettingsModal);
+  /* ========= ПРОФИЛЬ: UI и обработчики ========= */
+  function profileDisplayName(p){
+    if (!p) return 'Гость';
+    const n = [p.first_name, p.last_name].filter(Boolean).join(' ').trim();
+    return n || p.username || (p.userId === 'guest' ? 'Гость' : `User ${p.userId}`);
+    }
 
-  function openSettings(){
-    settingsModal.classList.remove('hidden');
+  function updateProfileUI(){
+    if (!profileInfo) return;
+    const name = profileDisplayName(profile);
+    const bound = profile.userId !== 'guest';
+    profileInfo.textContent = bound ? `${name} (ID: ${profile.userId})` : 'Гость (не привязан)';
+    if (btnLoginTg && btnLogout){
+      btnLoginTg.classList.toggle('hidden', bound);
+      btnLogout.classList.toggle('hidden', !bound);
+    }
   }
+
+  if (btnLoginTg){
+    btnLoginTg.addEventListener('click', ()=>{
+      if (TG){
+        // Повторная попытка считывания юзера из TG
+        const ok = tryAutoLoginFromTelegram();
+        if (ok){
+          switchProfile(profile);
+          alert('Вход через Telegram выполнен. Данные теперь привязаны к вашему профилю.');
+          return;
+        }
+        alert('Не удалось получить данные Telegram. Попробуйте открыть приложение внутри Telegram как Web App.');
+      } else {
+        // В браузере: позволим создать локальный "псевдо-профиль" (ручная привязка ID)
+        const manual = prompt('Введите ваш Telegram ID (число) для локальной привязки:\n(В браузере это только локальная привязка без проверки)');
+        if (manual && /^\d{5,}$/.test(manual.trim())){
+          const np = { userId: manual.trim(), first_name:'Пользователь', last_name:'', username:'', photo_url:'', isTelegram:false };
+          localStorage.setItem(LS_LAST_UID, np.userId);
+          switchProfile(np);
+          alert('Профиль локально привязан по указанному ID.');
+        } else {
+          alert('ID не задан. Откройте приложение внутри Telegram для авто-входа.');
+        }
+      }
+    });
+  }
+
+  if (btnLogout){
+    btnLogout.addEventListener('click', ()=>{
+      localStorage.setItem(LS_LAST_UID, 'guest');
+      switchProfile({ userId:'guest', first_name:'Гость', last_name:'', username:'', photo_url:'', isTelegram:false });
+      alert('Вы вышли. Загружены гостевые данные.');
+    });
+  }
+
+  /* ========= НАСТРОЙКИ (Тема) ========= */
+  btnSettings?.addEventListener('click', ()=> openSettings());
+  closeSettings?.addEventListener('click', closeSettingsModal);
+  settingsBackdrop?.addEventListener('click', closeSettingsModal);
+
+  function openSettings(){ settingsModal.classList.remove('hidden'); }
   function closeSettingsModal(){ settingsModal.classList.add('hidden'); }
 
   function buildThemeCards(){
+    if(!themeGrid) return;
     themeGrid.innerHTML = '';
     const current = document.documentElement.getAttribute('data-theme');
     THEMES.forEach(t=>{
@@ -792,6 +973,7 @@
   }
   function hydrateTaskProjectSelect(){
     const sel = document.getElementById('task-project');
+    if (!sel) return;
     sel.innerHTML = '';
     state.projects.forEach(p=>{
       const opt = document.createElement('option');
@@ -822,7 +1004,7 @@
     el('#project-description').value='';
   }
   function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
-  [closeProjectModal, cancelProject, projectBackdrop].forEach(x=> x.addEventListener('click', closeProjectModalFunc));
+  [closeProjectModal, cancelProject, projectBackdrop].forEach(x=> x?.addEventListener('click', closeProjectModalFunc));
 
   saveProject.addEventListener('click', ()=>{
     const name = projectNameInput.value.trim();
@@ -832,7 +1014,6 @@
     const existing = state.projects.find(p=>p.id===id);
     if(!existing){
       state.projects.push({ id, name, color });
-      // авто-добавление в закреплённые, если есть место
       if (state.pinned.length < 6) state.pinned.push(id);
     }else{
       existing.name = name; existing.color = color;
@@ -852,10 +1033,10 @@
     }
   });
 
-  /* ========= PINNED STRIP (закреплённые) ========= */
+  /* ========= PINNED STRIP ========= */
   function renderPinnedStrip(){
     pinnedStrip.innerHTML = '';
-    const makeChip = (pid, idx)=>{
+    const makeChip = (pid)=>{
       const p = projectById(pid);
       if (!p) return;
       const chip = document.createElement('div');
@@ -867,31 +1048,23 @@
         <span class="text-sm">${escapeHtml(p.name)}</span>
         <button class="text-red-500 hover:text-red-600 ml-1" title="Убрать из закреплённых" data-act="unpin"><i class="fas fa-times"></i></button>
       `;
-      // навигация в проект
       chip.addEventListener('click', (e)=>{
         if (e.target.closest('[data-act="unpin"]')) return;
         projectSelector.value = pid;
         renderAll();
       });
-      // удалить из закреплённых
       chip.querySelector('[data-act="unpin"]').addEventListener('click', (e)=>{
         e.stopPropagation();
         state.pinned = state.pinned.filter(x=>x!==pid);
         save(); renderPinnedStrip();
       });
-      // dnd
-      chip.addEventListener('dragstart', ()=>{
-        chip.classList.add('dragging');
-      });
-      chip.addEventListener('dragend', ()=>{
-        chip.classList.remove('dragging');
-      });
+      chip.addEventListener('dragstart', ()=> chip.classList.add('dragging'));
+      chip.addEventListener('dragend', ()=> chip.classList.remove('dragging'));
       pinnedStrip.appendChild(chip);
     };
 
     state.pinned.slice(0,6).forEach(makeChip);
 
-    // Кнопка добавления
     if (state.pinned.length < 6){
       const addChip = document.createElement('button');
       addChip.className = 'pin-chip px-3 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 ring-focus';
@@ -900,13 +1073,11 @@
       pinnedStrip.appendChild(addChip);
     }
 
-    // Область для dnd сортировки (горизонтально)
     pinnedStrip.addEventListener('dragover', (e)=>{
       e.preventDefault();
       const dragging = pinnedStrip.querySelector('.dragging');
       if (!dragging) return;
       const chips = [...pinnedStrip.querySelectorAll('.pin-chip:not(.dragging)')];
-      // вычислим ближайшую позицию
       const x = e.clientX;
       let afterElement = null;
       let afterOffset = Number.NEGATIVE_INFINITY;
@@ -920,7 +1091,6 @@
     });
 
     pinnedStrip.addEventListener('drop', ()=>{
-      // пересчитать порядок по DOM
       const newOrder = [...pinnedStrip.querySelectorAll('.pin-chip')]
         .map(ch => ch.dataset.id)
         .filter(Boolean);
@@ -932,7 +1102,6 @@
   function addPinnedFlow(){
     const available = state.projects.filter(p=> !state.pinned.includes(p.id));
     if (!available.length){ alert('Нет проектов для добавления.'); return; }
-    // простой выбор через prompt с номерами
     const lines = available.map((p,i)=> `${i+1}) ${p.name}`).join('\n');
     const ans = prompt(`Выберите проект для закрепления (введите номер):\n${lines}`);
     const idx = parseInt(ans,10)-1;
@@ -1496,7 +1665,7 @@
     el('#task-tags').value = (task?.tags||[]).join(', ');
   }
   function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
-  [closeTaskModal, cancelTask, taskBackdrop].forEach(x=> x.addEventListener('click', closeTaskModalFunc));
+  [closeTaskModal, cancelTask, taskBackdrop].forEach(x=> x?.addEventListener('click', closeTaskModalFunc));
 
   saveTaskBtn.addEventListener('click', ()=>{
     const id = el('#task-id').value;
@@ -1586,5 +1755,3 @@
   }
 })();
 </script>
-</body>
-</html>
