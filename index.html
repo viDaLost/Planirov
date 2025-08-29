@@ -38,8 +38,9 @@
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Inter',system-ui,sans-serif
     }
     .ring-focus:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
-    .task-card{transition:box-shadow .15s}
+    .task-card{transition:box-shadow .15s, background-color .15s}
     .task-card:hover{box-shadow:0 4px 10px rgb(0 0 0 /.08)}
+    .task-card.selected{outline:2px solid var(--ring); outline-offset:2px}
     .priority-low{background:rgba(52,211,153,.12);color:rgb(16,185,129)}
     .priority-medium{background:rgba(96,165,250,.12);color:rgb(59,130,246)}
     .priority-high{background:rgba(251,191,36,.12);color:rgb(234,179,8)}
@@ -51,6 +52,7 @@
     .kanban-column{min-height:60vh}
     .calendar-day{min-height:100px}
     .calendar-day.today{outline:2px solid var(--ring);outline-offset:-2px;background:rgba(59,130,246,.06)}
+    .calendar-day.dragover{outline:2px dashed var(--ring); outline-offset:-2px}
     .command-palette{backdrop-filter:blur(10px)}
     .subtask-checkbox:checked+.subtask-label{text-decoration:line-through;color:var(--tg-theme-hint-color)}
     @media (max-width:640px){
@@ -59,6 +61,11 @@
     .popover{position:absolute;z-index:30;background:var(--tg-theme-bg-color);border:1px solid var(--tg-theme-secondary-bg-color);box-shadow:0 8px 24px rgb(0 0 0 / .12);border-radius:.75rem;min-width:240px}
     /* фикс кликов по модалкам */
     .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+    /* прогресс по подзадачам */
+    .progress-wrap{height:6px;background:rgba(0,0,0,.08);border-radius:999px;overflow:hidden}
+    .progress-bar{height:100%;background:var(--tg-theme-button-color);width:0%}
+    /* инлайн-редактор */
+    .title-input{background:transparent;border:1px dashed var(--tg-theme-secondary-bg-color);padding:2px 6px;border-radius:6px;width:100%}
   </style>
 </head>
 <body class="min-h-screen">
@@ -92,6 +99,9 @@
               </button>
               <button id="btn-import" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
                 <i class="fas fa-file-import mr-2"></i>Импортировать данные
+              </button>
+              <button id="btn-restore" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
+                <i class="fas fa-rotate-left mr-2"></i>Восстановить из бэкапа
               </button>
             </div>
           </aside>
@@ -168,7 +178,7 @@
               <option value="medium">Средний</option>
               <option value="low">Низкий</option>
             </select>
-            <label class="block text-sm mb-1">Статус</label>
+            <label class="block text см mb-1">Статус</label>
             <select id="filter-status" class="w-full px-3 py-2 rounded bg-[var(--tg-theme-secondary-bg-color)] ring-focus">
               <option value="all">Все</option>
               <option value="backlog">Бэклог</option>
@@ -452,7 +462,7 @@
           </div>
         </div>
         <div class="p-2 text-xs text-center text-[var(--tg-theme-hint-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
-          Esc — закрыть • N — новая задача • Ctrl/Cmd+K — палитра
+          Esc — закрыть • N — новая задача • Ctrl/Cmd+K — палитра • F — поиск • 1/2/3 — виды • Del — удалить
         </div>
       </div>
     </div>
@@ -501,6 +511,7 @@
   const themeToggle = document.getElementById('btn-theme-toggle');
   const btnExport = document.getElementById('btn-export');
   const btnImport = document.getElementById('btn-import');
+  const btnRestore = document.getElementById('btn-restore');
 
   const viewContents = document.querySelectorAll('.view-content');
   const viewSelectors = document.querySelectorAll('.view-selector');
@@ -568,17 +579,80 @@
       { id: 'team',     name: 'Команда',  color: '#8b5cf6' }
     ],
     tasks: [
-      { id: uid(), title: 'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], completed:false, createdAt: nowISO() },
-      { id: uid(), title: 'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], completed:false, createdAt: nowISO() },
-      { id: uid(), title: 'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], completed:false, createdAt: nowISO() },
-      { id: uid(), title: 'Настроить CI/CD', priority:'high', status:'done', project:'team', dueDate: todayISO(-3), description:'GitHub Actions', tags:['DevOps'], subtasks:[], completed:true, completedAt: todayISO(-2)+'T10:00:00Z', createdAt: nowISO() },
+      { id: uid(), title: 'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], subtasksDone:[false,false], completed:false, createdAt: nowISO() },
+      { id: uid(), title: 'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], subtasksDone:[], completed:false, createdAt: nowISO() },
+      { id: uid(), title: 'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], subtasksDone:[false], completed:false, createdAt: nowISO() },
+      { id: uid(), title: 'Настроить CI/CD', priority:'high', status:'done', project:'team', dueDate: todayISO(-3), description:'GitHub Actions', tags:['DevOps'], subtasks:[], subtasksDone:[], completed:true, completedAt: todayISO(-2)+'T10:00:00Z', createdAt: nowISO() },
     ],
     view: 'list',
     search: '',
     filters: { due:'all', priority:'all', status:'all' },
     sort: 'due-asc',
-    currentMonth: new Date()
+    currentMonth: new Date(),
+    selectedTaskId: null
   };
+
+  // --- IndexedDB autobackup (№17) ---
+  const BACKUP_DB = 'tp_backups_db';
+  const BACKUP_STORE = 'snapshots';
+  const BACKUP_EVERY_MIN = 5;  // интервал
+  const MAX_BACKUPS = 10;
+  let idb;
+
+  function openBackupDB(){
+    return new Promise((resolve,reject)=>{
+      const req = indexedDB.open(BACKUP_DB, 1);
+      req.onupgradeneeded = (e)=>{
+        const db = e.target.result;
+        if(!db.objectStoreNames.contains(BACKUP_STORE)){
+          const store = db.createObjectStore(BACKUP_STORE, { keyPath:'ts' });
+          store.createIndex('ts_idx', 'ts', { unique:true });
+        }
+      };
+      req.onsuccess = ()=>{ idb = req.result; resolve(idb); };
+      req.onerror = ()=> reject(req.error);
+    });
+  }
+  function putBackup(dataObj){
+    if(!idb) return;
+    const tx = idb.transaction(BACKUP_STORE, 'readwrite');
+    const store = tx.objectStore(BACKUP_STORE);
+    store.put({ ts: Date.now(), data: dataObj });
+    tx.oncomplete = ()=> pruneBackups();
+  }
+  function pruneBackups(){
+    const tx = idb.transaction(BACKUP_STORE, 'readwrite');
+    const store = tx.objectStore(BACKUP_STORE);
+    const idx = store.index('ts_idx');
+    const req = idx.getAllKeys();
+    req.onsuccess = ()=>{
+      const keys = req.result.sort((a,b)=>a-b);
+      const toDelete = Math.max(0, keys.length - MAX_BACKUPS);
+      for(let i=0;i<toDelete;i++){ store.delete(keys[i]); }
+    };
+  }
+  function getLatestBackup(){
+    return new Promise((resolve)=>{
+      if(!idb) return resolve(null);
+      const tx = idb.transaction(BACKUP_STORE, 'readonly');
+      const store = tx.objectStore(BACKUP_STORE);
+      const idx = store.index('ts_idx');
+      const req = idx.getAll();
+      req.onsuccess = ()=>{
+        const arr = req.result;
+        if(!arr.length) return resolve(null);
+        arr.sort((a,b)=>b.ts-a.ts);
+        resolve(arr[0]);
+      };
+      req.onerror = ()=> resolve(null);
+    });
+  }
+  function scheduleAutobackup(){
+    setInterval(()=> {
+      const snapshot = { projects: state.projects, tasks: state.tasks, when: new Date().toISOString() };
+      putBackup(snapshot);
+    }, BACKUP_EVERY_MIN*60*1000);
+  }
 
   // --- Загрузка/Сохранение ---
   const load = () => {
@@ -587,7 +661,15 @@
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed.projects)) state.projects = parsed.projects;
-      if (Array.isArray(parsed.tasks)) state.tasks = parsed.tasks;
+      if (Array.isArray(parsed.tasks)) {
+        state.tasks = parsed.tasks.map(t=>{
+          // совместимость: если нет subtasksDone — создать
+          if (Array.isArray(t.subtasks) && !Array.isArray(t.subtasksDone)) {
+            t.subtasksDone = t.subtasks.map(()=>false);
+          }
+          return t;
+        });
+      }
     } catch(e){ console.warn('Ошибка загрузки:', e); }
   };
   const save = () => {
@@ -595,6 +677,7 @@
       projects: state.projects,
       tasks: state.tasks
     }));
+    updateAppBadge(); // №15
   };
 
   // --- Утилиты ---
@@ -617,12 +700,14 @@
 
   // --- Инициализация ---
   load();
+  openBackupDB().then(()=> scheduleAutobackup()).catch(()=>{});
   hydrateProjectSelector();
   hydrateTaskProjectSelect();
   showView('list');
   renderAll();
+  updateAppBadge();
 
-  // --- Меню/темы/импорт/экспорт ---
+  // --- Меню/темы/импорт/экспорт/восстановление ---
   menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
   closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
   if (inTelegram) {
@@ -658,6 +743,19 @@
       reader.readAsText(f);
     };
     inp.click();
+  });
+  btnRestore.addEventListener('click', async ()=>{
+    const last = await getLatestBackup();
+    if (!last) { alert('Бэкапов пока нет'); return; }
+    if (confirm(`Восстановить из бэкапа от ${new Date(last.ts).toLocaleString('ru-RU')}? Текущие данные будут заменены.`)) {
+      try{
+        const data = last.data || {};
+        if (data.projects) state.projects = data.projects;
+        if (data.tasks) state.tasks = data.tasks;
+        save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll();
+        alert('Восстановлено из бэкапа');
+      }catch(e){ alert('Не удалось восстановить'); }
+    }
   });
 
   // --- Виды ---
@@ -704,7 +802,6 @@
   // --- Проекты ---
   addProjectButton.addEventListener('click', openProjectModal);
 
-  // удаление выбранного проекта (выпадающий сверху селектор)
   deleteProjectButton.addEventListener('click', ()=>{
     const id = projectSelector.value;
     if (id==='all'){ alert('Сначала выберите конкретный проект.'); return; }
@@ -746,7 +843,6 @@
   }
   function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
 
-  // закрытие модалки проекта
   [closeProjectModal, cancelProject, projectBackdrop].forEach(el=>{
     el.addEventListener('click', ()=> closeProjectModalFunc());
   });
@@ -768,7 +864,6 @@
     closeProjectModalFunc();
   });
 
-  // удаление проекта из модалки (по имени)
   deleteProject.addEventListener('click', ()=>{
     const name = projectNameInput.value.trim();
     const id = name.toLowerCase().replace(/\s+/g,'-');
@@ -796,12 +891,11 @@
     document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
   }
   function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
-  // закрытие модалки задачи (крестик, отмена, фон)
+
   [closeTaskModal, cancelTask, taskBackdrop].forEach(el=>{
     el.addEventListener('click', ()=> closeTaskModalFunc());
   });
 
-  // сохранение задачи
   saveTaskBtn.addEventListener('click', ()=>{
     const id = document.getElementById('task-id').value;
     const title = document.getElementById('task-title').value.trim();
@@ -815,14 +909,20 @@
     const tagsRaw = document.getElementById('task-tags').value;
 
     const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
-    const tags = tagsRaw.split(',').map(s=>s.trim()).filter(Boolean);
+    let subtasksDone = subtasks.map(()=>false);
 
     if(id){
       const t = state.tasks.find(t=>t.id===id);
-      if(t) Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,tags,completed: status==='done', completedAt: status==='done'? (t.completedAt||nowISO()): undefined});
+      if(t){
+        // сохранить прогресс по существующим подзадачам по совпадению текста
+        const mapPrev = new Map((t.subtasks||[]).map((s,i)=>[s, (t.subtasksDone||[])[i] || false]));
+        subtasksDone = subtasks.map(s=> mapPrev.get(s) || false);
+        Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,subtasksDone,completed: status==='done', completedAt: status==='done'? (t.completedAt||nowISO()): undefined});
+      }
     } else {
       state.tasks.unshift({
-        id: uid(), title, priority, status, project, dueDate, description, tags, subtasks,
+        id: uid(), title, priority, status, project, dueDate, description, tags: tagsRaw.split(',').map(s=>s.trim()).filter(Boolean),
+        subtasks, subtasksDone,
         completed: status==='done', createdAt: nowISO(), completedAt: status==='done'? nowISO(): undefined
       });
     }
@@ -846,6 +946,7 @@
         description: '',
         tags: parsed.tags || [],
         subtasks: [],
+        subtasksDone: [],
         completed: false,
         createdAt: nowISO()
       });
@@ -996,7 +1097,7 @@
     });
   }
 
-  // --- Рендер списка (иконки редактирования/удаления вместо трёх точек) ---
+  // --- Рендер списка (+ инлайн-правка №11, подзадачи+прогресс №15, выбор для Del №18) ---
   function renderList(){
     const tasks = getFilteredTasks();
     listContainer.innerHTML = '';
@@ -1006,6 +1107,10 @@
     tasks.forEach(t=>{
       const project = projectById(t.project);
       const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+      const doneSub = (t.subtasksDone||[]).filter(Boolean).length;
+      const totalSub = (t.subtasks||[]).length;
+      const progressPct = totalSub ? Math.round(doneSub/totalSub*100) : 0;
+
       const card = document.createElement('div');
       card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 relative';
       card.dataset.id = t.id;
@@ -1016,8 +1121,8 @@
             <div class="mt-1">
               <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
             </div>
-            <div>
-              <h3 class="font-medium ${t.completed?'line-through opacity-70':''}">${escapeHtml(t.title)}</h3>
+            <div class="w-full">
+              <h3 class="font-medium ${t.completed?'line-through opacity-70':''}" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h3>
               <p class="text-sm text-[var(--tg-theme-hint-color)] mt-1">${t.dueDate?('Срок: '+fmtDateHuman(t.dueDate)):'Без срока'}</p>
               <div class="flex flex-wrap gap-2 mt-2">
                 <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
@@ -1025,6 +1130,22 @@
                 ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
                 ${(t.tags||[]).map(tag=>`<span class="bg-[var(--tg-theme-bg-color)] border border-[var(--tg-theme-secondary-bg-color)] text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
               </div>
+              ${ totalSub ? `
+                <div class="mt-3">
+                  <div class="progress-wrap" aria-label="Прогресс подзадач">
+                    <div class="progress-bar" style="width:${progressPct}%"></div>
+                  </div>
+                  <div class="text-xs text-[var(--tg-theme-hint-color)] mt-1">${doneSub}/${totalSub} выполнено</div>
+                  <div class="mt-2 space-y-1">
+                    ${t.subtasks.map((s,i)=>`
+                      <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" class="subtask-checkbox" data-act="toggle-subtask" data-id="${t.id}" data-idx="${i}" ${t.subtasksDone?.[i]?'checked':''}>
+                        <span class="subtask-label">${escapeHtml(s)}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : '' }
             </div>
           </div>
 
@@ -1036,11 +1157,21 @@
       `;
       listContainer.appendChild(card);
 
-      // свайпы только на тач-устройствах
       if (isTouch) attachSwipeHandlers(card, t.id);
     });
 
-    // Тоггл статуса (чекбокс)
+    // выбор карточки для Del
+    listContainer.querySelectorAll('.task-card').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        // не перехватывать клики по интерактивным элементам
+        if (e.target.closest('button, input, textarea, select, .subtask-checkbox')) return;
+        listContainer.querySelectorAll('.task-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.selectedTaskId = card.dataset.id;
+      });
+    });
+
+    // чекбокс завершения
     listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
       inp.addEventListener('click', e=> e.stopPropagation());
       inp.addEventListener('change', ()=>{
@@ -1054,7 +1185,35 @@
       });
     });
 
-    // Редактирование
+    // инлайн-правка заголовка (№11)
+    listContainer.querySelectorAll('[data-act="inline-title"]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const id = el.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t) return;
+        // уже редактируем?
+        if (el.querySelector('input')) return;
+        const input = document.createElement('input');
+        input.type='text';
+        input.value = t.title;
+        input.className = 'title-input';
+        el.replaceWith(input);
+        input.focus();
+        input.select();
+        const commit = ()=>{
+          const newTitle = input.value.trim() || t.title;
+          t.title = newTitle;
+          save(); renderList(); // перерисуем список
+        };
+        input.addEventListener('keydown', (e)=>{
+          if (e.key==='Enter') commit();
+          if (e.key==='Escape') renderList();
+        });
+        input.addEventListener('blur', commit);
+      });
+    });
+
+    // Редактирование (модалкой)
     listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
       e.stopPropagation();
       const t = state.tasks.find(x=>x.id===b.dataset.id);
@@ -1067,6 +1226,19 @@
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
     }));
+
+    // Тоггл подзадач (№15)
+    listContainer.querySelectorAll('[data-act="toggle-subtask"]').forEach(ch=>{
+      ch.addEventListener('change', ()=>{
+        const id = ch.dataset.id;
+        const idx = +ch.dataset.idx;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t) return;
+        if (!Array.isArray(t.subtasksDone)) t.subtasksDone = [];
+        t.subtasksDone[idx] = ch.checked;
+        save(); renderList(); // обновим прогресс
+      });
+    });
   }
 
   function attachSwipeHandlers(card, id){
@@ -1117,7 +1289,7 @@
         card.innerHTML = `
           <div class="flex justify-between gap-2">
             <div class="${t.completed?'line-through opacity-70':''}">
-              <h4 class="font-medium">${escapeHtml(t.title)}</h4>
+              <h4 class="font-medium" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h4>
               <div class="flex flex-wrap gap-2 mt-2">
                 <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
                 ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
@@ -1155,6 +1327,24 @@
       });
     });
 
+    // инлайн-правка заголовка и кнопки
+    document.querySelectorAll('#kanban-view [data-act="inline-title"]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const id = el.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t || el.querySelector('input')) return;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = t.title;
+        input.className = 'title-input';
+        el.replaceWith(input);
+        input.focus(); input.select();
+        const commit = ()=>{ t.title = input.value.trim() || t.title; save(); renderKanban(); };
+        input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') commit(); if (e.key==='Escape') renderKanban(); });
+        input.addEventListener('blur', commit);
+      });
+    });
+
     document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t) openTaskModal(t);
@@ -1165,7 +1355,7 @@
     }));
   }
 
-  // --- Календарь ---
+  // --- Календарь (№10 drag&drop дат) ---
   const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
   const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
@@ -1198,30 +1388,108 @@
       const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const cell = document.createElement('div');
       cell.className = 'calendar-day border border-[var(--tg-theme-secondary-bg-color)] rounded p-1';
+      cell.dataset.date = iso;
       if (iso===todayStr) cell.classList.add('today');
 
       cell.innerHTML = `<div class="text-right text-sm mb-1 ${iso===todayStr?'font-bold':''}">${day}</div>`;
 
       const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
-      tasks.slice(0,4).forEach(t=>{
+      tasks.slice(0,6).forEach(t=>{
         const badge = document.createElement('div');
         badge.className = `text-xs truncate px-1 py-0.5 rounded mb-1 ${t.status==='done'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}`;
         badge.textContent = t.title;
+        badge.draggable = true;             // draggable badge
+        badge.dataset.id = t.id;
+        // drag handlers
+        badge.addEventListener('dragstart', (e)=>{
+          e.dataTransfer.setData('text/task-id', t.id);
+          e.dataTransfer.effectAllowed = 'move';
+        });
         cell.appendChild(badge);
       });
-      if (tasks.length>4){
+      if (tasks.length>6){
         const more = document.createElement('div');
         more.className='text-[var(--tg-theme-hint-color)] text-xs px-1';
-        more.textContent = `+ ещё ${tasks.length-4}`;
+        more.textContent = `+ ещё ${tasks.length-6}`;
         cell.appendChild(more);
       }
-      cell.addEventListener('click', ()=> openTaskModal(null, iso));
+
+      // drop targets on day cells
+      cell.addEventListener('dragover', (e)=>{ e.preventDefault(); cell.classList.add('dragover'); });
+      cell.addEventListener('dragleave', ()=> cell.classList.remove('dragover'));
+      cell.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        cell.classList.remove('dragover');
+        const id = e.dataTransfer.getData('text/task-id');
+        if(!id) return;
+        const t = state.tasks.find(x=>x.id===id);
+        if(!t) return;
+        t.dueDate = cell.dataset.date || '';
+        save(); renderCalendar(); renderList(); // обновим связанные виды
+      });
+
+      cell.addEventListener('click', (ev)=>{
+        // не открывать модалку, если был d&d
+        if (ev.target && ev.target.getAttribute('draggable') === 'true') return;
+        openTaskModal(null, iso);
+      });
       calendarGrid.appendChild(cell);
     }
   }
   prevMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()-1); state.currentMonth=d; renderCalendar(); });
   nextMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()+1); state.currentMonth=d; renderCalendar(); });
   todayButton.addEventListener('click', ()=>{ state.currentMonth = new Date(); renderCalendar(); });
+
+  // --- Горячие клавиши (№18) ---
+  document.addEventListener('keydown', (e)=>{
+    const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+    const typing = ['input','textarea'].includes(activeTag) && document.activeElement?.type!=='button';
+
+    // N — новая задача
+    if ((e.key==='n' || e.key==='N') && !e.ctrlKey && !e.metaKey && !typing){
+      e.preventDefault(); openTaskModal(); return;
+    }
+    // Ctrl/Cmd+K — палитра
+    if ((e.key.toLowerCase()==='k') && (e.ctrlKey || e.metaKey)){
+      e.preventDefault(); openCommandPalette(); return;
+    }
+    // F — фокус поиска
+    if ((e.key==='f' || e.key==='F') && !e.ctrlKey && !e.metaKey){
+      if (searchInput && !typing){ e.preventDefault(); searchInput.focus(); }
+      return;
+    }
+    // 1/2/3 — смена вида
+    if (!typing && (e.key==='1' || e.key==='2' || e.key==='3')){
+      e.preventDefault();
+      const map = { '1':'list', '2':'kanban', '3':'calendar' };
+      showView(map[e.key]);
+      return;
+    }
+    // Del — удалить выбранное
+    if (e.key==='Delete' && !typing){
+      if (state.selectedTaskId){
+        const t = state.tasks.find(x=>x.id===state.selectedTaskId);
+        if (t && confirm(`Удалить «${t.title}»?`)){
+          state.tasks = state.tasks.filter(x=>x.id!==t.id);
+          state.selectedTaskId = null;
+          save(); renderAll();
+        }
+      }
+    }
+    // Esc — закрыть палитру
+    if (e.key==='Escape'){
+      closeCommandPalette();
+    }
+  });
+
+  // --- PWA Badging API (№15) ---
+  function updateAppBadge(){
+    const remain = state.tasks.filter(t=>!t.completed).length;
+    if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
+      if (remain>0) { navigator.setAppBadge(remain).catch(()=>{}); }
+      else { navigator.clearAppBadge().catch(()=>{}); }
+    }
+  }
 
   // --- Общий рендер ---
   function renderAll(){
