@@ -335,7 +335,7 @@
           <textarea id="task-description" rows="3" placeholder="Подробности..." class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
         </div>
         <div class="mb-4">
-          <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Подзадачи (через Enter)</label>
+          <label class="block text-sm text-[var(--tg-theme-hинt-color)] mb-1">Подзадачи (через Enter)</label>
           <textarea id="task-subtasks" rows="2" placeholder="Напр.: Исследовать конкурентов&#10;Сделать план" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
         </div>
         <div class="mb-4">
@@ -996,7 +996,7 @@
     });
   }
 
-  // --- Рендер списка (только меню для правок/удаления) ---
+  // --- Рендер списка (иконки редактирования/удаления вместо трёх точек) ---
   function renderList(){
     const tasks = getFilteredTasks();
     listContainer.innerHTML = '';
@@ -1009,9 +1009,6 @@
       const card = document.createElement('div');
       card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 relative';
       card.dataset.id = t.id;
-
-      // Клик по карточке НЕ открывает редактирование — только меню (по требованию)
-      const projectOptionsHtml = state.projects.map(p=>`<option value="${p.id}" ${p.id===t.project?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
 
       card.innerHTML = `
         <div class="flex items-start justify-between gap-2">
@@ -1031,28 +1028,9 @@
             </div>
           </div>
 
-          <div class="relative">
-            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="menu" aria-label="Меню" data-id="${t.id}">
-              <i class="fas fa-ellipsis-h"></i>
-            </button>
-            <div class="hidden absolute right-0 mt-2 w-60 bg-[var(--tg-theme-bg-color)] rounded-md shadow-lg z-10 border border-[var(--tg-theme-secondary-bg-color)] p-2">
-              <button class="w-full text-left px-3 py-2 text-sm hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="edit" data-id="${t.id}">
-                <i class="fas fa-pen mr-2"></i>Редактировать
-              </button>
-              <div class="px-3 py-2">
-                <div class="text-xs text-[var(--tg-theme-hint-color)] mb-1">Переназначить проект</div>
-                <div class="flex gap-1">
-                  <select class="flex-1 px-2 py-1 rounded bg-[var(--tg-theme-secondary-bg-color)]" data-act="reassign-select" data-id="${t.id}">
-                    <option value="">Без проекта</option>
-                    ${projectOptionsHtml}
-                  </select>
-                  <button class="px-2 rounded bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-xs" data-act="reassign" data-id="${t.id}">OK</button>
-                </div>
-              </div>
-              <button class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="delete" data-id="${t.id}">
-                <i class="fas fa-trash mr-2"></i>Удалить
-              </button>
-            </div>
+          <div class="flex flex-col items-end gap-1">
+            <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+            <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
           </div>
         </div>
       `;
@@ -1061,20 +1039,6 @@
       // свайпы только на тач-устройствах
       if (isTouch) attachSwipeHandlers(card, t.id);
     });
-
-    // Меню карточек
-    listContainer.querySelectorAll('[data-act="menu"]').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const menu = btn.nextElementSibling;
-        document.querySelectorAll('#list-container .relative > div').forEach(m=>{ if(m!==menu) m.classList.add('hidden'); });
-        menu.classList.toggle('hidden');
-      });
-    });
-    // клик в пустоту — закрыть открытые меню
-    document.addEventListener('click', ()=> {
-      document.querySelectorAll('#list-container .relative > div').forEach(m=> m.classList.add('hidden'));
-    }, { once:true });
 
     // Тоггл статуса (чекбокс)
     listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
@@ -1090,30 +1054,19 @@
       });
     });
 
-    // Редактирование из меню
+    // Редактирование
     listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
       e.stopPropagation();
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t) openTaskModal(t);
     }));
 
-    // Удаление из меню
+    // Удаление
     listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', (e)=>{
       e.stopPropagation();
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
     }));
-
-    // Переназначение проекта
-    listContainer.querySelectorAll('[data-act="reassign"]').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const id = btn.dataset.id;
-        const select = btn.parentElement.querySelector('[data-act="reassign-select"]');
-        const t = state.tasks.find(x=>x.id===id);
-        if (t){ t.project = select.value; save(); renderAll(); }
-      });
-    });
   }
 
   function attachSwipeHandlers(card, id){
