@@ -19,7 +19,6 @@
       --tg-theme-secondary-bg-color:#f4f4f5;
       --ring:rgba(51,144,236,.35)
     }
-    /* Используем .dark только ВНЕ Telegram. Внутри Telegram тема приходит из клиента. */
     .dark{
       --tg-theme-bg-color:#1c1c1d;
       --tg-theme-text-color:#fff;
@@ -39,8 +38,8 @@
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Inter',system-ui,sans-serif
     }
     .ring-focus:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
-    .task-card{transition:transform .15s,box-shadow .15s}
-    .task-card:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgb(0 0 0 /.08)}
+    .task-card{transition:box-shadow .15s}
+    .task-card:hover{box-shadow:0 4px 10px rgb(0 0 0 /.08)}
     .priority-low{background:rgba(52,211,153,.12);color:rgb(16,185,129)}
     .priority-medium{background:rgba(96,165,250,.12);color:rgb(59,130,246)}
     .priority-high{background:rgba(251,191,36,.12);color:rgb(234,179,8)}
@@ -57,7 +56,6 @@
     @media (max-width:640px){
       .kanban-column{min-height:auto;max-height:60vh;overflow-y:auto}
     }
-    /* Простые поповеры */
     .popover{position:absolute;z-index:30;background:var(--tg-theme-bg-color);border:1px solid var(--tg-theme-secondary-bg-color);box-shadow:0 8px 24px rgb(0 0 0 / .12);border-radius:.75rem;min-width:240px}
   </style>
 </head>
@@ -84,7 +82,6 @@
               <button class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
                 <i class="fas fa-user mr-2"></i><span id="menu-user">Профиль</span>
               </button>
-              <!-- Тумблер темы показываем только вне Telegram -->
               <button id="btn-theme-toggle" class="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--tg-theme-secondary-bg-color)]">
                 <i class="fas fa-moon mr-2"></i><span>Переключить тему</span>
               </button>
@@ -127,12 +124,10 @@
       </div>
     </div>
 
-    <!-- Mini dashboard (средняя фича) -->
-    <div id="stats-bar" class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4">
-      <!-- Заполним через JS -->
-    </div>
+    <!-- Mini dashboard -->
+    <div id="stats-bar" class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4"></div>
 
-    <!-- Project Selector + delete (средняя фича) -->
+    <!-- Project Selector -->
     <div class="mb-4 flex items-center gap-2">
       <select id="project-selector" class="bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] rounded-lg px-4 py-2 ring-focus">
         <option value="all">Все проекты</option>
@@ -199,7 +194,7 @@
         </div>
       </div>
 
-      <!-- Быстрое добавление (быстрая фича) -->
+      <!-- Быстрое добавление -->
       <div class="mb-3">
         <input id="quick-add-input"
                class="w-full px-4 py-3 rounded-lg bg-[var(--tg-theme-secondary-bg-color)] ring-focus"
@@ -339,7 +334,7 @@
         </div>
         <div class="mb-4">
           <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Подзадачи (через Enter)</label>
-          <textarea id="task-subtasks" rows="2" placeholder="Например: Исследовать конкурентов&#10;Сделать план" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
+          <textarea id="task-subtasks" rows="2" placeholder="Напр.: Исследовать конкурентов&#10;Сделать план" class="w-full px-4 py-2 bg-[var(--tg-theme-secondary-bg-color)] rounded-lg ring-focus"></textarea>
         </div>
         <div class="mb-4">
           <label class="block text-sm text-[var(--tg-theme-hint-color)] mb-1">Метки (через запятую)</label>
@@ -484,13 +479,8 @@
   const LS_DATA_PREFIX = 'tp_data_';
   const STORAGE_KEY = LS_DATA_PREFIX + (user?.id || 'default');
 
-  // Привязываем тему: внутри Telegram полагаемся на их переменные + события themeChanged
   const applyTheme = (mode) => {
-    if (inTelegram) {
-      // Внутри Telegram не трогаем .dark, чтобы не перебивать стили клиента
-      localStorage.setItem(LS_THEME, mode); // просто запомним предпочитаемую для standalone
-      return;
-    }
+    if (inTelegram) { localStorage.setItem(LS_THEME, mode); return; }
     document.documentElement.classList.toggle('dark', mode === 'dark');
     localStorage.setItem(LS_THEME, mode);
   };
@@ -498,12 +488,8 @@
                                  : (localStorage.getItem(LS_THEME) || 'light');
   applyTheme(initialMode);
 
-  // Реакция на смену темы в Telegram WebApp
   if (inTelegram && tg?.onEvent) {
-    tg.onEvent('themeChanged', () => {
-      // Просто перерендерим, переменные --tg-theme-* Telegram уже обновит
-      renderAll();
-    });
+    tg.onEvent('themeChanged', () => { renderAll(); });
   }
 
   // --- Элементы ---
@@ -571,9 +557,9 @@
   // --- Модель/состояние ---
   const state = {
     projects: [
-      { id: 'work', name: 'Работа', color: '#3b82f6' },
-      { id: 'personal', name: 'Личное', color: '#10b981' },
-      { id: 'team', name: 'Команда', color: '#8b5cf6' }
+      { id: 'work',     name: 'Работа',   color: '#3b82f6' },
+      { id: 'personal', name: 'Личное',   color: '#10b981' },
+      { id: 'team',     name: 'Команда',  color: '#8b5cf6' }
     ],
     tasks: [
       { id: uid(), title: 'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], completed:false, createdAt: nowISO() },
@@ -609,55 +595,34 @@
   function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
   function todayISO(shift=0){ const d=new Date(); d.setDate(d.getDate()+shift); return d.toISOString().slice(0,10); }
   function nowISO(){ return new Date().toISOString(); }
-  function fmtDateHuman(iso){
-    if(!iso) return 'Без срока';
-    const d = new Date(iso+'T00:00:00');
-    return d.toLocaleDateString('ru-RU',{ day:'2-digit', month:'long' });
-  }
+  function fmtDateHuman(iso){ if(!iso) return 'Без срока'; const d = new Date(iso+'T00:00:00'); return d.toLocaleDateString('ru-RU',{ day:'2-digit', month:'long' }); }
   function projectById(id){ return state.projects.find(p=>p.id===id) || null; }
   function projectName(id){ return (projectById(id)?.name) || 'Без проекта'; }
   function priorityRu(p){ return ({low:'Низкий', medium:'Средний', high:'Высокий', critical:'Критичный'})[p] || p; }
   function statusRu(s){ return ({'backlog':'Бэклог','in-progress':'В работе','review':'Проверка','done':'Готово'})[s] || s; }
   function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
-  function hexToRgb(hex){
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
-    return m ? { r:parseInt(m[1],16), g:parseInt(m[2],16), b:parseInt(m[3],16) } : {r:59,g:130,b:246};
-  }
+  function hexToRgb(hex){ const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || ''); return m ? { r:parseInt(m[1],16), g:parseInt(m[2],16), b:parseInt(m[3],16) } : {r:59,g:130,b:246}; }
   function rgba(hex, a){ const {r,g,b}=hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
-  function textColorForBg(hex){
-    const {r,g,b} = hexToRgb(hex);
-    const yiq = (r*299 + g*587 + b*114)/1000;
-    return yiq >= 128 ? '#111827' : '#f9fafb';
-  }
+  function textColorForBg(hex){ const {r,g,b} = hexToRgb(hex); const yiq = (r*299 + g*587 + b*114)/1000; return yiq >= 128 ? '#111827' : '#f9fafb'; }
   function startOfWeek(d=new Date()){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-wd); return x; }
   function endOfWeek(d=new Date()){ const x=startOfWeek(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
-  function parseRussianWeekdayToken(tok){
-    const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 };
-    return map[tok] ?? null;
-  }
-  function nextWeekdayISO(target){
-    const d = new Date(); const today = d.getDay(); // 0..6 (Вс..Сб)
-    // нам нужно следующее целевое с Пн=1..Вс=0
-    let delta = (target - today + 7) % 7;
-    if (delta === 0) delta = 7;
-    d.setDate(d.getDate() + delta);
-    return d.toISOString().slice(0,10);
-  }
+  function parseRussianWeekdayToken(tok){ const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 }; return map[tok] ?? null; }
+  function nextWeekdayISO(target){ const d=new Date(); const today=d.getDay(); let delta=(target-today+7)%7; if(delta===0) delta=7; d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); }
 
   // --- Инициализация ---
   load();
   hydrateProjectSelector();
   hydrateTaskProjectSelect();
-
   showView('list');
   renderAll();
 
   // --- Меню/темы/импорт/экспорт ---
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints>0;
+
   menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
   closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
   if (inTelegram) {
-    // Внутри Telegram — тумблер скрываем, тема управляется клиентом
-    themeToggle.style.display = 'none';
+    document.getElementById('btn-theme-toggle').style.display = 'none';
   } else {
     themeToggle.addEventListener('click', ()=>{
       const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
@@ -706,19 +671,12 @@
   viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
 
   // --- Поиск ---
-  searchButton.addEventListener('click', ()=> {
-    openCommandPalette();
-    commandInput.value = '';
-    commandInput.placeholder = 'Введите текст для поиска...';
-  });
+  searchButton.addEventListener('click', ()=> { openCommandPalette(); commandInput.value=''; commandInput.placeholder='Введите текст для поиска...'; });
   if (searchInput) {
-    searchInput.addEventListener('input', ()=>{
-      state.search = searchInput.value.trim().toLowerCase();
-      renderAll();
-    });
+    searchInput.addEventListener('input', ()=>{ state.search = searchInput.value.trim().toLowerCase(); renderAll(); });
   }
 
-  // --- Фильтры + сортировка (быстрая/средняя фичи) ---
+  // --- Фильтры + сортировка ---
   filterButton.addEventListener('click', (e)=>{
     filterPanel.style.left = 'auto';
     filterPanel.style.right = '0';
@@ -727,12 +685,7 @@
     e.stopPropagation();
   });
   [filterDue, filterPriority, filterStatus].forEach(el=>{
-    el.addEventListener('change', ()=>{
-      state.filters.due = filterDue.value;
-      state.filters.priority = filterPriority.value;
-      state.filters.status = filterStatus.value;
-      renderAll();
-    });
+    el.addEventListener('change', ()=>{ state.filters.due=filterDue.value; state.filters.priority=filterPriority.value; state.filters.status=filterStatus.value; renderAll(); });
   });
   sortButton.addEventListener('click', (e)=>{
     sortPanel.style.left = 'auto';
@@ -741,29 +694,19 @@
     filterPanel.classList.add('hidden');
     e.stopPropagation();
   });
-  sortSelect.addEventListener('change', ()=>{
-    state.sort = sortSelect.value;
-    renderAll();
-  });
-  document.addEventListener('click', ()=>{
-    filterPanel.classList.add('hidden');
-    sortPanel.classList.add('hidden');
-  });
+  sortSelect.addEventListener('change', ()=>{ state.sort = sortSelect.value; renderAll(); });
+  document.addEventListener('click', ()=>{ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); });
 
   // --- Проекты ---
   addProjectButton.addEventListener('click', openProjectModal);
   deleteProjectButton.addEventListener('click', ()=>{
     const id = projectSelector.value;
-    if (id==='all' || ['work','personal','team'].includes(id)) {
-      alert('Нельзя удалить этот проект.');
-      return;
-    }
+    if (id==='all'){ alert('Сначала выберите конкретный проект.'); return; }
     const name = projectName(id);
-    if (confirm(`Удалить проект «${name}»? Его задачи будут без проекта.`)) {
+    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
       state.projects = state.projects.filter(p=>p.id!==id);
-      state.tasks.forEach(t=>{ if (t.project===id) t.project = ''; });
-      hydrateProjectSelector();
-      hydrateTaskProjectSelect();
+      state.tasks.forEach(t=>{ if (t.project===id) t.project=''; });
+      hydrateProjectSelector(); hydrateTaskProjectSelect();
       projectSelector.value = 'all';
       save(); renderAll();
     }
@@ -788,18 +731,10 @@
     const name = projectNameInput.value.trim();
     const id = name.toLowerCase().replace(/\s+/g,'-');
     if(!id) return;
-    if (['work','personal','team'].includes(id)){
-      alert('Системные проекты удалить нельзя.');
-      return;
-    }
-    if (confirm(`Удалить проект «${name}»? Его задачи будут без проекта.`)) {
+    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
       state.projects = state.projects.filter(p=>p.id!==id);
       state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
-      save();
-      hydrateProjectSelector();
-      hydrateTaskProjectSelect();
-      renderAll();
-      closeProjectModalFunc();
+      save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll(); closeProjectModalFunc();
     }
   });
 
@@ -859,9 +794,7 @@
         completed: status==='done', createdAt: nowISO(), completedAt: status==='done'? nowISO(): undefined
       });
     }
-    save();
-    closeTaskModalFunc();
-    renderAll();
+    save(); closeTaskModalFunc(); renderAll();
   });
 
   function openTaskModal(task=null, prefillDate=null){
@@ -879,7 +812,7 @@
   }
   function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
 
-  // --- Быстрое добавление со слеш-командами ---
+  // --- Быстрое добавление ---
   quickAddInput.addEventListener('keydown', (e)=>{
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -906,23 +839,20 @@
   });
 
   function parseQuickAdd(text){
-    let t = ' ' + text + ' '; // для удобной замены
+    let t = ' ' + text + ' ';
     const res = { title:'', priority:'medium', dueDate:'', project:'', tags:[] };
 
-    // Теги #tag (включая кириллицу)
     const tagRe = /#([\p{L}\p{N}_-]+)/giu;
     const tags = [];
     t = t.replace(tagRe, (_,m)=>{ tags.push(m); return ' '; });
     res.tags = tags;
 
-    // @Проект (последний встретившийся)
     const projRe = /@([\p{L}\p{N}\s_-]+)/giu;
     let projName = '';
     t = t.replace(projRe, (_,m)=>{ projName = m.trim(); return ' '; });
     if (projName) {
       let proj = state.projects.find(p=>p.name.toLowerCase()===projName.toLowerCase());
       if (!proj) {
-        // создадим проект на лету
         const id = projName.toLowerCase().replace(/\s+/g,'-');
         const color = '#f59e0b';
         proj = { id, name: projName, color };
@@ -933,11 +863,9 @@
       res.project = proj.id;
     }
 
-    // Слэш-команды даты
     const low = t.toLowerCase();
     if (low.includes('/сегодня')) { res.dueDate = todayISO(0); t = t.replace('/сегодня',' '); }
     if (low.includes('/завтра')) { res.dueDate = todayISO(1); t = t.replace('/завтра',' '); }
-    // /пн.. /вс
     ['/пн','/вт','/ср','/чт','/пт','/сб','/вс'].forEach(tok=>{
       if (low.includes(tok)) {
         const idx = parseRussianWeekdayToken(tok);
@@ -946,7 +874,6 @@
       }
     });
 
-    // Приоритеты
     if (low.includes('/критично')) { res.priority = 'critical'; t = t.replace('/критично',' '); }
     if (low.includes('/высокий') || low.includes('/важно')) { res.priority = 'high'; t = t.replace('/высокий',' ').replace('/важно',' '); }
     if (low.includes('/средний')) { res.priority = 'medium'; t = t.replace('/средний',' '); }
@@ -973,17 +900,6 @@
   });
   commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
 
-  // --- Клавиатура ---
-  document.addEventListener('keydown', (e)=>{
-    if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCommandPalette(); }
-    if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase()==='n'){ e.preventDefault(); openTaskModal(); }
-    if (e.key==='Escape'){
-      if (!commandPalette.classList.contains('hidden')) closeCommandPalette();
-      else if (!taskModal.classList.contains('hidden')) closeTaskModalFunc();
-      else if (!projectModal.classList.contains('hidden')) closeProjectModalFunc();
-    }
-  });
-
   // --- Фильтрация/сортировка/поиск ---
   function getFilteredTasks(){
     const q = state.search;
@@ -996,7 +912,6 @@
         const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      // по сроку
       if (due!=='all') {
         const today = new Date(todayISO(0)+'T00:00:00');
         const d = t.dueDate ? new Date(t.dueDate+'T00:00:00') : null;
@@ -1016,7 +931,6 @@
       return true;
     });
 
-    // сортировка
     const prRank = { critical:3, high:2, medium:1, low:0 };
     const stRank = { 'backlog':0,'in-progress':1,'review':2,'done':3 };
     const cmp = {
@@ -1033,7 +947,7 @@
     return arr;
   }
 
-  // --- Статистика (средняя фича) ---
+  // --- Статистика ---
   function renderStats(){
     const total = state.tasks.length;
     const todayStr = todayISO(0);
@@ -1065,7 +979,7 @@
     });
   }
 
-  // --- Рендер списка + свайпы (быстрая фича) ---
+  // --- Рендер списка (фикс клика/коллапса + меню с переназначением) ---
   function renderList(){
     const tasks = getFilteredTasks();
     listContainer.innerHTML = '';
@@ -1076,10 +990,20 @@
       const project = projectById(t.project);
       const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
       const card = document.createElement('div');
-      card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 relative overflow-hidden';
+      card.className = 'task-card bg-[var(--tg-theme-secondary-bg-color)] rounded-lg p-4 relative';
       card.dataset.id = t.id;
+
+      // Главный клик — редактирование (исключая интерактивы)
+      card.addEventListener('click', (e)=>{
+        const target = e.target;
+        if (target.closest('[data-act="menu"]') || target.closest('select') || target.closest('button') || target.closest('input[type="checkbox"]')) return;
+        openTaskModal(t);
+      });
+
+      const projectOptionsHtml = state.projects.map(p=>`<option value="${p.id}" ${p.id===t.project?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
+
       card.innerHTML = `
-        <div class="flex items-start justify-between">
+        <div class="flex items-start justify-between gap-2">
           <div class="flex items-start gap-3">
             <div class="mt-1">
               <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-button-color)] focus:ring-[var(--tg-theme-button-color)]">
@@ -1095,15 +1019,26 @@
               </div>
             </div>
           </div>
+
           <div class="relative">
             <button class="text-[var(--tg-theme-hint-color)] hover:text-[var(--tg-theme-text-color)]" data-act="menu" aria-label="Меню" data-id="${t.id}">
-              <i class="fas fa-ellipsis-v"></i>
+              <i class="fas fa-ellipsis-h"></i>
             </button>
-            <div class="hidden absolute right-0 mt-2 w-44 bg-[var(--tg-theme-bg-color)] rounded-md shadow-lg z-10 border border-[var(--tg-theme-secondary-bg-color)]">
-              <button class="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="edit" data-id="${t.id}">
+            <div class="hidden absolute right-0 mt-2 w-60 bg-[var(--tg-theme-bg-color)] rounded-md shadow-lg z-10 border border-[var(--tg-theme-secondary-bg-color)] p-2">
+              <button class="w-full text-left px-3 py-2 text-sm hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="edit" data-id="${t.id}">
                 <i class="fas fa-pen mr-2"></i>Редактировать
               </button>
-              <button class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="delete" data-id="${t.id}">
+              <div class="px-3 py-2">
+                <div class="text-xs text-[var(--tg-theme-hint-color)] mb-1">Переназначить проект</div>
+                <div class="flex gap-1">
+                  <select class="flex-1 px-2 py-1 rounded bg-[var(--tg-theme-secondary-bg-color)]" data-act="reassign-select" data-id="${t.id}">
+                    <option value="">Без проекта</option>
+                    ${projectOptionsHtml}
+                  </select>
+                  <button class="px-2 rounded bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-xs" data-act="reassign" data-id="${t.id}">OK</button>
+                </div>
+              </div>
+              <button class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-[var(--tg-theme-secondary-bg-color)]" data-act="delete" data-id="${t.id}">
                 <i class="fas fa-trash mr-2"></i>Удалить
               </button>
             </div>
@@ -1112,8 +1047,8 @@
       `;
       listContainer.appendChild(card);
 
-      // свайпы (мобайл)
-      attachSwipeHandlers(card, t.id);
+      // Свайпы только на тач-устройствах (фикс “сворачивания” на десктопе)
+      if (isTouch) attachSwipeHandlers(card, t.id);
     });
 
     // Меню карточек
@@ -1131,6 +1066,7 @@
 
     // Действия
     listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
+      inp.addEventListener('click', e=> e.stopPropagation());
       inp.addEventListener('change', ()=>{
         const t = state.tasks.find(x=>x.id===inp.dataset.id);
         if (t){
@@ -1141,37 +1077,48 @@
         }
       });
     });
-    listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
+    listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
+      e.stopPropagation();
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t) openTaskModal(t);
     }));
-    listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
+    listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', (e)=>{
+      e.stopPropagation();
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
     }));
+    listContainer.querySelectorAll('[data-act="reassign"]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const select = btn.parentElement.querySelector('[data-act="reassign-select"]');
+        const t = state.tasks.find(x=>x.id===id);
+        if (t){ t.project = select.value; save(); renderAll(); }
+      });
+    });
   }
 
   function attachSwipeHandlers(card, id){
     let startX=0, currentX=0, swiping=false;
-    card.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; swiping=true; card.style.transition='transform .0s'; });
+    card.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; swiping=true; card.style.transition='transform .0s, opacity .0s'; }, {passive:true});
     card.addEventListener('touchmove', (e)=>{
       if(!swiping) return;
       currentX = e.touches[0].clientX;
       const dx = currentX - startX;
       card.style.transform = `translateX(${dx}px)`;
-      card.style.opacity = `${Math.max(0.4, 1 - Math.abs(dx)/300)}`;
+      card.style.opacity = `${Math.max(0.5, 1 - Math.abs(dx)/280)}`;
     }, {passive:true});
     card.addEventListener('touchend', ()=>{
       if(!swiping) return;
       const dx = currentX - startX;
-      card.style.transition='transform .2s, opacity .2s';
+      card.style.transition='transform .18s, opacity .18s';
       card.style.transform='translateX(0)';
       card.style.opacity='1';
       swiping=false;
-      if (dx > 80){ // вправо — выполнено
+      if (dx > 80){
         const t = state.tasks.find(x=>x.id===id);
         if (t){ t.completed = true; t.status='done'; t.completedAt = nowISO(); save(); renderAll(); }
-      } else if (dx < -80){ // влево — удалить
+      } else if (dx < -80){
         const t = state.tasks.find(x=>x.id===id);
         if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); renderAll(); }
       }
@@ -1215,12 +1162,10 @@
         body.appendChild(card);
       });
     });
-    // Счётчики
     ['backlog','in-progress','review','done'].forEach(s=>{
       document.getElementById('cnt-'+s).textContent = state.tasks.filter(t=>t.status===s).length;
     });
 
-    // DnD
     document.querySelectorAll('.kanban-column .task-card').forEach(card=>{
       card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
       card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
@@ -1239,7 +1184,6 @@
       });
     });
 
-    // Actions
     document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
       const t = state.tasks.find(x=>x.id===b.dataset.id);
       if (t) openTaskModal(t);
@@ -1255,7 +1199,6 @@
   const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
   function renderCalendar(){
-    // Дни недели
     weekdayRow.innerHTML = '';
     WEEKDAYS.forEach(w=>{
       const div = document.createElement('div');
@@ -1270,7 +1213,7 @@
     const year = d.getFullYear();
     monthTitle.textContent = `${MONTHS_NOM[month]} ${year}`;
 
-    let startIdx = (d.getDay() + 6) % 7; // Пн=0
+    let startIdx = (d.getDay() + 6) % 7;
     const daysInMonth = new Date(year, month+1, 0).getDate();
 
     calendarGrid.innerHTML = '';
@@ -1319,7 +1262,7 @@
     save();
   }
 
-  // --- Клики вне меню и поповеров ---
+  // --- Вне меню/поповеров ---
   document.addEventListener('click', (e)=>{
     if (sideMenu && !sideMenu.classList.contains('hidden')){
       const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
