@@ -1,5 +1,5 @@
-// ВКЛ / ВЫКЛ режима обслуживания
-const maintenance = true; // ← меняешь на false, когда включаешь приложение
+// ВКЛ true / ВЫКЛ false
+const maintenance = false; // ← меняешь на false, когда включаешь приложение
 
 if (maintenance) {
   document.addEventListener("DOMContentLoaded", () => {
