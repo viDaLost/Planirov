@@ -4,18 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Технические работы</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root{
       --bg:#f4f5f7;
       --card:#ffffff;
-      --text:#1a1a1a;
+      --text:#17181a;
       --muted:#6b7280;
-      --accent:#445066;
-      --radius:18px;
-      --shadow:0 10px 30px rgba(0,0,0,.08);
-      --btn-bg:#445066;
-      --btn-text:#ffffff;
-      --btn-hover:#2f3a4d;
+      --accent:#2f3a4d;
+      --radius:20px;
+      --shadow:0 14px 40px rgba(0,0,0,.08);
+      --btn:#2f3a4d;
+      --btn-hover:#242d3d;
+      --ring: 0 0 0 6px rgba(47,58,77,.12);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -26,43 +28,44 @@
       justify-content:center;
       background:var(--bg);
       color:var(--text);
-      font-family: "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
+      font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size:18px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .box{
-      width:min(92vw,560px);
+      width:min(92vw,640px);
       background:var(--card);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
-      padding:32px 28px;
+      padding:38px 32px 30px;
       text-align:center;
     }
     h1{
       margin:0 0 12px;
-      font-size:22px;
+      font-size:28px;
       font-weight:700;
       letter-spacing:.2px;
       color:var(--accent);
     }
     p{
-      margin:0 0 18px;
-      font-size:16px;
-      line-height:1.55;
-      color:var(--text);
+      margin:0 0 16px;
+      line-height:1.6;
     }
     .hint{
-      margin-top:12px;
-      font-size:13px;
+      margin-top:14px;
+      font-size:14px;
       color:var(--muted);
     }
 
-    /* === Анимация статуса: точки + шестерёнка === */
+    /* === Статус: точки + улучшенная шестерёнка === */
     .status{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap:10px;
-      margin-top:6px;
-      font-size:15px;
+      gap:12px;
+      margin-top:8px;
+      font-size:16px;
       color:var(--accent);
     }
     .dots{
@@ -75,67 +78,140 @@
     .dots::before{ content:"..."; letter-spacing:2px; }
 
     .gear{
-      width:22px; height:22px;
-      opacity:0; transform:scale(.9);
+      width:28px; height:28px;
+      opacity:0; transform:scale(.92);
+      transform-origin:50% 50%;
+      transform-box: fill-box;
       animation:
-        appear .8s ease-out .9s forwards,
-        spin 3s linear infinite .9s;
-    }
-    @keyframes dots{
-      0%   { width:0ch; }
-      100% { width:3ch; }
-    }
-    @keyframes appear{
-      to { opacity:1; transform:scale(1); }
-    }
-    @keyframes spin{
-      to { transform:rotate(360deg); }
-    }
-    @media (prefers-reduced-motion: reduce){
-      .dots, .gear{ animation:none !important; }
-      .gear{ opacity:1; transform:none; }
+        gear-appear .7s cubic-bezier(.2,.7,.2,1) .9s forwards,
+        gear-spin 2.6s linear infinite .9s;
+      shape-rendering: geometricPrecision;
     }
 
-    /* === Кнопка === */
-    .refresh-btn{
-      margin-top:22px;
-      padding:12px 20px;
-      border:none;
-      border-radius:10px;
-      background:var(--btn-bg);
-      color:var(--btn-text);
-      font-size:15px;
-      font-weight:500;
-      cursor:pointer;
-      transition: background .25s, transform .15s;
+    @keyframes dots{
+      0%{width:0ch}
+      100%{width:3ch}
     }
-    .refresh-btn:hover{
+    @keyframes gear-appear{
+      to{opacity:1; transform:scale(1)}
+    }
+    @keyframes gear-spin{
+      to{transform:rotate(360deg)}
+    }
+
+    /* === Кнопка с «подпрыгиванием» === */
+    .actions{ margin-top:22px; }
+    .refresh-btn{
+      appearance:none;
+      border:0;
+      border-radius:12px;
+      background:var(--btn);
+      color:#fff;
+      padding:14px 22px;
+      font-size:16px;
+      font-weight:600;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+      box-shadow: 0 10px 24px rgba(47,58,77,.22);
+    }
+    .refresh-btn svg{ width:18px; height:18px; }
+    .refresh-btn:hover,
+    .refresh-btn:focus-visible{
       background:var(--btn-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(47,58,77,.28);
     }
     .refresh-btn:active{
-      transform:scale(.97);
+      animation: btn-bounce .28s cubic-bezier(.2,.7,.2,1);
+    }
+    .refresh-btn:focus-visible{
+      outline:none;
+      box-shadow: 0 16px 32px rgba(47,58,77,.28), var(--ring);
+    }
+    @keyframes btn-bounce{
+      0%{transform:translateY(-2px)}
+      50%{transform:translateY(0) scale(.98)}
+      100%{transform:translateY(-1px)}
+    }
+
+    /* Предпочтение уменьшенной анимации */
+    @media (prefers-reduced-motion: reduce){
+      .dots, .gear, .refresh-btn{ animation:none !important; transition:none !important; }
+      .refresh-btn{ transform:none !important; }
+      .gear{ opacity:1; transform:none; }
     }
   </style>
 </head>
 <body>
   <div class="box" role="region" aria-labelledby="title">
     <h1 id="title">Технические работы</h1>
-    <p>Ваши данные в сохранности. <br>Сервис скоро вернётся к работе.</p>
+    <p>Ваши данные в сохранности.<br>Сервис скоро вернётся к работе.</p>
 
     <div class="status" role="status" aria-live="polite" aria-atomic="true">
       <span>Идёт обслуживание</span>
       <span class="dots" aria-hidden="true"></span>
+
+      <!-- Чёткая шестерёнка: 8 зубьев + обод + ось -->
       <svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
            aria-hidden="true" focusable="false">
-        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
-        <path d="M19.4 15.3a7.9 7.9 0 0 0 .2-2.3l1.8-1.3-1.7-3-2.1.4a7.9 7.9 0 0 0-1.7-1l-.3-2.2h-3.4l-.3 2.2a7.9 7.9 0 0 0-1.7 1l-2.1-.4-1.7 3 1.8 1.3a7.9 7.9 0 0 0 0 2.3L4 16.6l1.7 3 2.1-.4a7.9 7.9 0 0 0 1.7 1l.3 2.2h3.4l.3-2.2a7.9 7.9 0 0 0 1.7-1l2.1.4 1.7-3-1.8-1.3Z"/>
+        <!-- зубья -->
+        <g fill="currentColor" stroke="none">
+          <rect x="10.8" y="1.2" width="2.4" height="4.2" rx="1.1"/>
+          <rect x="10.8" y="18.6" width="2.4" height="4.2" rx="1.1"/>
+          <rect x="18.6" y="10.8" width="4.2" height="2.4" rx="1.1"/>
+          <rect x="1.2" y="10.8" width="4.2" height="2.4" rx="1.1"/>
+          <rect x="17.1" y="3.1" width="2.4" height="4.2" rx="1.1" transform="rotate(45 18.3 5.2)"/>
+          <rect x="4.5"  y="16.7" width="2.4" height="4.2" rx="1.1" transform="rotate(45 5.7 18.8)"/>
+          <rect x="16.7" y="17.1" width="2.4" height="4.2" rx="1.1" transform="rotate(-45 17.9 19.2)"/>
+          <rect x="3.1"  y="4.5"  width="2.4" height="4.2" rx="1.1" transform="rotate(-45 4.3 6.6)"/>
+        </g>
+        <!-- обод -->
+        <circle cx="12" cy="12" r="6.2" />
+        <!-- ось -->
+        <circle cx="12" cy="12" r="2.6" />
       </svg>
     </div>
 
-    <button class="refresh-btn" onclick="location.reload()">🔄 Обновить страницу</button>
+    <div class="actions">
+      <button class="refresh-btn" type="button" onclick="refreshApp()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+          <path d="M21 3v6h-6"/>
+        </svg>
+        Обновить страницу
+      </button>
+    </div>
 
     <div class="hint">Спасибо за терпение ❤️</div>
   </div>
+
+  <script>
+    (function(){
+      const isTG = typeof window.Telegram !== 'undefined' && Telegram.WebApp;
+      if(isTG){ try{ Telegram.WebApp.ready(); }catch(e){} }
+
+      window.refreshApp = function(){
+        try{
+          if(isTG){
+            try{ Telegram.WebApp.HapticFeedback?.impactOccurred('light'); }catch(e){}
+            // Внутри WebApp надёжнее заменить URL без хэша
+            const clean = location.href.split('#')[0];
+            location.replace(clean);
+          }else{
+            // Обычный браузер
+            location.reload();
+          }
+        }catch(err){
+          // Фоллбек
+          location.href = location.href;
+        }
+      };
+    })();
+  </script>
 </body>
 </html>
