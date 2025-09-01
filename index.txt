@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Технические работы</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #fafafa;
+      font-family: sans-serif;
+      color: #333;
+      text-align: center;
+    }
+    .box {
+      max-width: 400px;
+    }
+    h1 { font-size: 24px; margin-bottom: 12px; }
+    p { font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Ведутся технические работы</h1>
+    <p>Ваши данные на месте, скоро всё заработает! 🙌</p>
+  </div>
+</body>
+</html>
