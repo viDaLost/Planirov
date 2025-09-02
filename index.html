@@ -19,41 +19,88 @@
       --button-text:#ffffff;
       --ring:rgba(37,99,235,.35);
       --header-gradient:linear-gradient(90deg,#ffffff,#ffffff);
-      --badge-ok:#10b981; --badge-warn:#f59e0b; --badge-err:#ef4444;
+      --badge-ok:#10b981;
+      --badge-warn:#f59e0b;
+      --badge-err:#ef4444;
+
+      /* Premium shimmer */
+      --premium-grad: linear-gradient(90deg, #ffd700, #ff9f1c, #ffd700, #fff3b0);
+      --premium-grad-dark: linear-gradient(90deg, #ffe08a, #ffc857, #ffe08a, #fff3b0);
     }
     html[data-theme="dark"]{
-      --bg:#0f1115; --text:#e5e7eb; --hint:#9ca3af; --secondary:#171a21;
-      --button:#5b74f9; --button-text:#ffffff; --ring:rgba(91,116,249,.35);
+      --bg:#0f1115;
+      --text:#e5e7eb;
+      --hint:#9ca3af;
+      --secondary:#171a21;
+      --button:#5b74f9;
+      --button-text:#ffffff;
+      --ring:rgba(91,116,249,.35);
       --header-gradient:linear-gradient(90deg,#10131a,#171a21);
     }
+    /* 1) Sunset */
     html[data-theme="sunset"]{
-      --bg:#fff7ed; --text:#1f2937; --hint:#6b7280; --secondary:#ffe9d6;
-      --button:#f97316; --button-text:#1f2937; --ring:rgba(249,115,22,.35);
+      --bg:#fff7ed;
+      --text:#1f2937;
+      --hint:#6b7280;
+      --secondary:#ffe9d6;
+      --button:#f97316;
+      --button-text:#1f2937;
+      --ring:rgba(249,115,22,.35);
       --header-gradient:linear-gradient(90deg,#ffedd5,#fecaca,#fde68a);
     }
+    /* 2) Peach */
     html[data-theme="peach"]{
-      --bg:#fff1f2; --text:#1f2937; --hint:#6b7280; --secondary:#ffe4e6;
-      --button:#fb7185; --button-text:#1f2937; --ring:rgba(251,113,133,.35);
-      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68a);
+      --bg:#fff1f2;
+      --text:#1f2937;
+      --hint:#6b7280;
+      --secondary:#ffe4e6;
+      --button:#fb7185;
+      --button-text:#1f2937;
+      --ring:rgba(251,113,133,.35);
+      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68а);
     }
+    /* 3) Sand */
     html[data-theme="sand"]{
-      --bg:#faf6f0; --text:#1f2937; --hint:#6b7280; --secondary:#f1ebe2;
-      --button:#d97706; --button-text:#111827; --ring:rgba(217,119,6,.35);
+      --bg:#faf6f0;
+      --text:#1f2937;
+      --hint:#6b7280;
+      --secondary:#f1ebe2;
+      --button:#d97706;
+      --button-text:#111827;
+      --ring:rgba(217,119,6,.35);
       --header-gradient:linear-gradient(90deg,#f5eede,#f1ebe2,#fde68a);
     }
+    /* 4) Coral */
     html[data-theme="coral"]{
-      --bg:#fff5f0; --text:#1f2937; --hint:#6b7280; --secondary:#ffe8e0;
-      --button:#f43f5e; --button-text:#fff; --ring:rgba(244,63,94,.35);
+      --bg:#fff5f0;
+      --text:#1f2937;
+      --hint:#6b7280;
+      --secondary:#ffe8e0;
+      --button:#f43f5e;
+      --button-text:#fff;
+      --ring:rgba(244,63,94,.35);
       --header-gradient:linear-gradient(90deg,#ffd1c7,#ffe0d5,#fff0e5);
     }
+    /* 5) Plum */
     html[data-theme="plum"]{
-      --bg:#f9f5ff; --text:#1f2937; --hint:#6b7280; --secondary:#f3e8ff;
-      --button:#a855f7; --button-text:#fff; --ring:rgba(168,85,247,.35);
+      --bg:#f9f5ff;
+      --text:#1f2937;
+      --hint:#6b7280;
+      --secondary:#f3e8ff;
+      --button:#a855f7;
+      --button-text:#fff;
+      --ring:rgba(168,85,247,.35);
       --header-gradient:linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6);
     }
+    /* 6) OLIVE (новая градиентовая тема) */
     html[data-theme="olive"]{
-      --bg:#f5f7f2; --text:#1f2937; --hint:#6b7280; --secondary:#e8efe1;
-      --button:#7da453; --button-text:#111827; --ring:rgba(125,164,83,.35);
+      --bg:#f5f7f2;
+      --text:#1f2937;
+      --hint:#6b7280;
+      --secondary:#e8efe1;
+      --button:#7da453;
+      --button-text:#111827;
+      --ring:rgba(125,164,83,.35);
       --header-gradient:linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6);
     }
 
@@ -61,7 +108,8 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      background:var(--bg); color:var(--text);
+      background:var(--bg);
+      color:var(--text);
       transition:background-color .25s,color .25s;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Inter',system-ui,sans-serif
     }
@@ -100,28 +148,44 @@
     .pin-chip{background:var(--secondary); border:1px solid var(--secondary)}
     .pin-chip.dragging{opacity:.5}
 
-    /* === Premium shimmer === */
-    .shimmer{
-      background: linear-gradient(90deg,#C6A240,#F4E28A,#C6A240);
-      background-size: 200% 100%;
-      -webkit-background-clip: text; background-clip: text;
-      color: transparent;
-      animation: shine 2.5s linear infinite;
-      font-weight: 800;
-      letter-spacing:.3px;
+    /* === BADGE "Подписка | ..." и Premium с короной === */
+    .badge-subscription{
+      display:inline-flex;align-items:center;gap:.4rem;
+      font-size:.75rem;line-height:1rem;
+      border-radius:999px;border:1px solid var(--secondary);
+      padding:.25rem .6rem;background:var(--secondary);user-select:none;cursor:default;
     }
-    @keyframes shine{
-      0%{background-position:0% 50%} 100%{background-position:200% 50%}
+    .badge-subscription .sep{opacity:.5}
+    .premium-glow{
+      font-weight:700;letter-spacing:.02em;
+      background: var(--premium-grad);
+      -webkit-background-clip:text;background-clip:text;
+      color:transparent;
+      animation: premiumShimmer 2.5s linear infinite;
+      white-space:nowrap;
+    }
+    html[data-theme="dark"] .premium-glow{
+      background: var(--premium-grad-dark);
+    }
+    @keyframes premiumShimmer{
+      0%{ background-position:0% 50%; }
+      100%{ background-position:200% 50%; }
     }
 
-    /* Toast */
+    /* === TOAST (долгое нажатие по бейджу) === */
     .toast{
-      position: fixed; left:50%; transform:translateX(-50%);
-      bottom: 24px; max-width: 92vw;
-      background: var(--bg); border:1px solid var(--secondary);
-      box-shadow: 0 10px 30px rgba(0,0,0,.14);
-      padding: 10px 14px; border-radius: 12px; z-index: 60; font-size: 14px;
+      position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+      background:var(--bg);color:var(--text);
+      border:1px solid var(--secondary);box-shadow:0 10px 30px rgb(0 0 0 / .18);
+      padding:.75rem .9rem;border-radius:.75rem;z-index:60;max-width:92vw
     }
+    .toast .toast-title{font-weight:600;margin-bottom:.25rem}
+    .toast .toast-sub{font-size:.8rem;color:var(--hint)}
+
+    /* Покупка: radio-карточки */
+    .plan-card{border:1px solid var(--secondary);border-radius:.75rem;padding:.75rem;display:flex;align-items:center;gap:.65rem;background:var(--secondary)}
+    .plan-card input{accent-color:var(--button)}
+
   </style>
 </head>
 <body class="min-h-screen">
@@ -144,7 +208,7 @@
               </button>
             </div>
 
-            <!-- Профиль -->
+            <!-- Профиль (автовход Telegram) -->
             <div id="profile-box" class="p-4 border-b border-secondary flex items-center gap-3">
               <div id="profile-avatar" class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold">?</div>
               <div class="min-w-0">
@@ -153,24 +217,19 @@
               </div>
             </div>
 
-            <div class="p-3 space-y-1" id="menu-buttons">
+            <div class="p-3 space-y-1">
               <button id="btn-settings" class="w-full text-left px-4 py-2 rounded-lg hover:bg-secondary">
                 <i class="fas fa-gear mr-2"></i>Настройки
               </button>
-              <!-- будет добавлена кнопка Премиум -->
-              <!-- только для админа добавим кнопку Админ-панель -->
+
+              <!-- Кнопка «Премиум» добавляется ниже скриптом (injectPremiumButton) -->
+              <!-- Кнопка «Админ панель» добавится только администратору (injectAdminButtonIfNeeded) -->
             </div>
           </aside>
         </div>
         <h1 class="text-xl font-semibold">Планировщик задач</h1>
-
-        <!-- Бейдж подписки -->
-        <div id="sub-badge" class="ml-3 select-none text-sm px-2 py-1 rounded-lg border border-secondary bg-secondary cursor-default"
-             title="Длинное нажатие — показать статус">
-          Подписка | <span id="sub-label">Базовая</span>
-        </div>
+        <!-- Бейдж подписки будет вставлен скриптом сразу после h1 -->
       </div>
-
       <div class="flex items-center gap-2">
         <button id="search-button" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Поиск">
           <i class="fas fa-search"></i>
@@ -221,7 +280,9 @@
         <div class="text-sm text-hint">Закреплённые проекты</div>
         <div class="text-xs text-hint">Перетаскивайте для изменения порядка</div>
       </div>
-      <div id="pinned-strip" class="flex gap-2 overflow-x-auto pb-1"></div>
+      <div id="pinned-strip" class="flex gap-2 overflow-x-auto pb-1">
+        <!-- Chips генерируются JS -->
+      </div>
     </div>
 
     <!-- List View -->
@@ -338,7 +399,9 @@
           </button>
         </div>
         <div>
-          <button id="today-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary">Сегодня</button>
+          <button id="today-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary">
+            Сегодня
+          </button>
         </div>
       </div>
       <div id="weekday-row" class="grid grid-cols-7 gap-1 mb-1"></div>
@@ -479,14 +542,16 @@
       <div class="p-4 space-y-6">
         <div>
           <div class="text-sm font-medium mb-2">Тема оформления</div>
-          <div id="theme-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+          <div id="theme-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <!-- Карточки тем генерируются JS -->
+          </div>
         </div>
-
-        <!-- Премиум-блок -->
+        <!-- Админский раздел убран из настроек и доступен только в боковом меню у администратора -->
+        <div id="admin-slot" class="hidden"></div>
         <div id="premium-settings-block" class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
           <div class="flex items-center justify-between gap-2">
             <div>
-              <div class="text-sm font-medium">Статус премиума</div>
+              <div class="text-sm font-medium">Статус подписки</div>
               <div class="text-xs text-hint" id="premium-status-line">—</div>
             </div>
             <div class="flex gap-2">
@@ -494,8 +559,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Слот под админ-панель больше не нужен здесь -->
         <div class="text-xs text-hint">Тема сохраняется локально для вашего профиля и применяется ко всему приложению.</div>
       </div>
     </div>
@@ -583,16 +646,17 @@
     <button id="empty-state-add-task" class="px-4 py-2 rounded-lg btn-main">Добавить задачу</button>
   </div>
 </div>
-
 <script>
 (() => {
-  /* ========= Только Telegram WebApp ========= */
+  /* ========= ЗАПРЕТ ОТКРЫТИЯ В БРАУЗЕРЕ (только Telegram WebApp) ========= */
   (function enforceTelegramOnly(){
     const isTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
     const platform = Telegram?.WebApp?.platform || '';
     if (!isTg || platform === '') {
       const gate = document.createElement('div');
-      gate.style.position = 'fixed'; gate.style.inset = '0'; gate.style.zIndex = '9999';
+      gate.style.position = 'fixed';
+      gate.style.inset = '0';
+      gate.style.zIndex = '9999';
       gate.style.background = 'var(--bg)';
       gate.innerHTML = `
         <div class="h-full w-full flex items-center justify-center p-6 text-center">
@@ -611,18 +675,36 @@
     }
   })();
 
+  /* ========= TELEGRAM AUTOLOGIN / ПРОФИЛЬ / КЛЮЧИ ХРАНИЛИЩА ========= */
   const tg = window.Telegram?.WebApp;
   const tgUser = tg?.initDataUnsafe?.user || null;
-  try{ tg?.ready(); tg?.expand?.(); tg?.MainButton?.hide?.(); }catch(_){}
 
-  /* ========= Ключи localStorage ========= */
+  // Авто-инициализация Telegram WebApp
+  try {
+    tg?.ready();
+    tg?.expand?.();
+    tg?.MainButton?.hide?.();
+  } catch(_) {}
+
+  // Персональные ключи localStorage (привязка к Telegram ID)
   const LS_THEME_BASE = 'tp_theme_v2';
   const LS_DATA_BASE  = 'tp_data_default';
   const userSuffix    = tgUser?.id ? `tg_${tgUser.id}` : 'guest';
   const LS_THEME      = `${LS_THEME_BASE}_${userSuffix}`;
   const LS_DATA       = `${LS_DATA_BASE}_${userSuffix}`;
 
-  // Миграция
+  // ==== PREMIUM/ADMIN: Константы ====
+  const ADMIN_TG_ID = 1288379477; // твой Telegram ID (админ всегда premium)
+  const PREMIUM_SECRET = 'tp$S3cr3t@v1'; // подпись промокодов
+  const PREMIUM_LS_KEY = tgUser?.id ? `tp_premium_${tgUser.id}` : null;
+
+  // Объект статуса подписки (упрощён: без пробного периода и счётчиков дней)
+  const premium = {
+    tier: 'free',        // 'free' | 'premium'
+    expiresAt: null      // 'YYYY-MM-DD' если premium
+  };
+
+  // Мягкая миграция старых общих данных в профильные (если есть TG-пользователь)
   if (tgUser?.id) {
     try {
       if (!localStorage.getItem(LS_DATA) && localStorage.getItem(LS_DATA_BASE)) {
@@ -634,7 +716,8 @@
     } catch(e) { console.warn('migrate error', e); }
   }
 
-  /* ========= Профиль в меню ========= */
+  // Обновление UI профиля в боковом меню
+  const profileBox = document.getElementById('profile-box');
   const avatarEl   = document.getElementById('profile-avatar');
   const nameEl     = document.getElementById('profile-name');
   const usernameEl = document.getElementById('profile-username');
@@ -659,7 +742,7 @@
     usernameEl.textContent = 'autologin: off';
   }
 
-  /* ========= ТЕМЫ ========= */
+  /* ========= КОНСТАНТЫ / ТЕМЫ ========= */
   const THEMES = [
     { id:'light',  name:'Светлая',  grad:'linear-gradient(90deg,#ffffff,#f9fafb)' },
     { id:'dark',   name:'Тёмная',   grad:'linear-gradient(90deg,#0f1115,#171a21)' },
@@ -674,200 +757,116 @@
   const el  = (sel) => document.querySelector(sel);
   const els = (sel) => document.querySelectorAll(sel);
 
-  /* ========= Премиум / Подписка ========= */
-  const ADMIN_TG_ID = 1288379477; // ваш Telegram ID
-  const PREMIUM_LS_KEY = tgUser?.id ? `tp_premium_${tgUser.id}` : null;
-  const ADMIN_USERNAME = 'D_a_n_Vi'; // куда вести на оплату
+  /* ========= СОСТОЯНИЕ ========= */
+  const state = {
+    projects: [
+      { id:'work',     name:'Работа',   color:'#3b82f6' },
+      { id:'personal', name:'Личное',   color:'#10b981' },
+      { id:'team',     name:'Команда',  color:'#8b5cf6' }
+    ],
+    pinned: ['work','personal','team'], // до 6
+    tasks: [
+      { id: uid(), title:'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], subtasksDone:[false,false], completed:false, createdAt: nowISO() },
+      { id: uid(), title:'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], subtasksDone:[], completed:false, createdAt: nowISO() },
+      { id: uid(), title:'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], subtasksDone:[false], completed:false, createdAt: nowISO() },
+      { id: uid(), title:'Настроить CI/CD', priority:'high', status:'done', project:'team', dueDate: todayISO(-3), description:'GitHub Actions', tags:['DevOps'], subtasks:[], subtasksDone:[], completed:true, completedAt: todayISO(-2)+'T10:00:00Z', createdAt: nowISO() },
+    ],
+    view:'list',
+    search:'',
+    filters:{ due:'all', priority:'all', status:'all' },
+    sort:'due-asc',
+    currentMonth:new Date(),
+    selectedTaskId:null
+  };
 
-  const premium = { tier:'free', expiresAt:null }; // 'free'|'premium'
+  /* ========= ПРИМЕНЕНИЕ ТЕМЫ (ПРОФИЛЬНОЕ ХРАНЕНИЕ) ========= */
+  const savedTheme = localStorage.getItem(LS_THEME) || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
 
-  function isAdmin(){ return String(tgUser?.id) === String(ADMIN_TG_ID); }
+  function setTheme(id){
+    document.documentElement.setAttribute('data-theme', id);
+    localStorage.setItem(LS_THEME, id);
+  }
+
+  /* ========= ПОДПИСКА (без пробников) ========= */
+  function fmtISOdate(iso){ if(!iso) return ''; try{ const d=new Date(iso); return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(_){return iso?.slice(0,10)||'';} }
+  function isPremiumActive(){ return premium.tier==='premium'; }
+
+  function reflectPremiumUI(){
+    let badge = document.getElementById('premium-badge');
+    if (!badge) {
+      badge = document.createElement('button');
+      badge.id = 'premium-badge';
+      badge.type = 'button';
+      badge.className = 'badge-subscription ring-focus';
+      document.querySelector('h1').after(badge);
+      // Долгое нажатие — показать тост со статусом
+      attachLongPress(badge, 600, showPremiumToast);
+    }
+    if (isPremiumActive()){
+      badge.innerHTML = `<span class="sep">Подписка</span> <i class="fas fa-crown"></i> <span class="premium-glow">Premium</span>`;
+      badge.title = 'Ваша подписка активна';
+    } else {
+      badge.innerHTML = `<span class="sep">Подписка</span> <span>Базовая</span>`;
+      badge.title = 'Базовая версия';
+    }
+  }
+
+  function showToast(html){
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = html;
+    document.body.appendChild(t);
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; t.style.transition='opacity .3s, transform .3s'; }, 2200);
+    setTimeout(()=> t.remove(), 2700);
+  }
+  function showPremiumToast(){
+    if (isPremiumActive()){
+      const until = premium.expiresAt ? `<div class="toast-sub">Активна до: ${fmtISOdate(premium.expiresAt)}</div>` : '';
+      showToast(`<div class="toast-title">Ваш статус: Премиум подписка</div>${until}`);
+    } else {
+      showToast(`<div class="toast-title">Ваш статус: Базовая подписка</div><div class="toast-sub">Оформите Premium в разделе «Премиум»</div>`);
+    }
+  }
+  function attachLongPress(el, ms, cb){
+    let t=null, start=0;
+    const startPress = ()=>{ start=Date.now(); t=setTimeout(()=>cb?.(), ms); };
+    const cancel = ()=>{ if(t){ clearTimeout(t); t=null; } };
+    el.addEventListener('mousedown', startPress);
+    el.addEventListener('touchstart', startPress, {passive:true});
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=> el.addEventListener(ev, cancel));
+    // Клик обычный — открывать модалку управления подпиской
+    el.addEventListener('click', ()=> openPremiumModal());
+  }
 
   function fetchPremiumStatus(){
-    // Админ всегда премиум без ограничений
-    if (isAdmin()){
+    // Админ всегда premium
+    if (String(tgUser?.id) === String(ADMIN_TG_ID)){
       premium.tier = 'premium';
-      premium.expiresAt = '2099-12-31';
-      reflectSubscriptionBadge();
-      updatePremiumStatusLine();
+      premium.expiresAt = '2099-12-31T00:00:00.000Z';
+      reflectPremiumUI();
       return;
     }
+
     premium.tier = 'free';
     premium.expiresAt = null;
 
-    if (!PREMIUM_LS_KEY){ reflectSubscriptionBadge(); updatePremiumStatusLine(); return; }
+    if (!PREMIUM_LS_KEY){ reflectPremiumUI(); return; }
     const rec = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY) || '{}');
-    const now = new Date();
-    if (rec.end_ts && new Date(rec.end_ts) > now){
+
+    // Только платная подписка (никаких пробных режимов)
+    const end = rec?.end_ts ? new Date(rec.end_ts) : null;
+    if (end && end > new Date()){
       premium.tier = 'premium';
-      premium.expiresAt = new Date(rec.end_ts).toISOString().slice(0,10);
-    }
-    reflectSubscriptionBadge();
-    updatePremiumStatusLine();
-  }
-
-  // Бейдж «Подписка | ...» + long-press toast
-  const subBadge = document.getElementById('sub-badge');
-  const subLabel = document.getElementById('sub-label');
-  function reflectSubscriptionBadge(){
-    if (premium.tier==='premium'){
-      subBadge.classList.remove('bg-secondary','border-secondary');
-      subBadge.classList.add('bg-yellow-50');
-      subLabel.innerHTML = `<i class="fas fa-crown mr-1"></i><span class="shimmer">Premium</span>`;
+      premium.expiresAt = end.toISOString();
     } else {
-      subBadge.classList.add('bg-secondary','border-secondary');
-      subLabel.textContent = 'Базовая';
+      premium.tier = 'free';
+      premium.expiresAt = null;
     }
+    reflectPremiumUI();
   }
 
-  // Long press (600ms) для показа статуса
-  (function initLongPress(){
-    let tId=null, down=false;
-    const show = ()=>{
-      const wrap = document.createElement('div');
-      wrap.className='toast';
-      const status = (premium.tier==='premium')
-        ? `Ваш статус: Премиум подписка<br><span class="text-hint">Активна до: ${premium.expiresAt || '—'}</span>`
-        : `Ваш статус: Базовая подписка`;
-      wrap.innerHTML = status;
-      document.body.appendChild(wrap);
-      setTimeout(()=> wrap.remove(), 2500);
-    };
-    const start = ()=>{ down=true; tId=setTimeout(()=>{ if(down) show(); }, 600); };
-    const end   = ()=>{ down=false; if(tId){ clearTimeout(tId); tId=null; } };
-    subBadge.addEventListener('mousedown', start);
-    subBadge.addEventListener('touchstart', start, {passive:true});
-    ['mouseup','mouseleave','touchend','touchcancel'].forEach(evt=> subBadge.addEventListener(evt, end));
-  })();
-
-  // Строка в Настройках
-  function updatePremiumStatusLine(){
-    const line = document.getElementById('premium-status-line');
-    if (!line) return;
-    line.textContent = (premium.tier==='premium')
-      ? `Premium${premium.expiresAt?` • до ${premium.expiresAt}`:''}`
-      : 'Базовая';
-  }
-
-  // Покупка — компактное меню выбора срока и переход в ЛС к админу с готовым текстом
-  function openPurchaseMenu(){
-    const id = 'buy-menu';
-    document.getElementById(id)?.remove();
-    const wrap = document.createElement('div');
-    wrap.id=id;
-    wrap.className='fixed inset-0 z-50';
-    wrap.innerHTML = `
-      <div class="absolute inset-0 bg-black/50"></div>
-      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-semibold">Оформить подписку</h3>
-          <button class="p-2 rounded-full hover:bg-secondary" id="buy-close"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="space-y-2">
-          <label class="block text-sm">Срок подписки</label>
-          <div class="grid grid-cols-3 gap-2">
-            <label class="flex items-center gap-2 px-3 py-2 border border-secondary rounded-lg cursor-pointer">
-              <input type="radio" name="plan" value="1" checked>
-              <span>1 месяц</span>
-            </label>
-            <label class="flex items-center gap-2 px-3 py-2 border border-secondary rounded-lg cursor-pointer">
-              <input type="radio" name="plan" value="3">
-              <span>3 месяца</span>
-            </label>
-            <label class="flex items-center gap-2 px-3 py-2 border border-secondary rounded-lg cursor-pointer">
-              <input type="radio" name="plan" value="6">
-              <span>6 месяцев</span>
-            </label>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button id="buy-send" class="px-4 py-2 rounded-lg btn-main flex-1">Отправить</button>
-        </div>
-        <div class="text-xs text-hint">Будет открыт чат с администратором и подставлено сообщение с выбранным сроком.</div>
-      </div>
-    `;
-    document.body.appendChild(wrap);
-    wrap.querySelector('#buy-close').addEventListener('click', ()=> wrap.remove());
-    wrap.querySelector('#buy-send').addEventListener('click', ()=>{
-      const val = (document.querySelector('input[name="plan"]:checked')?.value || '1');
-      const text = `Добрый день, хотел бы приобрести подписку на ${val==='1'?'1 месяц': val==='3'?'3 месяца':'6 месяцев'}.`;
-      const url = `https://t.me/${ADMIN_USERNAME}?text=${encodeURIComponent(text)}`;
-      try { tg?.openTelegramLink(url); } catch(_){ window.open(url, '_blank'); }
-      wrap.remove();
-    });
-  }
-
-  /* ========= Меню: кнопки Премиум и Админ-панель ========= */
-  (function injectMenuButtons(){
-    const container = document.getElementById('menu-buttons');
-    // Премиум
-    const btnPrem = document.createElement('button');
-    btnPrem.id='btn-premium';
-    btnPrem.className='w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
-    btnPrem.innerHTML = `<i class="fas fa-crown mr-2"></i>Премиум`;
-    btnPrem.addEventListener('click', openPremiumModal);
-    container.appendChild(btnPrem);
-
-    // Админ-панель — только для админа
-    if (isAdmin()){
-      const btnAdmin = document.createElement('button');
-      btnAdmin.id='btn-admin';
-      btnAdmin.className='w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
-      btnAdmin.innerHTML = `<i class="fas fa-user-shield mr-2"></i>Админ-панель`;
-      btnAdmin.addEventListener('click', openAdminPanel);
-      container.appendChild(btnAdmin);
-    }
-  })();
-
-  /* ========= Premium Modal (упрощённый) ========= */
-  function openPremiumModal(){
-    const id = 'premium-modal';
-    document.getElementById(id)?.remove();
-    const modal = document.createElement('div');
-    modal.id=id; modal.className='fixed inset-0 z-50';
-    modal.innerHTML = `
-      <div class="absolute inset-0 bg-black/50"></div>
-      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-semibold">Премиум</h3>
-          <button id="prem-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
-          <div class="text-sm">Статус: <b>${premium.tier==='premium' ? ('Активна' + (premium.expiresAt? ' до '+premium.expiresAt : '')) : 'Базовая'}</b></div>
-        </div>
-
-        <div class="space-y-2">
-          <div class="text-sm font-medium">Оформить подписку</div>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="btn-buy" class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary">Купить</button>
-            <a href="https://t.me/${ADMIN_USERNAME}" target="_blank" class="px-3 py-2 rounded-lg btn-main text-center">Связаться</a>
-          </div>
-          <div class="text-xs text-hint">После оплаты доступ активируется админом/промокодом.</div>
-        </div>
-
-        <div class="space-y-2">
-          <div class="text-sm font-medium">У меня есть промокод</div>
-          <div class="flex gap-2">
-            <input id="promo-input" class="flex-1 px-3 py-2 rounded-lg bg-secondary ring-focus" placeholder="TP1.xxxxx.yyyyy"/>
-            <button id="btn-redeem" class="px-3 py-2 rounded-lg btn-main">Активировать</button>
-          </div>
-        </div>
-
-        <div class="text-xs text-hint">Подписка привязана к вашему Telegram ID: <b>${tgUser?.id ?? '—'}</b></div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-    modal.querySelector('#prem-close').addEventListener('click', ()=> modal.remove());
-    modal.querySelector('#btn-buy').addEventListener('click', openPurchaseMenu);
-    modal.querySelector('#btn-redeem').addEventListener('click', ()=>{
-      const code = modal.querySelector('#promo-input').value.trim();
-      redeemPromo(code);
-      modal.remove();
-    });
-  }
-
-  /* ========= Промокоды (остались, но без «триала») ========= */
-  const PREMIUM_SECRET = 'tp$S3cr3t@v1';
+  // Простая "подпись" промокода (FNV-1a 32-bit)
   function hashFn(str){
     let h = 0x811c9dc5;
     for (let i=0;i<str.length;i++){
@@ -877,9 +876,10 @@
     return ('0000000' + (h>>>0).toString(16)).slice(-8);
   }
   function b64u(str){ return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
-  function b64uDec(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return atob(s); }
+  function b64uDec(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return atob(s); }
 
-  // payload: { tgId, plan:"M1"|"M3"|"M6", durDays:number, iat:number, expISO:string }
+  // Формат кода: TP1.{b64u(JSON payload)}.{sig}
+  // payload: { tgId, plan:"M1"|"M3"|"M6", iat:number, durDays:number, expISO:string }
   function signPayload(obj){
     const payload = JSON.stringify(obj);
     const sig = hashFn(PREMIUM_SECRET + '|' + payload + '|v1');
@@ -894,16 +894,19 @@
       const sig = parts[2];
       const ok = hashFn(PREMIUM_SECRET + '|' + payloadStr + '|v1') === sig;
       if (!ok) return null;
-      return JSON.parse(payloadStr);
+      const obj = JSON.parse(payloadStr);
+      return obj;
     }catch(e){ return null; }
   }
+
   function redeemPromo(code){
     const data = verifyAndParse(code);
     if (!data){ alert('Неверный промокод'); return; }
     if (!tgUser?.id){ alert('Нужен вход через Telegram'); return; }
     if (String(data.tgId) !== String(tgUser.id)){ alert('Этот промокод выдан для другого аккаунта'); return; }
 
-    const days = data.durDays || (data.plan==='M6'? 183 : data.plan==='M3'? 92 : 31);
+    const PLAN_DAYS = { M1:31, M3:92, M6:183 };
+    const days = data.durDays || PLAN_DAYS[data.plan] || 31;
     const now = new Date();
     const store = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY) || '{}');
 
@@ -921,159 +924,305 @@
     alert('Премиум активирован!');
   }
 
-  /* ========= Админ-панель (только у админа в боковом меню) ========= */
-  function openAdminPanel(){
-    if (!isAdmin()) return;
-    const id='admin-modal';
-    document.getElementById(id)?.remove();
-    const modal = document.createElement('div');
-    modal.id=id; modal.className='fixed inset-0 z-50';
+  /* ========= МОДАЛКА ПРЕМИУМА ========= */
+  function openPremiumModal(){
+    const id = 'premium-modal';
+    let modal = document.getElementById(id);
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'fixed inset-0 z-50';
+    const statusText = isPremiumActive()
+      ? (premium.expiresAt ? `Premium активна до ${fmtISOdate(premium.expiresAt)}` : 'Premium активна')
+      : 'Базовая подписка';
+
     modal.innerHTML = `
       <div class="absolute inset-0 bg-black/50"></div>
       <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-semibold">Админ-панель</h3>
+          <h3 class="text-lg font-semibold"><i class="fas fa-crown mr-2"></i>Премиум</h3>
+          <button id="prem-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
+          <div class="text-sm">Статус: <b>${statusText}</b></div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium">Оформить подписку</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-buy" class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary">Купить</button>
+            <a href="https://t.me/D_a_n_Vi" target="_blank" class="px-3 py-2 rounded-lg btn-main text-center">Связаться с владельцем</a>
+          </div>
+          <div class="text-xs text-hint">После оплаты вы получите промокод для активации.</div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium">У меня есть промокод</div>
+          <div class="flex gap-2">
+            <input id="promo-input" class="flex-1 px-3 py-2 rounded-lg bg-secondary ring-focus" placeholder="TP1.xxxxx.yyyyy"/>
+            <button id="btn-redeem" class="px-3 py-2 rounded-lg btn-main">Активировать</button>
+          </div>
+        </div>
+
+        <div class="text-xs text-hint">
+          Подписка привязана к вашему Telegram ID: <b>${tgUser?.id ?? '—'}</b>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('#prem-close').addEventListener('click', ()=> modal.remove());
+    modal.querySelector('#btn-redeem').addEventListener('click', ()=>{
+      const code = modal.querySelector('#promo-input').value.trim();
+      redeemPromo(code);
+      modal.remove();
+    });
+    modal.querySelector('#btn-buy').addEventListener('click', ()=>{
+      modal.remove();
+      openPurchaseMenu();
+    });
+  }
+
+  /* ========= МЕНЮ ПОКУПКИ (1 / 3 / 6 месяцев) ========= */
+  function openPurchaseMenu(){
+    const id = 'purchase-modal';
+    let m = document.getElementById(id);
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = id;
+    m.className = 'fixed inset-0 z-50';
+    m.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold"><i class="fas fa-crown mr-2"></i>Оформить подписку</h3>
+          <button id="pur-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="space-y-2">
+          <label class="plan-card">
+            <input type="radio" name="plan" value="1 месяц" checked>
+            <div>
+              <div class="font-medium">1 месяц</div>
+              <div class="text-xs text-hint">Стандартный период</div>
+            </div>
+          </label>
+          <label class="plan-card">
+            <input type="radio" name="plan" value="3 месяца">
+            <div>
+              <div class="font-medium">3 месяца</div>
+              <div class="text-xs text-hint">Выгодно при оплате за квартал</div>
+            </div>
+          </label>
+          <label class="plan-card">
+            <input type="radio" name="plan" value="6 месяцев">
+            <div>
+              <div class="font-medium">6 месяцев</div>
+              <div class="text-xs text-hint">Максимальная экономия</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="pur-send" class="px-4 py-2 rounded-lg btn-main flex-1">Отправить</button>
+          <button id="pur-cancel" class="px-4 py-2 rounded-lg border border-secondary hover:bg-secondary">Отмена</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    const close = ()=> m.remove();
+    m.querySelector('#pur-close').addEventListener('click', close);
+    m.querySelector('#pur-cancel').addEventListener('click', close);
+    m.querySelector('#pur-send').addEventListener('click', ()=>{
+      const val = m.querySelector('input[name="plan"]:checked')?.value || '1 месяц';
+      openChatWithAdmin(val);
+      close();
+    });
+  }
+
+  function openChatWithAdmin(periodLabel){
+    // Текст сообщения строго по ТЗ
+    const msg = `добрый день хотел бы приобрести подписку на ${periodLabel}`; // без точки
+    const url = `https://t.me/D_a_n_Vi?text=${encodeURIComponent(msg)}`;
+    if (tg?.openTelegramLink){ tg.openTelegramLink(url); }
+    else if (tg?.openLink){ tg.openLink(url, { try_instant_view: false }); }
+    else { window.open(url, '_blank'); }
+  }
+
+  /* ========= КНОПКА «Премиум» в боковом меню ========= */
+  (function injectPremiumButton(){
+    const sideMenu = document.getElementById('side-menu');
+    const existing = sideMenu?.querySelector('#btn-premium');
+    if (!existing && sideMenu){
+      const wrap = sideMenu.querySelector('.p-3.space-y-1');
+      if (wrap){
+        const btn = document.createElement('button');
+        btn.id = 'btn-premium';
+        btn.className = 'w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
+        btn.innerHTML = `<i class="fas fa-crown mr-2"></i>Премиум`;
+        btn.addEventListener('click', openPremiumModal);
+        wrap.appendChild(btn);
+      }
+    }
+  })();
+
+  /* ========= КНОПКА «Админ панель» только для администратора (в боковом меню) ========= */
+  function isAdmin(){ return String(tgUser?.id) === String(ADMIN_TG_ID); }
+
+  function injectAdminButtonIfNeeded(){
+    if (!isAdmin()) return;
+    const sideMenu = document.getElementById('side-menu');
+    const wrap = sideMenu?.querySelector('.p-3.space-y-1');
+    if (!wrap) return;
+    if (wrap.querySelector('#btn-admin-panel')) return;
+    const btn = document.createElement('button');
+    btn.id = 'btn-admin-panel';
+    btn.className = 'w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
+    btn.innerHTML = `<i class="fas fa-user-shield mr-2"></i>Админ панель`;
+    btn.addEventListener('click', openAdminPanelModal);
+    wrap.appendChild(btn);
+  }
+  injectAdminButtonIfNeeded();
+
+  /* ========= ПАНЕЛЬ АДМИНА (генерация промокодов и ссылок) ========= */
+  function openAdminPanelModal(){
+    if (!isAdmin()){ alert('Доступ запрещён'); return; }
+    const id = 'admin-modal';
+    let m = document.getElementById(id);
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = id;
+    m.className = 'fixed inset-0 z-50';
+    m.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold"><i class="fas fa-user-shield mr-2"></i>Админ панель</h3>
           <button id="adm-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
         </div>
 
         <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)] space-y-3">
           <div class="text-sm font-medium">Генерация промокодов</div>
-          <div class="grid sm:grid-cols-3 gap-2">
+          <div class="grid sm:grid-cols-2 gap-2">
             <input id="promo-user-id" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary" placeholder="User Telegram ID"/>
             <select id="promo-plan" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary">
               <option value="M1">1 месяц</option>
               <option value="M3">3 месяца</option>
               <option value="M6">6 месяцев</option>
             </select>
+          </div>
+          <div class="flex gap-2">
             <button id="promo-generate" class="px-3 py-2 rounded-lg btn-main">Сгенерировать</button>
+            <button id="promo-refresh" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Обновить код</button>
           </div>
           <div>
             <label class="block text-xs text-hint mb-1">Сгенерированный промокод</label>
             <input id="promo-output" readonly class="w-full px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary"/>
+            <div class="text-xs text-hint mt-1">Код предназначен для конкретного Telegram ID — другой пользователь активировать не сможет.</div>
           </div>
         </div>
 
         <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)] space-y-3">
-          <div class="text-sm font-medium">Генерация ссылки-приглашения</div>
+          <div class="text-sm font-medium">Генерация ссылки в личный чат</div>
           <div class="grid sm:grid-cols-2 gap-2">
-            <input id="inv-title" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary" placeholder="Название (необязательно)"/>
-            <select id="inv-default-plan" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary">
-              <option value="M1">1 мес</option>
-              <option value="M3">3 мес</option>
-              <option value="M6">6 мес</option>
+            <select id="chat-plan" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary">
+              <option value="1 месяц">1 месяц</option>
+              <option value="3 месяца">3 месяца</option>
+              <option value="6 месяцев">6 месяцев</option>
             </select>
+            <input id="chat-link" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary" placeholder="Ссылка будет здесь" readonly/>
           </div>
           <div class="flex gap-2">
-            <button id="inv-generate" class="px-3 py-2 rounded-lg btn-main">Сгенерировать ссылку</button>
-          </div>
-          <div>
-            <label class="block text-xs text-hint mb-1">Ссылка</label>
-            <input id="inv-output" readonly class="w-full px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary"/>
-            <div class="text-xs text-hint mt-1">Ссылка содержит base64-параметр с планом и меткой.</div>
+            <button id="chat-build" class="px-3 py-2 rounded-lg btn-main">Сформировать ссылку</button>
+            <button id="chat-open" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Открыть чат</button>
           </div>
         </div>
+
       </div>
     `;
-    document.body.appendChild(modal);
-    modal.querySelector('#adm-close').addEventListener('click', ()=> modal.remove());
+    document.body.appendChild(m);
+    const close = ()=> m.remove();
+    m.querySelector('#adm-close').addEventListener('click', close);
 
-    // Промокоды
-    const uidInput = modal.querySelector('#promo-user-id');
-    const planSel  = modal.querySelector('#promo-plan');
-    const out      = modal.querySelector('#promo-output');
+    const uidInput = m.querySelector('#promo-user-id');
+    const planSel  = m.querySelector('#promo-plan');
+    const out      = m.querySelector('#promo-output');
+
     if (!uidInput.value && tgUser?.id) uidInput.value = String(tgUser.id);
-    modal.querySelector('#promo-generate').addEventListener('click', ()=>{
+
+    function doGen(){
       const targetId = uidInput.value.trim();
-      if (!/^\d+$/.test(targetId)) { alert('Укажите корректный Telegram ID'); return; }
       const plan = planSel.value;
-      const days = plan==='M6'?183: plan==='M3'?92:31;
+      if (!/^\d+$/.test(targetId)) { alert('Укажите корректный Telegram ID'); return; }
+      const PLAN_DAYS = { M1:31, M3:92, M6:183 };
+      const days = PLAN_DAYS[plan] || 31;
       const payload = {
-        tgId:Number(targetId), plan, durDays:days,
-        iat:Date.now(), expISO:new Date(Date.now()+days*86400000).toISOString()
+        tgId: Number(targetId),
+        plan,
+        durDays: days,
+        iat: Date.now(),
+        expISO: new Date(Date.now() + days*24*60*60*1000).toISOString()
       };
       const code = signPayload(payload);
-      out.value = code; navigator.clipboard?.writeText(code).catch(()=>{});
-    });
-
-    // Ссылка-приглашение
-    modal.querySelector('#inv-generate').addEventListener('click', ()=>{
-      const title = (modal.querySelector('#inv-title').value||'').trim();
-      const plan  = modal.querySelector('#inv-default-plan').value;
-      const payload = b64u(JSON.stringify({ plan, title, iat:Date.now() }));
-      const link = `${location.origin}${location.pathname}?invite=${payload}`;
-      const field = modal.querySelector('#inv-output');
-      field.value = link; navigator.clipboard?.writeText(link).catch(()=>{});
-    });
-  }
-
-  /* ========= Тема (с блокировкой премиум-тем без статуса) ========= */
-  const savedTheme = localStorage.getItem(LS_THEME) || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  function _setTheme(id){
-    document.documentElement.setAttribute('data-theme', id);
-    localStorage.setItem(LS_THEME, id);
-  }
-  function setTheme(id){
-    const isFree = (id==='light' || id==='dark');
-    if (!isFree && premium.tier!=='premium'){
-      openPremiumModal(); return;
+      out.value = code;
+      navigator.clipboard?.writeText(code).catch(()=>{});
     }
-    _setTheme(id);
-    buildThemeCards();
-  }
-  function buildThemeCards(){
-    const grid = document.getElementById('theme-grid');
-    grid.innerHTML='';
-    const current = document.documentElement.getAttribute('data-theme');
-    THEMES.forEach(t=>{
-      const isFree = (t.id==='light'||t.id==='dark');
-      const locked = !isFree && premium.tier!=='premium';
-      const card = document.createElement('button');
-      card.className = 'w-full text-left rounded-xl border border-secondary p-3 ring-focus ' + (locked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-secondary');
-      card.setAttribute('data-theme-id', t.id);
-      card.innerHTML = `
-        <div class="h-10 w-full rounded-md mb-2" style="background:${t.grad}"></div>
-        <div class="flex items-center justify-between">
-          <div class="font-medium">${t.name} ${locked ? '<span class="text-xs ml-2">🔒</span>' : ''}</div>
-          ${current===t.id ? '<i class="fas fa-check"></i>' : ''}
-        </div>
-      `;
-      card.addEventListener('click', ()=> setTheme(t.id));
-      grid.appendChild(card);
+    m.querySelector('#promo-generate').addEventListener('click', doGen);
+    m.querySelector('#promo-refresh').addEventListener('click', doGen);
+
+    // Генерация ссылки в личный чат
+    const chatPlanSel = m.querySelector('#chat-plan');
+    const chatLinkInp = m.querySelector('#chat-link');
+    function buildChatLink(){
+      const msg = `добрый день хотел бы приобрести подписку на ${chatPlanSel.value}`;
+      const url = `https://t.me/D_a_n_Vi?text=${encodeURIComponent(msg)}`;
+      chatLinkInp.value = url;
+      navigator.clipboard?.writeText(url).catch(()=>{});
+      showToast('<div class="toast-title">Ссылка скопирована</div><div class="toast-sub">Можно отправлять клиенту</div>');
+    }
+    m.querySelector('#chat-build').addEventListener('click', buildChatLink);
+    m.querySelector('#chat-open').addEventListener('click', ()=>{
+      if (!chatLinkInp.value) buildChatLink();
+      const url = chatLinkInp.value;
+      if (tg?.openTelegramLink){ tg.openTelegramLink(url); }
+      else if (tg?.openLink){ tg.openLink(url, { try_instant_view:false }); }
+      else { window.open(url, '_blank'); }
     });
   }
 
-  /* ========= Остальная логика приложения (проект/задачи/канбан/календарь) ========= */
+  /* ========= ИНИЦИАЛИЗАЦИЯ СТАТУСА ПОДПИСКИ ========= */
+  fetchPremiumStatus();
+
+  /* ========= ДАЛЕЕ — логика приложения (проекты, задачи, виды и т.д.) ========= */
+
   const sideMenu = document.getElementById('side-menu');
-  const menuBtnEl = document.getElementById('menu-button');
-  const closeMenuEl = document.getElementById('close-menu');
-  menuBtnEl.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
-  closeMenuEl.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
-  document.addEventListener('click', (e)=>{
-    if (!sideMenu.classList.contains('hidden')) {
-      const inside = sideMenu.contains(e.target) || menuBtnEl.contains(e.target);
-      if (!inside) sideMenu.classList.add('hidden');
-    }
-  });
+  const menuBtn = document.getElementById('menu-button');
+  const closeMenu = document.getElementById('close-menu');
 
   const statsBar = document.getElementById('stats-bar');
   const projectSelector = document.getElementById('project-selector');
   const addProjectButton = document.getElementById('add-project-button');
   const deleteProjectButton = document.getElementById('delete-project-button');
+
   const pinnedStrip = document.getElementById('pinned-strip');
+
   const searchButton = document.getElementById('search-button');
   const searchInput = document.getElementById('search-input');
   const quickAddInput = document.getElementById('quick-add-input');
+
   const filterButton = document.getElementById('filter-button');
   const filterPanel = document.getElementById('filter-panel');
   const filterDue = document.getElementById('filter-due');
   const filterPriority = document.getElementById('filter-priority');
   const filterStatus = document.getElementById('filter-status');
+
   const sortButton = document.getElementById('sort-button');
   const sortPanel = document.getElementById('sort-panel');
   const sortSelect = document.getElementById('sort-select');
+
   const listContainer = document.getElementById('list-container');
   const emptyState = document.getElementById('empty-state');
+
   const taskModal = document.getElementById('task-modal');
   const taskBackdrop = document.getElementById('task-backdrop');
   const taskModalTitle = document.getElementById('task-modal-title');
@@ -1081,6 +1230,7 @@
   const closeTaskModal = document.getElementById('close-task-modal');
   const cancelTask = document.getElementById('cancel-task');
   const saveTaskBtn = document.getElementById('save-task');
+
   const projectModal = document.getElementById('project-modal');
   const projectBackdrop = document.getElementById('project-backdrop');
   const closeProjectModal = document.getElementById('close-project-modal');
@@ -1089,23 +1239,26 @@
   const deleteProject = document.getElementById('delete-project');
   const projectNameInput = document.getElementById('project-name');
   const projectColorInput = document.getElementById('project-color');
+
   const settingsModal = document.getElementById('settings-modal');
   const settingsBackdrop = document.getElementById('settings-backdrop');
   const closeSettings = document.getElementById('close-settings');
   const themeGrid = document.getElementById('theme-grid');
+
   const commandPalette = document.getElementById('command-palette');
   const commandInput = document.getElementById('command-input');
   const commandOptions = document.querySelectorAll('.command-option');
+
   const prevMonth = document.getElementById('prev-month');
   const nextMonth = document.getElementById('next-month');
   const todayButton = document.getElementById('today-button');
   const monthTitle = document.getElementById('month-title');
   const weekdayRow = document.getElementById('weekday-row');
   const calendarGrid = document.getElementById('calendar-grid');
+
   const viewContents = document.querySelectorAll('.view-content');
   const viewSelectors = document.querySelectorAll('.view-selector');
-
-  /* ========= Утилиты ========= */
+    /* ========= УТИЛИТЫ ========= */
   function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
   function todayISO(shift=0){ const d=new Date(); d.setDate(d.getDate()+shift); return d.toISOString().slice(0,10); }
   function nowISO(){ return new Date().toISOString(); }
@@ -1113,54 +1266,17 @@
   function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
   function projectById(id){ return state.projects.find(p=>p.id===id) || null; }
   function projectName(id){ return (projectById(id)?.name) || 'Без проекта'; }
+  function priorityRu(p){ return ({low:'Низкий', medium:'Средний', high:'Высокий', critical:'Критичный'})[p] || p; }
+  function statusRu(s){ return ({'backlog':'Бэклог','in-progress':'В работе','review':'Проверка','done':'Готово'})[s] || s; }
   function hexToRgb(hex){ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||''); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:{r:59,g:130,b:246}; }
   function rgba(hex,a){ const {r,g,b}=hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
   function textColorForBg(hex){ const {r,g,b}=hexToRgb(hex); const yiq=(r*299+g*587+b*114)/1000; return yiq>=128?'#111827':'#f9fafb'; }
   function startOfWeek(d=new Date()){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-wd); return x; }
   function endOfWeek(d=new Date()){ const x=startOfWeek(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
+  function parseRussianWeekdayToken(tok){ const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 }; return map[tok] ?? null; }
+  function nextWeekdayISO(target){ const d=new Date(); const today=d.getDay(); let delta=(target-today+7)%7; if(delta===0) delta=7; d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); }
 
-  /* ========= Состояние ========= */
-  const state = {
-    projects: [
-      { id:'work',     name:'Работа',   color:'#3b82f6' },
-      { id:'personal', name:'Личное',   color:'#10b981' },
-      { id:'team',     name:'Команда',  color:'#8b5cf6' }
-    ],
-    pinned: ['work','personal','team'],
-    tasks: [
-      { id: uid(), title:'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], subtasksDone:[false,false], completed:false, createdAt: nowISO() },
-      { id: uid(), title:'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], subtasksDone:[], completed:false, createdAt: nowISO() },
-      { id: uid(), title:'Купить продукты', priority:'low', status:'backlog', project:'personal', dueDate:'', description:'Хлеб, молоко', tags:['Личное'], subtasks:['Список'], subtasksDone:[false], completed:false, createdAt: nowISO() },
-      { id: uid(), title:'Настроить CI/CD', priority:'high', status:'done', project:'team', dueDate: todayISO(-3), description:'GitHub Actions', tags:['DevOps'], subtasks:[], subtasksDone:[], completed:true, completedAt: todayISO(-2)+'T10:00:00Z', createdAt: nowISO() },
-    ],
-    view:'list',
-    search:'',
-    filters:{ due:'all', priority:'all', status:'all' },
-    sort:'due-asc',
-    currentMonth:new Date(),
-    selectedTaskId:null
-  };
-
-  /* ========= Тема ========= */
-  const savedTheme = localStorage.getItem(LS_THEME) || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-
-  /* ========= Настройки ========= */
-  const btnSettings = document.getElementById('btn-settings');
-  btnSettings?.addEventListener('click', ()=> {
-    settingsModal.classList.remove('hidden');
-    buildThemeCards();
-    updatePremiumStatusLine();
-  });
-  function closeSettingsModal(){ settingsModal.classList.add('hidden'); }
-  document.getElementById('close-settings').addEventListener('click', closeSettingsModal);
-  document.getElementById('settings-backdrop').addEventListener('click', closeSettingsModal);
-  document.getElementById('prem-manage').addEventListener('click', openPremiumModal);
-
-  /* ========= Premium init ========= */
-  fetchPremiumStatus();
-
-  /* ========= Загрузка/сохранение ========= */
+  /* ========= ХРАНИЛИЩЕ: ЗАГРУЗКА/СОХРАНЕНИЕ ========= */
   function load(){
     const raw = localStorage.getItem(LS_DATA);
     if(!raw) return;
@@ -1176,4 +1292,873 @@
           return t;
         });
       }
+    }catch(e){ console.warn('load error', e); }
+  }
+  function save(){
+    localStorage.setItem(LS_DATA, JSON.stringify({
+      projects: state.projects,
+      pinned: state.pinned,
+      tasks: state.tasks
+    }));
+    updateAppBadge();
+  }
+
+  /* ========= ИНИЦИАЛИЗАЦИЯ ========= */
+  load();
+  hydrateProjectSelector();
+  hydrateTaskProjectSelect();
+  renderPinnedStrip();
+  showView('list');
+  renderAll();
+  updateAppBadge();
+  buildThemeCards();
+  updatePremiumStatusInSettings();
+
+  /* ========= МЕНЮ ========= */
+  menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
+  closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
+  document.addEventListener('click', (e)=>{
+    if (!sideMenu.classList.contains('hidden')) {
+      const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
+      if (!inside) sideMenu.classList.add('hidden');
     }
+  });
+
+  /* ========= НАСТРОЙКИ ========= */
+  function openSettings(){
+    settingsModal.classList.remove('hidden');
+    buildThemeCards();
+    updatePremiumStatusInSettings();
+  }
+  function closeSettingsModal(){ settingsModal.classList.add('hidden'); }
+  closeSettings.addEventListener('click', closeSettingsModal);
+  settingsBackdrop.addEventListener('click', closeSettingsModal);
+
+  function buildThemeCards(){
+    themeGrid.innerHTML = '';
+    const current = document.documentElement.getAttribute('data-theme');
+    THEMES.forEach(t=>{
+      const card = document.createElement('button');
+      card.className = 'w-full text-left rounded-xl border border-secondary p-3 ring-focus hover:bg-secondary';
+      card.setAttribute('data-theme-id', t.id);
+      card.innerHTML = `
+        <div class="h-10 w-full rounded-md mb-2" style="background:${t.grad}"></div>
+        <div class="flex items-center justify-between">
+          <div class="font-medium">${t.name}</div>
+          ${current===t.id ? '<i class="fas fa-check"></i>' : ''}
+        </div>
+      `;
+      card.addEventListener('click', ()=>{
+        setTheme(t.id);
+        buildThemeCards();
+      });
+      themeGrid.appendChild(card);
+    });
+  }
+  function updatePremiumStatusInSettings(){
+    const line = document.getElementById('premium-status-line');
+    const btn = document.getElementById('prem-manage');
+    if (line){
+      line.textContent = isPremiumActive()
+        ? (premium.expiresAt ? `Premium активна до ${fmtISOdate(premium.expiresAt)}` : 'Premium активна')
+        : 'Базовая';
+    }
+    if (btn && !btn._wired){
+      btn._wired = true;
+      btn.addEventListener('click', openPremiumModal);
+    }
+  }
+
+  /* ========= ПРОЕКТЫ ========= */
+  function hydrateProjectSelector(){
+    projectSelector.innerHTML = '<option value="all">Все проекты</option>';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      projectSelector.appendChild(opt);
+    });
+  }
+  function hydrateTaskProjectSelect(){
+    const sel = document.getElementById('task-project');
+    sel.innerHTML = '';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+  }
+  projectSelector.addEventListener('change', renderAll);
+
+  addProjectButton.addEventListener('click', openProjectModal);
+  deleteProjectButton.addEventListener('click', ()=>{
+    const id = projectSelector.value;
+    if (id==='all'){ alert('Сначала выберите конкретный проект.'); return; }
+    const name = projectName(id);
+    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
+      state.projects = state.projects.filter(p=>p.id!==id);
+      state.tasks.forEach(t=>{ if (t.project===id) t.project=''; });
+      state.pinned = state.pinned.filter(pid=>pid!==id);
+      save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderPinnedStrip(); renderAll();
+    }
+  });
+
+  function openProjectModal(){
+    projectModal.classList.remove('hidden');
+    document.getElementById('project-id').value='';
+    projectNameInput.value='';
+    projectColorInput.value='#3b82f6';
+    document.getElementById('project-description').value='';
+  }
+  function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
+  [closeProjectModal, cancelProject, projectBackdrop].forEach(x=> x.addEventListener('click', closeProjectModalFunc));
+
+  saveProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const color = projectColorInput.value || '#3b82f6';
+    if(!name){ alert('Введите название проекта'); return; }
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    const existing = state.projects.find(p=>p.id===id);
+    if(!existing){
+      state.projects.push({ id, name, color });
+      if (state.pinned.length < 6) state.pinned.push(id);
+    }else{
+      existing.name = name; existing.color = color;
+    }
+    save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderPinnedStrip(); closeProjectModalFunc(); renderAll();
+  });
+
+  deleteProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    if(!id){ alert('Укажите название проекта для удаления'); return; }
+    if (confirm(`Удалить проект «${name}»? Его задачи станут «Без проекта».`)) {
+      state.projects = state.projects.filter(p=>p.id!==id);
+      state.tasks.forEach(t=>{ if(t.project===id) t.project=''; });
+      state.pinned = state.pinned.filter(pid=>pid!==id);
+      save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderPinnedStrip(); renderAll(); closeProjectModalFunc();
+    }
+  });
+
+  /* ========= PINNED STRIP ========= */
+  function renderPinnedStrip(){
+    pinnedStrip.innerHTML = '';
+    const makeChip = (pid)=>{
+      const p = projectById(pid);
+      if (!p) return;
+      const chip = document.createElement('div');
+      chip.className = 'pin-chip flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer select-none';
+      chip.draggable = true;
+      chip.dataset.id = pid;
+      chip.innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full" style="background:${p.color}"></span>
+        <span class="text-sm">${escapeHtml(p.name)}</span>
+        <button class="text-red-500 hover:text-red-600 ml-1" title="Убрать из закреплённых" data-act="unpin"><i class="fas fa-times"></i></button>
+      `;
+      chip.addEventListener('click', (e)=>{
+        if (e.target.closest('[data-act="unpin"]')) return;
+        projectSelector.value = pid;
+        renderAll();
+      });
+      chip.querySelector('[data-act="unpin"]').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        state.pinned = state.pinned.filter(x=>x!==pid);
+        save(); renderPinnedStrip();
+      });
+      // drag & drop order
+      chip.addEventListener('dragstart', ()=> chip.classList.add('dragging'));
+      chip.addEventListener('dragend', ()=> chip.classList.remove('dragging'));
+      pinnedStrip.appendChild(chip);
+    };
+
+    state.pinned.slice(0,6).forEach(makeChip);
+
+    if (state.pinned.length < 6){
+      const addChip = document.createElement('button');
+      addChip.className = 'pin-chip px-3 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 ring-focus';
+      addChip.innerHTML = '<i class="fas fa-plus"></i><span class="text-sm">Добавить</span>';
+      addChip.addEventListener('click', ()=> addPinnedFlow());
+      pinnedStrip.appendChild(addChip);
+    }
+
+    // Перестановка
+    pinnedStrip.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      const dragging = pinnedStrip.querySelector('.dragging');
+      if (!dragging) return;
+      const siblings = [...pinnedStrip.querySelectorAll('.pin-chip:not(.dragging)')];
+      const afterEl = siblings.find(s=>{
+        const rect = s.getBoundingClientRect();
+        return e.clientX < rect.left + rect.width/2;
+      });
+      if (afterEl) pinnedStrip.insertBefore(dragging, afterEl);
+      else pinnedStrip.appendChild(dragging);
+    });
+    pinnedStrip.addEventListener('drop', ()=>{
+      const ids = [...pinnedStrip.querySelectorAll('.pin-chip')].map(c=>c.dataset.id).filter(Boolean);
+      state.pinned = ids.slice(0,6);
+      save();
+    });
+  }
+
+  function addPinnedFlow(){
+    const available = state.projects.filter(p=> !state.pinned.includes(p.id));
+    if (!available.length){ alert('Нет проектов для добавления.'); return; }
+    const lines = available.map((p,i)=> `${i+1}) ${p.name}`).join('\n');
+    const ans = prompt(`Выберите проект для закрепления (введите номер):\n${lines}`);
+    const idx = parseInt(ans,10)-1;
+    if (Number.isInteger(idx) && idx>=0 && idx<available.length){
+      state.pinned.push(available[idx].id);
+      state.pinned = state.pinned.slice(0,6);
+      save(); renderPinnedStrip();
+    }
+  }
+
+  /* ========= ВИДЫ ========= */
+  function showView(view){
+    state.view = view;
+    viewContents.forEach(el=> el.classList.toggle('hidden', el.id !== `${view}-view`));
+    viewSelectors.forEach(btn=>{
+      btn.classList.remove('btn-main','text-[var(--button-text)]');
+      if (btn.dataset.view === view) btn.classList.add('btn-main');
+    });
+    if (view==='calendar') renderCalendar();
+    if (view==='kanban') renderKanban();
+    if (view==='list') renderList();
+  }
+  viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
+
+  /* ========= ПОИСК / ФИЛЬТРЫ / СОРТИРОВКА ========= */
+  searchButton.addEventListener('click', ()=> { openCommandPalette(); commandInput.value=''; commandInput.placeholder='Введите текст для поиска...'; });
+  if (searchInput) searchInput.addEventListener('input', ()=>{ state.search = searchInput.value.trim().toLowerCase(); renderAll(); });
+
+  filterButton.addEventListener('click', (e)=>{
+    filterPanel.style.left = 'auto';
+    filterPanel.style.right = '0';
+    filterPanel.classList.toggle('hidden');
+    sortPanel.classList.add('hidden');
+    e.stopPropagation();
+  });
+  [filterDue, filterPriority, filterStatus].forEach(elm=>{
+    elm.addEventListener('change', ()=>{ state.filters.due=filterDue.value; state.filters.priority=filterPriority.value; state.filters.status=filterStatus.value; renderAll(); });
+  });
+
+  sortButton.addEventListener('click', (e)=>{
+    sortPanel.style.left = 'auto';
+    sortPanel.style.right = '0';
+    sortPanel.classList.toggle('hidden');
+    filterPanel.classList.add('hidden');
+    e.stopPropagation();
+  });
+  sortSelect.addEventListener('change', ()=>{ state.sort = sortSelect.value; renderAll(); });
+  document.addEventListener('click', ()=>{ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); });
+
+  /* ========= БЫСТРОЕ ДОБАВЛЕНИЕ ========= */
+  quickAddInput.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const raw = quickAddInput.value.trim();
+      if (!raw) return;
+      const parsed = parseQuickAdd(raw);
+      state.tasks.unshift({
+        id: uid(),
+        title: parsed.title || 'Без названия',
+        priority: parsed.priority || 'medium',
+        status: 'backlog',
+        project: parsed.project || (state.projects[0]?.id || ''),
+        dueDate: parsed.dueDate || '',
+        description: '',
+        tags: parsed.tags || [],
+        subtasks: [],
+        subtasksDone: [],
+        completed: false,
+        createdAt: nowISO()
+      });
+      save();
+      quickAddInput.value = '';
+      renderAll();
+    }
+  });
+
+  function parseQuickAdd(text){
+    let t = ' ' + text + ' ';
+    const res = { title:'', priority:'medium', dueDate:'', project:'', tags:[] };
+
+    const tagRe = /#([\p{L}\p{N}_-]+)/giu;
+    const tags = [];
+    t = t.replace(tagRe, (_,m)=>{ tags.push(m); return ' '; });
+    res.tags = tags;
+
+    const projRe = /@([\p{L}\p{N}\s_-]+)/giu;
+    let projName = '';
+    t = t.replace(projRe, (_,m)=>{ projName = m.trim(); return ' '; });
+    if (projName) {
+      let proj = state.projects.find(p=>p.name.toLowerCase()===projName.toLowerCase());
+      if (!proj) {
+        const id = projName.toLowerCase().replace(/\s+/g,'-');
+        const color = '#f59e0b';
+        proj = { id, name: projName, color };
+        state.projects.push(proj);
+        hydrateProjectSelector();
+        hydrateTaskProjectSelect();
+      }
+      res.project = proj.id;
+    }
+
+    const low = t.toLowerCase();
+    if (low.includes('/сегодня')) { res.dueDate = todayISO(0); t = t.replace('/сегодня',' '); }
+    if (low.includes('/завтра')) { res.dueDate = todayISO(1); t = t.replace('/завтра',' '); }
+    ['/пн','/вт','/ср','/чт','/пт','/сб','/вс'].forEach(tok=>{
+      if (low.includes(tok)) {
+        const idx = parseRussianWeekdayToken(tok);
+        if (idx!==null) res.dueDate = nextWeekdayISO(idx);
+        t = t.replace(tok,' ');
+      }
+    });
+
+    if (low.includes('/критично')) { res.priority = 'critical'; t = t.replace('/критично',' '); }
+    if (low.includes('/высокий') || low.includes('/важно')) { res.priority = 'high'; t = t.replace('/высокий',' ').replace('/важно',' '); }
+    if (low.includes('/средний')) { res.priority = 'medium'; t = t.replace('/средний',' '); }
+    if (low.includes('/низкий')) { res.priority = 'low'; t = t.replace('/низкий',' '); }
+
+    res.title = t.replace(/\s+/g,' ').trim();
+    return res;
+  }
+
+  /* ========= КОМАНДНАЯ ПАЛИТРА ========= */
+  function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
+  function closeCommandPalette(){ commandPalette.classList.add('hidden'); }
+  commandOptions.forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      const label = opt.querySelector('.font-medium').textContent;
+      closeCommandPalette();
+      if(label.includes('Создать задачу')) openTaskModal();
+      else if(label.includes('Создать проект')) openProjectModal();
+      else if(label.includes('Список')) showView('list');
+      else if(label.includes('Доску')) showView('kanban');
+      else if(label.includes('Календарь')) showView('calendar');
+      else if(label.includes('Поиск')) { if (searchInput) searchInput.focus(); }
+    });
+  });
+  commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
+
+  /* ========= ФИЛЬТРАЦИЯ/СОРТИРОВКА ========= */
+  function getFilteredTasks(){
+    const q = state.search;
+    const proj = projectSelector.value;
+    const { due, priority, status } = state.filters;
+
+    let arr = state.tasks.filter(t=>{
+      if (proj!=='all' && t.project!==proj) return false;
+      if (q) {
+        const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (due!=='all') {
+        const today = new Date(todayISO(0)+'T00:00:00');
+        const d = t.dueDate ? new Date(t.dueDate+'T00:00:00') : null;
+        if (due==='today' && (!d || d.toDateString()!==today.toDateString())) return false;
+        if (due==='week') {
+          const s = startOfWeek(today), e = endOfWeek(today);
+          if (!d || d<s || d>e) return false;
+        }
+        if (due==='overdue') {
+          if (!t.dueDate) return false;
+          if (t.completed) return false;
+          if (new Date(t.dueDate+'T00:00:00') >= today) return false;
+        }
+      }
+      if (priority!=='all' && t.priority!==priority) return false;
+      if (status!=='all' && t.status!==status) return false;
+      return true;
+    });
+
+    const prRank = { critical:3, high:2, medium:1, low:0 };
+    const stRank = { 'backlog':0,'in-progress':1,'review':2,'done':3 };
+    const cmp = {
+      'due-asc': (a,b)=> (a.dueDate||'9999') < (b.dueDate||'9999') ? -1 : (a.dueDate||'9999') > (b.dueDate||'9999') ? 1 : 0,
+      'due-desc': (a,b)=> (a.dueDate||'0000') > (b.dueDate||'0000') ? -1 : (a.dueDate||'0000') < (b.dueDate||'0000') ? 1 : 0,
+      'priority-desc': (a,b)=> prRank[b.priority]-prRank[a.priority],
+      'priority-asc': (a,b)=> prRank[a.priority]-prRank[b.priority],
+      'project-asc': (a,b)=> projectName(a.project).localeCompare(projectName(b.project),'ru'),
+      'status-asc': (a,b)=> stRank[a.status]-stRank[b.status],
+      'title-asc': (a,b)=> a.title.localeCompare(b.title,'ru')
+    }[state.sort] || (()=>0);
+
+    arr.sort(cmp);
+    return arr;
+  }
+
+  /* ========= СТАТИСТИКА ========= */
+  function renderStats(){
+    const total = state.tasks.length;
+    const todayStr = todayISO(0);
+    const doneToday = state.tasks.filter(t=> t.completed && (t.completedAt||'').slice(0,10)===todayStr).length;
+    const sWeek = startOfWeek(); const eWeek = endOfWeek();
+    const doneWeek = state.tasks.filter(t=>{
+      if (!t.completedAt) return false;
+      const d = new Date(t.completedAt);
+      return d>=sWeek && d<=eWeek;
+    }).length;
+    const overdue = state.tasks.filter(t=> t.dueDate && !t.completed && t.dueDate < todayStr).length;
+
+    statsBar.innerHTML = '';
+    [
+      { label:'Всего задач', value: total, icon:'fa-list' },
+      { label:'Выполнено сегодня', value: doneToday, icon:'fa-check-circle' },
+      { label:'Выполнено за неделю', value: doneWeek, icon:'fa-calendar-check' },
+      { label:'Просрочено', value: overdue, icon:'fa-clock' },
+    ].forEach(s=>{
+      const el = document.createElement('div');
+      el.className = 'bg-secondary rounded-xl p-3 md:p-4 flex items-center gap-3';
+      el.innerHTML = `
+        <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--bg)] border border-secondary">
+          <i class="fas ${s.icon}"></i>
+        </div>
+        <div><div class="text-xs text-hint">${s.label}</div><div class="text-lg font-semibold">${s.value}</div></div>
+      `;
+      statsBar.appendChild(el);
+    });
+  }
+
+  /* ========= СПИСОК ========= */
+  function renderList(){
+    const tasks = getFilteredTasks();
+    listContainer.innerHTML = '';
+    if (tasks.length===0){ emptyState.classList.remove('hidden'); return; }
+    emptyState.classList.add('hidden');
+
+    tasks.forEach(t=>{
+      const project = projectById(t.project);
+      const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+      const doneSub = (t.subtasksDone||[]).filter(Boolean).length;
+      const totalSub = (t.subtasks||[]).length;
+      const progressPct = totalSub ? Math.round(doneSub/totalSub*100) : 0;
+
+      const card = document.createElement('div');
+      card.className = 'task-card bg-secondary rounded-lg p-4 relative';
+      card.dataset.id = t.id;
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-start gap-3">
+            <div class="mt-1">
+              <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-secondary text-[var(--button)] focus:ring-[var(--button)]">
+            </div>
+            <div class="w-full">
+              <h3 class="font-medium ${t.completed?'line-through opacity-70':''}" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h3>
+              <p class="text-sm text-hint mt-1">${t.dueDate?('Срок: '+fmtDateHuman(t.dueDate)):'Без срока'}</p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                <span class="${statusClass(t.status)} text-xs px-2 py-1 rounded-full">${statusRu(t.status)}</span>
+                ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
+                ${(t.tags||[]).map(tag=>`<span class="bg-[var(--bg)] border border-secondary text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
+              </div>
+              ${ totalSub ? `
+                <div class="mt-3">
+                  <div class="progress-wrap" aria-label="Прогресс подзадач">
+                    <div class="progress-bar" style="width:${progressPct}%"></div>
+                  </div>
+                  <div class="text-xs text-hint mt-1">${doneSub}/${totalSub} выполнено</div>
+                  <div class="mt-2 space-y-1">
+                    ${t.subtasks.map((s,i)=>`
+                      <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" class="subtask-checkbox" data-act="toggle-subtask" data-id="${t.id}" data-idx="${i}" ${t.subtasksDone?.[i]?'checked':''}>
+                        <span class="subtask-label">${escapeHtml(s)}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : '' }
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <button class="text-hint hover:text-[var(--text)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+            <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+      `;
+      listContainer.appendChild(card);
+      attachSwipeHandlers(card, t.id);
+    });
+
+    listContainer.querySelectorAll('.task-card').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        if (e.target.closest('button, input, textarea, select, .subtask-checkbox')) return;
+        listContainer.querySelectorAll('.task-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.selectedTaskId = card.dataset.id;
+      });
+    });
+
+    listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
+      inp.addEventListener('click', e=> e.stopPropagation());
+      inp.addEventListener('change', ()=>{
+        const t = state.tasks.find(x=>x.id===inp.dataset.id);
+        if (t){
+          t.completed = inp.checked;
+          if (t.completed){ t.status='done'; t.completedAt = nowISO(); }
+          else { if (t.status==='done') t.status='backlog'; t.completedAt = undefined; }
+          save(); renderAll();
+        }
+      });
+    });
+
+    listContainer.querySelectorAll('[data-act="inline-title"]').forEach(elm=>{
+      elm.addEventListener('click', ()=>{
+        const id = elm.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t) return;
+        if (elm.querySelector('input')) return;
+        const input = document.createElement('input');
+        input.type='text';
+        input.value = t.title;
+        input.className = 'title-input';
+        elm.replaceWith(input);
+        input.focus();
+        input.select();
+        const commit = ()=>{
+          const newTitle = input.value.trim() || t.title;
+          t.title = newTitle;
+          save(); renderList();
+        };
+        input.addEventListener('keydown', (e)=>{
+          if (e.key==='Enter') commit();
+          if (e.key==='Escape') renderList();
+        });
+        input.addEventListener('blur', commit);
+      });
+    });
+
+    listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t) openTaskModal(t);
+    }));
+
+    listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+    }));
+
+    listContainer.querySelectorAll('[data-act="toggle-subtask"]').forEach(ch=>{
+      ch.addEventListener('change', ()=>{
+        const id = ch.dataset.id;
+        const idx = +ch.dataset.idx;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t) return;
+        if (!Array.isArray(t.subtasksDone)) t.subtasksDone = [];
+        t.subtasksDone[idx] = ch.checked;
+        save(); renderList();
+      });
+    });
+  }
+
+  function attachSwipeHandlers(card, id){
+    let startX=0, currentX=0, swiping=false;
+    card.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; swiping=true; card.style.transition='transform .0s, opacity .0s'; }, {passive:true});
+    card.addEventListener('touchmove', (e)=>{
+      if(!swiping) return;
+      currentX = e.touches[0].clientX;
+      const dx = currentX - startX;
+      card.style.transform = `translateX(${dx}px)`;
+      card.style.opacity = `${Math.max(0.5, 1 - Math.abs(dx)/280)}`;
+    }, {passive:true});
+    card.addEventListener('touchend', ()=>{
+      if(!swiping) return;
+      const dx = currentX - startX;
+      card.style.transition='transform .18s, opacity .18s';
+      card.style.transform='translateX(0)';
+      card.style.opacity='1';
+      swiping=false;
+      if (dx > 80){
+        const t = state.tasks.find(x=>x.id===id);
+        if (t){ t.completed = true; t.status='done'; t.completedAt = nowISO(); save(); renderAll(); }
+      } else if (dx < -80){
+        const t = state.tasks.find(x=>x.id===id);
+        if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); renderAll(); }
+      }
+    });
+  }
+
+  function priorityClass(p){ return ({low:'priority-low',medium:'priority-medium',high:'priority-high',critical:'priority-critical'})[p]; }
+  function statusClass(s){ return ({'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'})[s]; }
+
+  /* ========= КАНБАН ========= */
+  function renderKanban(){
+    const columns = document.querySelectorAll('.kanban-column');
+    columns.forEach(col=>{
+      const body = col.querySelector('.column-body');
+      body.innerHTML = '';
+      const status = col.getAttribute('data-col');
+      const tasks = getFilteredTasks().filter(t=>t.status===status);
+      tasks.forEach(t=>{
+        const project = projectById(t.project);
+        const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+        const card = document.createElement('div');
+        card.className='task-card bg-[var(--bg)] rounded-lg p-3 cursor-move';
+        card.draggable=true;
+        card.dataset.id = t.id;
+        card.innerHTML = `
+          <div class="flex justify-between gap-2">
+            <div class="${t.completed?'line-through opacity-70':''}">
+              <h4 class="font-medium" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h4>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
+              </div>
+              <div class="text-xs text-hint mt-1">${t.dueDate? 'Срок: '+fmtDateHuman(t.dueDate):'Без срока'}</div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <button class="text-hint hover:text-[var(--text)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+              <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+        body.appendChild(card);
+      });
+    });
+    ['backlog','in-progress','review','done'].forEach(s=>{
+      const cntEl = document.getElementById('cnt-'+s);
+      if (cntEl) cntEl.textContent = state.tasks.filter(t=>t.status===s).length;
+    });
+
+    document.querySelectorAll('.kanban-column .task-card').forEach(card=>{
+      card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
+      card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
+    });
+    document.querySelectorAll('.kanban-column').forEach(col=>{
+      col.addEventListener('dragover', (e)=>{ e.preventDefault(); col.classList.add('bg-opacity-50'); });
+      col.addEventListener('dragleave', ()=> col.classList.remove('bg-opacity-50'));
+      col.addEventListener('drop', (e)=>{
+        e.preventDefault(); col.classList.remove('bg-opacity-50');
+        const dragged = document.querySelector('.kanban-column .task-card.opacity-50');
+        const status = col.getAttribute('data-col');
+        if(!dragged) return;
+        const id = dragged.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if(t){ t.status = status; if(status==='done'){ t.completed=true; t.completedAt=nowISO(); } else { t.completed=false; t.completedAt=undefined; } save(); renderKanban(); renderList(); renderCalendar(); }
+      });
+    });
+
+    document.querySelectorAll('#kanban-view [data-act="inline-title"]').forEach(elm=>{
+      elm.addEventListener('click', ()=>{
+        const id = elm.dataset.id;
+        const t = state.tasks.find(x=>x.id===id);
+        if (!t || elm.querySelector('input')) return;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = t.title;
+        input.className = 'title-input';
+        elm.replaceWith(input);
+        input.focus(); input.select();
+        const commit = ()=>{ t.title = input.value.trim() || t.title; save(); renderKanban(); };
+        input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') commit(); if (e.key==='Escape') renderKanban(); });
+        input.addEventListener('blur', commit);
+      });
+    });
+
+    document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t) openTaskModal(t);
+    }));
+    document.querySelectorAll('#kanban-view [data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+    }));
+  }
+
+  /* ========= КАЛЕНДАРЬ ========= */
+  const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+  function renderCalendar(){
+    weekdayRow.innerHTML = '';
+    WEEKDAYS.forEach(w=>{
+      const div = document.createElement('div');
+      div.className = 'text-center text-sm font-medium py-2';
+      div.textContent = w;
+      weekdayRow.appendChild(div);
+    });
+
+    const d = new Date(state.currentMonth);
+    d.setDate(1);
+    const month = d.getMonth();
+    const year = d.getFullYear();
+    monthTitle.textContent = `${MONTHS_NOM[month]} ${year}`;
+
+    let startIdx = (d.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    calendarGrid.innerHTML = '';
+    for(let i=0;i<startIdx;i++){
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day border border-secondary rounded p-1 opacity-50';
+      calendarGrid.appendChild(cell);
+    }
+    const todayStr = todayISO(0);
+    for(let day=1; day<=daysInMonth; day++){
+      const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day border border-secondary rounded p-1';
+      cell.dataset.date = iso;
+      if (iso===todayStr) cell.classList.add('today');
+
+      cell.innerHTML = `<div class="text-right text-sm mb-1 ${iso===todayStr?'font-bold':''}">${day}</div>`;
+
+      const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
+      tasks.slice(0,6).forEach(t=>{
+        const badge = document.createElement('div');
+        badge.className = `text-xs truncate px-1 py-0.5 rounded mb-1 ${t.status==='done'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}`;
+        badge.textContent = t.title;
+        badge.draggable = true;
+        badge.dataset.id = t.id;
+        badge.addEventListener('dragstart', (e)=>{
+          e.dataTransfer.setData('text/task-id', t.id);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        cell.appendChild(badge);
+      });
+      if (tasks.length>6){
+        const more = document.createElement('div');
+        more.className='text-hint text-xs px-1';
+        more.textContent = `+ ещё ${tasks.length-6}`;
+        cell.appendChild(more);
+      }
+
+      cell.addEventListener('dragover', (e)=>{ e.preventDefault(); cell.classList.add('dragover'); });
+      cell.addEventListener('dragleave', ()=> cell.classList.remove('dragover'));
+      cell.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        cell.classList.remove('dragover');
+        const id = e.dataTransfer.getData('text/task-id');
+        if(!id) return;
+        const t = state.tasks.find(x=>x.id===id);
+        if(!t) return;
+        t.dueDate = cell.dataset.date || '';
+        save(); renderCalendar(); renderList();
+      });
+
+      cell.addEventListener('click', (ev)=>{
+        if (ev.target && ev.target.getAttribute('draggable') === 'true') return;
+        openTaskModal(null, iso);
+      });
+      calendarGrid.appendChild(cell);
+    }
+  }
+  prevMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()-1); state.currentMonth=d; renderCalendar(); });
+  nextMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()+1); state.currentMonth=d; renderCalendar(); });
+  todayButton.addEventListener('click', ()=>{ state.currentMonth = new Date(); renderCalendar(); });
+
+  /* ========= МОДАЛКА ЗАДАЧ ========= */
+  addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
+  function openTaskModal(task=null, prefillDate=null){
+    taskModal.classList.remove('hidden');
+    taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
+    document.getElementById('task-id').value = task?.id || '';
+    document.getElementById('task-title').value = task?.title || '';
+    document.getElementById('task-priority').value = task?.priority || 'medium';
+    document.getElementById('task-status').value = task?.status || 'backlog';
+    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
+    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
+    document.getElementById('task-description').value = task?.description || '';
+    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
+    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
+  }
+  function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
+  [closeTaskModal, cancelTask, taskBackdrop].forEach(x=> x.addEventListener('click', closeTaskModalFunc));
+
+  saveTaskBtn.addEventListener('click', ()=>{
+    const id = document.getElementById('task-id').value;
+    const title = document.getElementById('task-title').value.trim();
+    if(!title){ alert('Введите название задачи'); return; }
+    const priority = document.getElementById('task-priority').value;
+    const status = document.getElementById('task-status').value;
+    const project = document.getElementById('task-project').value;
+    const dueDate = document.getElementById('task-due-date').value;
+    const description = document.getElementById('task-description').value.trim();
+    const subtasksRaw = document.getElementById('task-subtasks').value;
+    const tagsRaw = document.getElementById('task-tags').value;
+
+    const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
+    let subtasksDone = subtasks.map(()=>false);
+
+    if(id){
+      const t = state.tasks.find(t=>t.id===id);
+      if(t){
+        const mapPrev = new Map((t.subtasks||[]).map((s,i)=>[s, (t.subtasksDone||[])[i] || false]));
+        subtasksDone = subtasks.map(s=> mapPrev.get(s) || false);
+        Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,subtasksDone,completed: status==='done', completedAt: status==='done'? (t.completedAt||nowISO()): undefined});
+      }
+    } else {
+      state.tasks.unshift({
+        id: uid(), title, priority, status, project, dueDate, description, tags: tagsRaw.split(',').map(s=>s.trim()).filter(Boolean),
+        subtasks, subtasksDone,
+        completed: status==='done', createdAt: nowISO(), completedAt: status==='done'? nowISO(): undefined
+      });
+    }
+    save(); closeTaskModalFunc(); renderAll();
+  });
+
+  /* ========= ГОРЯЧИЕ КЛАВИШИ ========= */
+  document.addEventListener('keydown', (e)=>{
+    const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+    const typing = ['input','textarea'].includes(activeTag) && document.activeElement?.type!=='button';
+
+    if ((e.key==='n' || e.key==='N') && !e.ctrlKey && !e.metaKey && !typing){
+      e.preventDefault(); openTaskModal(); return;
+    }
+    if ((e.key.toLowerCase()==='k') && (e.ctrlKey || e.metaKey)){
+      e.preventDefault(); openCommandPalette(); return;
+    }
+    if ((e.key==='f' || e.key==='F') && !e.ctrlKey && !e.metaKey){
+      if (searchInput && !typing){ e.preventDefault(); searchInput.focus(); }
+      return;
+    }
+    if (!typing && (e.key==='1' || e.key==='2' || e.key==='3')){
+      e.preventDefault();
+      const map = { '1':'list', '2':'kanban', '3':'calendar' };
+      showView(map[e.key]);
+      return;
+    }
+    if (e.key==='Delete' && !typing){
+      if (state.selectedTaskId){
+        const t = state.tasks.find(x=>x.id===state.selectedTaskId);
+        if (t && confirm(`Удалить «${t.title}»?`)){
+          state.tasks = state.tasks.filter(x=>x.id!==t.id);
+          state.selectedTaskId = null;
+          save(); renderAll();
+        }
+      }
+    }
+    if (e.key==='Escape'){
+      closeCommandPalette();
+    }
+  });
+
+  /* ========= PWA Badging ========= */
+  function updateAppBadge(){
+    const remain = state.tasks.filter(t=>!t.completed).length;
+    if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
+      if (remain>0) { navigator.setAppBadge(remain).catch(()=>{}); }
+      else { navigator.clearAppBadge().catch(()=>{}); }
+    }
+  }
+
+  /* ========= Итого ========= */
+  function renderAll(){
+    renderStats();
+    if (state.view==='list') renderList();
+    if (state.view==='kanban') renderKanban();
+    if (state.view==='calendar') renderCalendar();
+    emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
+    save();
+  }
+
+  // Финальные штрихи UI
+  reflectPremiumUI();
+  updatePremiumStatusInSettings();
+})(); // end IIFE
+</script>
+</body>
+</html>
