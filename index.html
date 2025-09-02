@@ -2,11 +2,32 @@
 <html lang="ru" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
   <title>Планировщик задач</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <!-- PERF: быстрые соединения к CDN -->
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+  <link rel="preconnect" href="https://telegram.org" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.tailwindcss.com">
+  <link rel="dns-prefetch" href="//telegram.org">
+  <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+
+  <!-- Иконки: неблокирующая загрузка -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        media="print" onload="this.media='all'"/>
+
+  <!-- Tailwind CDN: оставили, но он тяжелый. Для ускорения – грузим отложенно с defer -->
+  <script>
+    // Небольшая конфигурация перед Tailwind (уменьшаем предзагрузку)
+    window.tailwind = { darkMode: ['class','[data-theme="dark"]'] };
+  </script>
+  <script src="https://cdn.tailwindcss.com" defer></script>
+
+  <!-- Telegram WebApp API (defer) -->
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 
   <style>
     /* === ТЕМЫ (light/dark + 5 тёплых градиентных + OLIVE) === */
@@ -48,7 +69,7 @@
       --ring:rgba(249,115,22,.35);
       --header-gradient:linear-gradient(90deg,#ffedd5,#fecaca,#fde68a);
     }
-    /* 2) Peach */
+    /* 2) Peach (исправлен символ 'а' в hex) */
     html[data-theme="peach"]{
       --bg:#fff1f2;
       --text:#1f2937;
@@ -57,7 +78,7 @@
       --button:#fb7185;
       --button-text:#1f2937;
       --ring:rgba(251,113,133,.35);
-      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68а);
+      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68a);
     }
     /* 3) Sand */
     html[data-theme="sand"]{
@@ -70,7 +91,7 @@
       --ring:rgba(217,119,6,.35);
       --header-gradient:linear-gradient(90deg,#f5eede,#f1ebe2,#fde68a);
     }
-    /* 4) Coral */
+    /* 4) Coral (исправлен символ 'д' в hex) */
     html[data-theme="coral"]{
       --bg:#fff5f0;
       --text:#1f2937;
@@ -79,7 +100,7 @@
       --button:#f43f5e;
       --button-text:#fff;
       --ring:rgba(244,63,94,.35);
-      --header-gradient:linear-gradient(90deg,#ffd1c7,#ffe0д5,#fff0e5);
+      --header-gradient:linear-gradient(90deg,#ffd1c7,#ffe0d5,#fff0e5);
     }
     /* 5) Plum */
     html[data-theme="plum"]{
@@ -104,17 +125,19 @@
       --header-gradient:linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6);
     }
 
-    /* === БАЗОВЫЕ СТИЛИ === */
+    /* === БАЗОВЫЕ СТИЛИ + PERF === */
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       background:var(--bg);
       color:var(--text);
-      transition:background-color .25s,color .25s;
+      transition:background-color .2s,color .2s;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Inter',system-ui,sans-serif
     }
+    /* Секции, не видимые на экране — не раскладывать layout */
+    .view-content{content-visibility:auto;contain-intrinsic-size:800px 1200px}
     .ring-focus:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
-    .task-card{transition:box-shadow .15s, background-color .15s}
+    .task-card{transition:box-shadow .12s, background-color .12s; will-change: transform}
     .task-card:hover{box-shadow:0 4px 10px rgb(0 0 0 /.08)}
     .task-card.selected{outline:2px solid var(--ring); outline-offset:2px}
     .priority-low{background:rgba(52,211,153,.12);color:rgb(16,185,129)}
@@ -168,6 +191,10 @@
     @keyframes premiumShimmer{
       0%{ background-position:0% 50%; }
       100%{ background-position:200% 50%; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .premium-glow{ animation: none !important; }
+      .task-card{ transition: none !important; }
     }
 
     .toast{
@@ -440,7 +467,7 @@
   <!-- Task Modal -->
   <div id="task-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
     <div class="modal-backdrop" id="task-backdrop"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-height-[90vh] max-h-[90vh] overflow-y-auto">
+    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--bg)] p-4 flex justify-between items-center border-b border-secondary">
         <h2 id="task-modal-title" class="text-xl font-semibold">Новая задача</h2>
         <button id="close-task-modal" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Закрыть">
@@ -647,10 +674,27 @@
     <button id="empty-state-add-task" class="px-4 py-2 rounded-lg btn-main">Добавить задачу</button>
   </div>
 </div>
+
 <script>
 (() => {
+  "use strict";
+
+  /* ========= МАЛЕНЬКИЕ ПОЛИФИЛЫ/ХЕЛПЕРЫ ДЛЯ PERF ========= */
+  const raf = window.requestAnimationFrame.bind(window);
+  const ric = window.requestIdleCallback || function(cb){ return setTimeout(()=>cb({didTimeout:false,timeRemaining:()=>10}), 1); };
+  const passOpt = { passive: true };
+
+  function debounce(fn, ms=120){
+    let t=null;
+    return function(...args){
+      clearTimeout(t);
+      t = setTimeout(()=>fn.apply(this,args), ms);
+    };
+  }
+
   /* ========= ЗАПРЕТ ОТКРЫТИЯ В БРАУЗЕРЕ (только Telegram WebApp) ========= */
   (function enforceTelegramOnly(){
+    // Выполняем как можно раньше, но без тяжёлых операций
     const isTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
     const platform = Telegram?.WebApp?.platform || '';
     if (!isTg || platform === '') {
@@ -680,7 +724,7 @@
   const tg = window.Telegram?.WebApp;
   const tgUser = tg?.initDataUnsafe?.user || null;
 
-  try { tg?.ready(); tg?.expand?.(); tg?.MainButton?.hide?.(); } catch(_) {}
+  try { tg?.ready?.(); tg?.expand?.(); tg?.MainButton?.hide?.(); } catch(_) {}
 
   const LS_THEME_BASE = 'tp_theme_v2';
   const LS_DATA_BASE  = 'tp_data_default';
@@ -743,17 +787,18 @@
   document.documentElement.setAttribute('data-theme', savedTheme);
   function setTheme(id){ document.documentElement.setAttribute('data-theme', id); localStorage.setItem(LS_THEME, id); }
 
-  /* ========= PREMIUM / TRIAL (3 дня новым пользователям) ========= */
+  /* ========= PREMIUM / TRIAL ========= */
   const ADMIN_TG_ID_STR = String(ADMIN_TG_ID);
   const premium = { tier:'free', expiresAt:null, trial:false };
 
+  /* ========= UI helpers ========= */
   function showToast(html){
     const t = document.createElement('div');
     t.className = 'toast';
     t.innerHTML = html;
     document.body.appendChild(t);
-    setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; t.style.transition='opacity .3s, transform .3s'; }, 2200);
-    setTimeout(()=> t.remove(), 2700);
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; t.style.transition='opacity .2s, transform .2s'; }, 2000);
+    setTimeout(()=> t.remove(), 2500);
   }
   function b64u(str){ return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
   function b64uDec(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return atob(s); }
@@ -788,8 +833,7 @@
   // Инициализация / триал
   function ensureTrialIfFirstRun(){
     const rec = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY)||'{}');
-    if (rec.end_ts) return; // уже что-то было
-    // Новый пользователь: даём 3 дня
+    if (rec.end_ts) return;
     const now = new Date();
     const end = new Date(now);
     end.setDate(end.getDate()+3);
@@ -801,7 +845,6 @@
       premium.tier='premium'; premium.expiresAt='2099-12-31T00:00:00.000Z'; premium.trial=false;
       reflectPremiumUI(); return;
     }
-    // если ключа нет — создаём триал
     if (!localStorage.getItem(PREMIUM_LS_KEY)) ensureTrialIfFirstRun();
 
     premium.tier='free'; premium.expiresAt=null; premium.trial=false;
@@ -835,10 +878,8 @@
       badge.innerHTML = `<span class="sep">Подписка</span> <span>Базовая</span>`;
       badge.title = 'Базовая версия';
     }
-    // Гейтинг функций
     gateFeaturesByPlan();
   }
-
   function showPremiumToast(){
     if (isPremiumActive()){
       const until = premium.expiresAt ? `<div class="toast-sub">Активна до: ${fmtISOdate(premium.expiresAt)}${premium.trial?' (пробный период)':''}</div>` : '';
@@ -856,7 +897,6 @@
     ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=> el.addEventListener(ev, cancel));
   }
 
-  // Активировать промокод
   function redeemPromo(code){
     const data = verifyAndParse(code);
     if (!data){ alert('Неверный промокод'); return; }
@@ -999,7 +1039,7 @@
     }
   })();
 
-  /* ========= Админ панель ========= */
+  /* ========= Админ-панель ========= */
   function isAdmin(){ return String(tgUser?.id) === ADMIN_TG_ID_STR; }
   const sideMenu = document.getElementById('side-menu');
   const menuBtn = document.getElementById('menu-button');
@@ -1246,7 +1286,19 @@
   function parseRussianWeekdayToken(tok){ const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 }; return map[tok] ?? null; }
   function nextWeekdayISO(target){ const d=new Date(); const today=d.getDay(); let delta=(target-today+7)%7; if(delta===0) delta=7; d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); }
 
-  /* ========= Хранение ========= */
+  /* ========= Хранение (дебаунс) ========= */
+  const _saveDebounced = debounce(()=>{
+    try{
+      localStorage.setItem(LS_DATA, JSON.stringify({
+        projects: state.projects,
+        pinned: state.pinned,
+        tasks: state.tasks
+      }));
+      updateAppBadge();
+    }catch(e){ console.warn('save error', e); }
+  }, 120);
+  function save(){ _saveDebounced(); }
+
   function load(){
     const raw = localStorage.getItem(LS_DATA);
     if(!raw) return;
@@ -1256,50 +1308,14 @@
       if (Array.isArray(data.pinned)) state.pinned = data.pinned.slice(0,6);
       if (Array.isArray(data.tasks)) {
         state.tasks = data.tasks.map(t=>{
-          if (Array.isArray(t.subtasks) && !Array.isArray(t.subtasksDone)) {
-            t.subtasksDone = t.subtasks.map(()=>false);
-          }
+          if (Array.isArray(t.subtasks) && !Array.isArray(t.subtasksDone)) t.subtasksDone = t.subtasks.map(()=>false);
           return t;
         });
       }
     }catch(e){ console.warn('load error', e); }
   }
-  function save(){
-    localStorage.setItem(LS_DATA, JSON.stringify({
-      projects: state.projects,
-      pinned: state.pinned,
-      tasks: state.tasks
-    }));
-    updateAppBadge();
-  }
 
-  /* ========= Инициализация Premium/Trial и UI ========= */
-  fetchPremiumStatus();
-  load();
-
-  // Тема
-  buildThemeCards();
-
-  // Меню
-  menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
-  closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
-  document.addEventListener('click', (e)=>{
-    if (!sideMenu.classList.contains('hidden')) {
-      const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
-      if (!inside) sideMenu.classList.add('hidden');
-    }
-  });
-
-  // Настройки
-  function openSettings(){
-    settingsModal.classList.remove('hidden');
-    buildThemeCards();
-    updatePremiumStatusInSettings();
-  }
-  function closeSettingsModal(){ settingsModal.classList.add('hidden'); }
-  closeSettings.addEventListener('click', closeSettingsModal);
-  settingsBackdrop.addEventListener('click', closeSettingsModal);
-
+  /* ========= ТЕМА / НАСТРОЙКИ UI ========= */
   function buildThemeCards(){
     themeGrid.innerHTML = '';
     const current = document.documentElement.getAttribute('data-theme');
@@ -1345,15 +1361,12 @@
   /* ========= Гейтинг функций ========= */
   function gateFeaturesByPlan(){
     const prem = isPremiumActive();
-
-    // Виды (Календарь, Доска) — только премиум
     const lockViewBtn = (el)=>{ if (!el) return; el.dataset.requiresPremium='1'; };
     lockViewBtn(document.getElementById('btn-view-kanban'));
     lockViewBtn(document.getElementById('btn-view-calendar'));
     lockViewBtn(document.getElementById('btn-mobile-kanban'));
     lockViewBtn(document.getElementById('btn-mobile-calendar'));
 
-    // Фильтр и сортировка — только премиум
     [filterButton, sortButton].forEach(btn=>{
       if (!btn) return;
       btn.disabled = !prem;
@@ -1361,13 +1374,9 @@
       btn.title = prem ? '' : 'Доступно в Premium';
     });
 
-    // Панели тоже скрыть если не премиум
     if (!prem){ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); }
-
-    // Активные проекты (панель)
     activeProjectsPanel.classList.toggle('hidden', !prem);
 
-    // Если пользователь в бесплатной и открыл канбан/календарь — вернуть на список
     const currentView = state.view;
     if (!prem && (currentView==='kanban' || currentView==='calendar')){
       state.view='list';
@@ -1393,9 +1402,6 @@
       sel.appendChild(opt);
     });
   }
-
-  hydrateProjectSelector();
-  hydrateTaskProjectSelect();
 
   addProjectButton.addEventListener('click', openProjectModal);
   deleteProjectButton.addEventListener('click', ()=>{
@@ -1447,7 +1453,7 @@
     }
   });
 
-  /* ========= Закреплённые проекты: НОВЫЙ ФЛОУ (по названию или создание) ========= */
+  /* ========= Закреплённые проекты ========= */
   function renderPinnedStrip(){
     pinnedStrip.innerHTML = '';
     const makeChip = (pid)=>{
@@ -1487,7 +1493,6 @@
       pinnedStrip.appendChild(addChip);
     }
 
-    // Перестановка
     pinnedStrip.addEventListener('dragover', (e)=>{
       e.preventDefault();
       const dragging = pinnedStrip.querySelector('.dragging');
@@ -1499,7 +1504,7 @@
       });
       if (afterEl) pinnedStrip.insertBefore(dragging, afterEl);
       else pinnedStrip.appendChild(dragging);
-    });
+    }, passOpt);
     pinnedStrip.addEventListener('drop', ()=>{
       const ids = [...pinnedStrip.querySelectorAll('.pin-chip')].map(c=>c.dataset.id).filter(Boolean);
       state.pinned = ids.slice(0,6);
@@ -1507,7 +1512,6 @@
     });
   }
 
-  // Новый UX: ввод названия (существующего или нового)
   function addPinnedFlow(){
     const name = (prompt('Введите название проекта, чтобы закрепить.\nЕсли такого проекта нет — он будет создан:') || '').trim();
     if (!name) return;
@@ -1516,7 +1520,6 @@
     if (found){
       targetId = found.id;
     } else {
-      // Создаём новый проект
       const id = name.toLowerCase().replace(/\s+/g,'-');
       const color = '#f59e0b';
       state.projects.push({ id, name, color });
@@ -1559,7 +1562,6 @@
         </div>
       `;
       card.addEventListener('click', ()=>{
-        // Открыть редактор проекта, предзаполненный
         projectModal.classList.remove('hidden');
         document.getElementById('project-id').value=p.id;
         projectNameInput.value=p.name;
@@ -1571,7 +1573,6 @@
 
   /* ========= Виды ========= */
   function showView(view){
-    // Если нужна премиум-фича
     if ((view==='kanban' || view==='calendar') && !isPremiumActive()){
       openPremiumModal();
       view='list';
@@ -1618,7 +1619,7 @@
     e.stopPropagation();
   });
   sortSelect.addEventListener('change', ()=>{ state.sort = sortSelect.value; renderAll(); });
-  document.addEventListener('click', ()=>{ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); });
+  document.addEventListener('click', ()=>{ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); }, passOpt);
 
   /* ========= Быстрое добавление ========= */
   quickAddInput.addEventListener('keydown', (e)=>{
@@ -1707,33 +1708,147 @@
       else if(label.includes('Поиск')) { if (searchInput) searchInput.focus(); }
     });
   });
-  commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
+  commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); }, 
+  <script>
+/* ==========================================================
+   Planner WebApp — Perf-optimized bundle (Part 2/2)
+   — rAF batching, idle hydration, delegated events
+   — lightweight list virtualization for mobile
+   — fewer layouts, fewer listeners, trimmed work on load
+   ========================================================== */
+(() => {
+  "use strict";
 
-  /* ========= Фильтрация/Сортировка ========= */
+  /* ---- Lightweight scheduler ---- */
+  const raf = window.requestAnimationFrame || (cb=>setTimeout(cb,16));
+  const ric = window.requestIdleCallback || (cb=>setTimeout(()=>cb({timeRemaining:()=>50}), 60));
+  const now = ()=>performance?.now?.() || Date.now();
+
+  /* Refs to reused nodes (re-queried only once) */
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+
+  // Containers from Part 1 (должны уже быть в разметке):
+  const statsBar = $('#stats-bar');
+  const projectSelector = $('#project-selector');
+  const pinnedStrip = $('#pinned-strip');
+  const activeProjectsPanel = $('#active-projects-panel');
+  const activeProjectsGrid = $('#active-projects-grid');
+  const listContainer = $('#list-container');
+  const emptyState = $('#empty-state');
+  const filterPanel = $('#filter-panel');
+  const sortPanel = $('#sort-panel');
+  const searchInput = $('#search-input');
+  const quickAddInput = $('#quick-add-input');
+  const taskModal = $('#task-modal');
+  const projectModal = $('#project-modal');
+  const settingsModal = $('#settings-modal');
+  const commandPalette = $('#command-palette');
+  const commandInput = $('#command-input');
+
+  const prevMonth = $('#prev-month');
+  const nextMonth = $('#next-month');
+  const todayButton = $('#today-button');
+  const monthTitle = $('#month-title');
+  const weekdayRow = $('#weekday-row');
+  const calendarGrid = $('#calendar-grid');
+
+  const viewSelectors = $$('.view-selector');
+
+  /* ---- Shared state (continued) ---- */
+  const state = window.__TP_STATE__ || {
+    projects: [],
+    pinned: [],
+    tasks: [],
+    view: 'list',
+    search: '',
+    filters: { due:'all', priority:'all', status:'all' },
+    sort: 'due-asc',
+    currentMonth: new Date(),
+    selectedTaskId: null
+  };
+  // expose once for other blocks from Part 1 (если загружены)
+  window.__TP_STATE__ = state;
+
+  /* ---- Helpers (compatible with Part 1 naming) ---- */
+  const LS_DATA = window.__TP_KEYS__?.LS_DATA || (() => {
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+    const base = 'tp_data_default';
+    const suffix = tgUser?.id ? `tg_${tgUser.id}` : 'guest';
+    return `${base}_${suffix}`;
+  })();
+
+  function saveDebounced(){
+    if (saveDebounced.t) cancelAnimationFrame(saveDebounced.t);
+    saveDebounced.t = raf(()=>{
+      try{
+        localStorage.setItem(LS_DATA, JSON.stringify({
+          projects: state.projects,
+          pinned: state.pinned,
+          tasks: state.tasks
+        }));
+      }catch(e){}
+      updateAppBadge();
+    });
+  }
+  const isPremiumActive = window.__TP_PREMIUM__?.isPremiumActive || (()=>false);
+  const projectById = id => state.projects.find(p=>p.id===id) || null;
+  const rgba = (hex,a)=>{
+    const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||'');
+    const r=m?parseInt(m[1],16):59,g=m?parseInt(m[2],16):130,b=m?parseInt(m[3],16):246;
+    return `rgba(${r},${g},${b},${a})`;
+  };
+  const textColorForBg = hex=>{
+    const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||'');
+    const r=m?parseInt(m[1],16):59,g=m?parseInt(m[2],16):130,b=m?parseInt(m[3],16):246;
+    const yiq=(r*299+g*587+b*114)/1000; return yiq>=128?'#111827':'#f9fafb';
+  };
+  const todayISO = (shift=0)=>{ const d=new Date(); d.setDate(d.getDate()+shift); return d.toISOString().slice(0,10); };
+  const nowISO = ()=> new Date().toISOString();
+  const fmtDateHuman = iso => !iso ? 'Без срока' : new Date(iso+'T00:00:00').toLocaleDateString('ru-RU',{day:'2-digit',month:'long'});
+  const priorityRu = p => ({low:'Низкий',medium:'Средний',high:'Высокий',critical:'Критичный'})[p]||p;
+  const statusRu   = s => ({'backlog':'Бэклог','in-progress':'В работе','review':'Проверка','done':'Готово'})[s]||s;
+  const priorityClass = p => ({low:'priority-low',medium:'priority-medium',high:'priority-high',critical:'priority-critical'})[p];
+  const statusClass   = s => ({'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'})[s];
+
+  /* ==========================================================
+     Virtualized list (mobile) — keeps DOM light
+     ========================================================== */
+  const VIRT = {
+    enabled: true,
+    estRow: 112,          // средняя высота карточки
+    overscan: 6,          // буфер карточек сверху/снизу
+    scrollTop: 0,
+    viewportH: 0,
+    total: 0,
+    items: [],
+    mounted: false
+  };
+
   function getFilteredTasks(){
-    const q = state.search;
-    const proj = projectSelector.value;
+    const q = state.search?.toLowerCase?.() || '';
+    const proj = projectSelector?.value || 'all';
     const { due, priority, status } = state.filters;
+
+    const premium = isPremiumActive();
+    const today = new Date(todayISO(0)+'T00:00:00');
 
     let arr = state.tasks.filter(t=>{
       if (proj!=='all' && t.project!==proj) return false;
-      if (q) {
+      if (q){
         const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      // если нет премиума — не фильтруем по этим критериям (кроме поиска/проекта)
-      if (isPremiumActive()){
-        if (due!=='all') {
-          const today = new Date(todayISO(0)+'T00:00:00');
+      if (premium){
+        if (due!=='all'){
           const d = t.dueDate ? new Date(t.dueDate+'T00:00:00') : null;
           if (due==='today' && (!d || d.toDateString()!==today.toDateString())) return false;
-          if (due==='week') {
+          if (due==='week'){
             const s = startOfWeek(today), e = endOfWeek(today);
             if (!d || d<s || d>e) return false;
           }
-          if (due==='overdue') {
-            if (!t.dueDate) return false;
-            if (t.completed) return false;
+          if (due==='overdue'){
+            if (!t.dueDate || t.completed) return false;
             if (new Date(t.dueDate+'T00:00:00') >= today) return false;
           }
         }
@@ -1745,47 +1860,55 @@
 
     const prRank = { critical:3, high:2, medium:1, low:0 };
     const stRank = { 'backlog':0,'in-progress':1,'review':2,'done':3 };
-
-    let cmp = (a,b)=>0;
-    if (isPremiumActive()){
-      cmp = {
-        'due-asc': (a,b)=> (a.dueDate||'9999') < (b.dueDate||'9999') ? -1 : (a.dueDate||'9999') > (b.dueDate||'9999') ? 1 : 0,
-        'due-desc': (a,b)=> (a.dueDate||'0000') > (b.dueDate||'0000') ? -1 : (a.dueDate||'0000') < (b.dueDate||'0000') ? 1 : 0,
-        'priority-desc': (a,b)=> prRank[b.priority]-prRank[a.priority],
-        'priority-asc': (a,b)=> prRank[a.priority]-prRank[b.priority],
-        'project-asc': (a,b)=> projectName(a.project).localeCompare(projectName(b.project),'ru'),
-        'status-asc': (a,b)=> stRank[a.status]-stRank[b.status],
-        'title-asc': (a,b)=> a.title.localeCompare(b.title,'ru')
-      }[state.sort] || (()=>0);
-    } else {
-      // Базовая — сортируем только по названию
-      cmp = (a,b)=> a.title.localeCompare(b.title,'ru');
-    }
+    const cmp = isPremiumActive()
+      ? ({
+          'due-asc': (a,b)=> (a.dueDate||'9999').localeCompare(b.dueDate||'9999'),
+          'due-desc': (a,b)=> (b.dueDate||'0000').localeCompare(a.dueDate||'0000'),
+          'priority-desc': (a,b)=> prRank[b.priority]-prRank[a.priority],
+          'priority-asc': (a,b)=> prRank[a.priority]-prRank[b.priority],
+          'project-asc': (a,b)=> (projectById(a.project)?.name||'').localeCompare(projectById(b.project)?.name||'','ru'),
+          'status-asc': (a,b)=> stRank[a.status]-stRank[b.status],
+          'title-asc': (a,b)=> a.title.localeCompare(b.title,'ru')
+        }[state.sort] || (()=>0))
+      : ((a,b)=> a.title.localeCompare(b.title,'ru'));
 
     arr.sort(cmp);
     return arr;
   }
 
-  /* ========= Статистика ========= */
+  function startOfWeek(d=new Date()){
+    const x=new Date(d); const wd=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-wd); return x;
+  }
+  function endOfWeek(d=new Date()){
+    const x=startOfWeek(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x;
+  }
+
+  /* ---- Stats (batched) ---- */
   function renderStats(){
     const total = state.tasks.length;
     const todayStr = todayISO(0);
-    const doneToday = state.tasks.filter(t=> t.completed && (t.completedAt||'').slice(0,10)===todayStr).length;
-    const sWeek = startOfWeek(); const eWeek = endOfWeek();
-    const doneWeek = state.tasks.filter(t=>{
-      if (!t.completedAt) return false;
-      const d = new Date(t.completedAt);
-      return d>=sWeek && d<=eWeek;
-    }).length;
-    const overdue = state.tasks.filter(t=> t.dueDate && !t.completed && t.dueDate < todayStr).length;
+    let doneToday=0, doneWeek=0, overdue=0;
 
-    statsBar.innerHTML = '';
-    [
+    const sWeek = startOfWeek(), eWeek=endOfWeek();
+    for (let i=0;i<state.tasks.length;i++){
+      const t = state.tasks[i];
+      if (t.completed && (t.completedAt||'').slice(0,10)===todayStr) doneToday++;
+      if (t.completedAt){
+        const d = new Date(t.completedAt);
+        if (d>=sWeek && d<=eWeek) doneWeek++;
+      }
+      if (t.dueDate && !t.completed && t.dueDate < todayStr) overdue++;
+    }
+
+    const frag = document.createDocumentFragment();
+    const metas = [
       { label:'Всего задач', value: total, icon:'fa-list' },
       { label:'Выполнено сегодня', value: doneToday, icon:'fa-check-circle' },
       { label:'Выполнено за неделю', value: doneWeek, icon:'fa-calendar-check' },
       { label:'Просрочено', value: overdue, icon:'fa-clock' },
-    ].forEach(s=>{
+    ];
+    statsBar.innerHTML = '';
+    for (const s of metas){
       const el = document.createElement('div');
       el.className = 'bg-secondary rounded-xl p-3 md:p-4 flex items-center gap-3';
       el.innerHTML = `
@@ -1794,149 +1917,389 @@
         </div>
         <div><div class="text-xs text-hint">${s.label}</div><div class="text-lg font-semibold">${s.value}</div></div>
       `;
-      statsBar.appendChild(el);
+      frag.appendChild(el);
+    }
+    statsBar.appendChild(frag);
+  }
+
+  /* ---- Pinned strip (delegated) ---- */
+  function renderPinnedStrip(){
+    pinnedStrip.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    const max = Math.min(6, state.pinned.length);
+    for (let i=0;i<max;i++){
+      const pid = state.pinned[i];
+      const p = projectById(pid); if (!p) continue;
+      const chip = document.createElement('div');
+      chip.className = 'pin-chip flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer select-none';
+      chip.draggable = true;
+      chip.dataset.id = pid;
+      chip.innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full" style="background:${p.color}"></span>
+        <span class="text-sm">${escapeHtml(p.name)}</span>
+        <button class="text-red-500 hover:text-red-600 ml-1" title="Убрать из закреплённых" data-act="unpin"><i class="fas fa-times"></i></button>
+      `;
+      frag.appendChild(chip);
+    }
+    if (state.pinned.length < 6){
+      const addChip = document.createElement('button');
+      addChip.className = 'pin-chip px-3 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 ring-focus';
+      addChip.innerHTML = '<i class="fas fa-plus"></i><span class="text-sm">Добавить</span>';
+      addChip.dataset.act = 'pin-add';
+      frag.appendChild(addChip);
+    }
+    pinnedStrip.appendChild(frag);
+  }
+
+  function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
+
+  pinnedStrip.addEventListener('click', (e)=>{
+    const chip = e.target.closest('.pin-chip'); if (!chip) return;
+    if (e.target.closest('[data-act="unpin"]')){
+      const id = chip.dataset.id;
+      state.pinned = state.pinned.filter(x=>x!==id);
+      saveDebounced(); renderPinnedStrip();
+      return;
+    }
+    if (chip.dataset.act==='pin-add'){
+      const name = (prompt('Введите название проекта для закрепления (новый — будет создан):')||'').trim();
+      if (!name) return;
+      const found = state.projects.find(p=>p.name.toLowerCase()===name.toLowerCase());
+      let targetId;
+      if (found){ targetId = found.id; }
+      else{
+        const id = name.toLowerCase().replace(/\s+/g,'-');
+        const color = '#f59e0b';
+        state.projects.push({ id, name, color });
+        targetId = id;
+        hydrateProjectSelector(); hydrateTaskProjectSelect();
+      }
+      if (!state.pinned.includes(targetId)){
+        state.pinned.push(targetId);
+        state.pinned = state.pinned.slice(0,6);
+        saveDebounced(); renderPinnedStrip();
+      } else {
+        alert('Проект уже закреплён.');
+      }
+      return;
+    }
+    // select project
+    const pid = chip.dataset.id;
+    if (pid){ projectSelector.value = pid; scheduleRenderAll(); }
+  }, {passive:true});
+
+  // Drag reorder
+  let dragEl = null;
+  pinnedStrip.addEventListener('dragstart', e=>{
+    dragEl = e.target.closest('.pin-chip'); if (dragEl) dragEl.classList.add('dragging');
+  });
+  pinnedStrip.addEventListener('dragend', ()=>{
+    if (!dragEl) return; dragEl.classList.remove('dragging'); dragEl=null;
+    const ids = [...pinnedStrip.querySelectorAll('.pin-chip')].map(c=>c.dataset.id).filter(Boolean);
+    state.pinned = ids.slice(0,6); saveDebounced();
+  });
+  pinnedStrip.addEventListener('dragover', e=>{
+    e.preventDefault();
+    const dragging = pinnedStrip.querySelector('.dragging'); if (!dragging) return;
+    const siblings = [...pinnedStrip.querySelectorAll('.pin-chip:not(.dragging)')];
+    const afterEl = siblings.find(s=>{
+      const rect = s.getBoundingClientRect();
+      return e.clientX < rect.left + rect.width/2;
+    });
+    if (afterEl) pinnedStrip.insertBefore(dragging, afterEl);
+    else pinnedStrip.appendChild(dragging);
+  });
+
+  /* ---- Active projects (premium) ---- */
+  function renderActiveProjects(){
+    if (activeProjectsPanel.classList.contains('hidden')) return;
+    const activeIds = new Set();
+    for (let i=0;i<state.tasks.length;i++){
+      const t=state.tasks[i]; if(!t.completed && t.project) activeIds.add(t.project);
+    }
+    const ids = [...activeIds];
+    if (!ids.length){ activeProjectsGrid.innerHTML = `<div class="text-sm text-hint">Нет активных проектов</div>`; return; }
+
+    const frag = document.createDocumentFragment();
+    for (const pid of ids){
+      const p = projectById(pid); if (!p) continue;
+      const textColor = textColorForBg(p.color);
+      const count = state.tasks.reduce((acc,t)=> acc + (t.project===p.id && !t.completed ? 1 : 0), 0);
+      const card = document.createElement('button');
+      card.className = 'w-full text-left rounded-xl border border-secondary p-3 hover:bg-secondary';
+      card.dataset.pid = p.id;
+      card.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full" style="background:${p.color}"></span>
+            <span class="font-medium">${escapeHtml(p.name)}</span>
+          </div>
+          <span class="text-xs px-2 py-0.5 rounded-full" style="background:${rgba(p.color,.15)};color:${textColor};border:1px solid ${rgba(p.color,.35)}">
+            ${count} задач
+          </span>
+        </div>
+      `;
+      frag.appendChild(card);
+    }
+    activeProjectsGrid.innerHTML = '';
+    activeProjectsGrid.appendChild(frag);
+  }
+  activeProjectsGrid.addEventListener('click', (e)=>{
+    const card = e.target.closest('button[data-pid]'); if (!card) return;
+    // Открываем модал проекта, предварительно заполнять может ваш код из части 1
+    $('#project-modal')?.classList?.remove('hidden');
+    const p = projectById(card.dataset.pid);
+    if (p){
+      $('#project-id').value=p.id;
+      $('#project-name').value=p.name;
+      $('#project-color').value=p.color;
+    }
+  }, {passive:true});
+
+  /* ---- View switch ---- */
+  function showView(view){
+    if ((view==='kanban' || view==='calendar') && !isPremiumActive()){
+      window.__TP_PREMIUM__?.openPremiumModal?.(); // мягкий переход
+      view='list';
+    }
+    state.view = view;
+    $$('.view-content').forEach(el=> el.classList.toggle('hidden', el.id !== `${view}-view`));
+    viewSelectors.forEach(btn=>{
+      btn.classList.remove('btn-main','text-[var(--button-text)]');
+      if (btn.dataset.view === view) btn.classList.add('btn-main');
+    });
+    if (view==='calendar') renderCalendar();
+    if (view==='kanban') renderKanban();
+    if (view==='list') renderList();
+  }
+  viewSelectors.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      if (b.dataset.requiresPremium==='1' && !isPremiumActive()){ window.__TP_PREMIUM__?.openPremiumModal?.(); return; }
+      showView(b.dataset.view);
+    }, {passive:true});
+  });
+
+  /* ---- Search & Quick add (debounced) ---- */
+  if (searchInput){
+    let t=null;
+    searchInput.addEventListener('input', ()=>{
+      if (t) cancelAnimationFrame(t);
+      t = raf(()=>{ state.search = searchInput.value.trim().toLowerCase(); scheduleRenderAll(); });
+    }, {passive:true});
+  }
+  if (quickAddInput){
+    quickAddInput.addEventListener('keydown', (e)=>{
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const raw = quickAddInput.value.trim();
+      if (!raw) return;
+      const parsed = window.__TP_PARSE__ ? window.__TP_PARSE__.parseQuickAdd(raw) : { title: raw, priority:'medium' };
+      state.tasks.unshift({
+        id: Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4),
+        title: parsed.title || 'Без названия',
+        priority: parsed.priority || 'medium',
+        status: 'backlog',
+        project: parsed.project || (state.projects[0]?.id || ''),
+        dueDate: parsed.dueDate || '',
+        description: '',
+        tags: parsed.tags || [],
+        subtasks: [],
+        subtasksDone: [],
+        completed: false,
+        createdAt: nowISO()
+      });
+      quickAddInput.value = '';
+      saveDebounced(); scheduleRenderAll();
     });
   }
 
-  /* ========= Список ========= */
+  /* ==========================================================
+     LIST (virtualized)
+     ========================================================== */
+  let listScrollParent = null;
+  function ensureListScrollParent(){
+    if (listScrollParent) return listScrollParent;
+    // для мобильной верстки ближайший скроллер — window
+    listScrollParent = document.scrollingElement || document.documentElement;
+    return listScrollParent;
+  }
+
+  function measureViewport(){
+    const sp = ensureListScrollParent();
+    VIRT.viewportH = sp.clientHeight || window.innerHeight;
+    VIRT.scrollTop = (sp.scrollTop||0);
+  }
+
   function renderList(){
-    const tasks = getFilteredTasks();
+    const items = getFilteredTasks();
+    VIRT.items = items;
+    VIRT.total = items.length;
+
+    if (!VIRT.enabled || VIRT.total<=40){ // малые списки — без виртуализации
+      renderListFull(items);
+      return;
+    }
+    measureViewport();
+
+    const est = VIRT.estRow;
+    const startIdx = Math.max(0, Math.floor(VIRT.scrollTop/est) - VIRT.overscan);
+    const endIdx = Math.min(VIRT.total, Math.ceil((VIRT.scrollTop+VIRT.viewportH)/est) + VIRT.overscan);
+    const before = startIdx * est;
+    const after  = Math.max(0, (VIRT.total - endIdx) * est);
+
+    const fragTop = document.createElement('div');
+    fragTop.style.height = before+'px';
+
+    const fragBottom = document.createElement('div');
+    fragBottom.style.height = after+'px';
+
+    const frag = document.createDocumentFragment();
+    frag.appendChild(fragTop);
+
+    for (let i=startIdx;i<endIdx;i++){
+      frag.appendChild(buildTaskCard(items[i]));
+    }
+
+    frag.appendChild(fragBottom);
     listContainer.innerHTML = '';
-    if (tasks.length===0){ emptyState.classList.remove('hidden'); return; }
-    emptyState.classList.add('hidden');
+    listContainer.appendChild(frag);
 
-    tasks.forEach(t=>{
-      const project = projectById(t.project);
-      const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
-      const doneSub = (t.subtasksDone||[]).filter(Boolean).length;
-      const totalSub = (t.subtasks||[]).length;
-      const progressPct = totalSub ? Math.round(doneSub/totalSub*100) : 0;
-
-      const card = document.createElement('div');
-      card.className = 'task-card bg-secondary rounded-lg p-4 relative';
-      card.dataset.id = t.id;
-
-      card.innerHTML = `
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex items-start gap-3">
-            <div class="mt-1">
-              <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-secondary text-[var(--button)] focus:ring-[var(--button)]">
-            </div>
-            <div class="w-full">
-              <h3 class="font-medium ${t.completed?'line-through opacity-70':''}" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h3>
-              <p class="text-sm text-hint mt-1">${t.dueDate?('Срок: '+fmtDateHuman(t.dueDate)):'Без срока'}</p>
-              <div class="flex flex-wrap gap-2 mt-2">
-                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
-                <span class="${statusClass(t.status)} text-xs px-2 py-1 rounded-full">${statusRu(t.status)}</span>
-                ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
-                ${(t.tags||[]).map(tag=>`<span class="bg-[var(--bg)] border border-secondary text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
-              </div>
-              ${ totalSub ? `
-                <div class="mt-3">
-                  <div class="progress-wrap" aria-label="Прогресс подзадач">
-                    <div class="progress-bar" style="width:${progressPct}%"></div>
-                  </div>
-                  <div class="text-xs text-hint mt-1">${doneSub}/${totalSub} выполнено</div>
-                  <div class="mt-2 space-y-1">
-                    ${t.subtasks.map((s,i)=>`
-                      <label class="flex items-center gap-2 text-sm">
-                        <input type="checkbox" class="subtask-checkbox" data-act="toggle-subtask" data-id="${t.id}" data-idx="${i}" ${t.subtasksDone?.[i]?'checked':''}>
-                        <span class="subtask-label">${escapeHtml(s)}</span>
-                      </label>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : '' }
-            </div>
-          </div>
-          <div class="flex flex-col items-end gap-1">
-            <button class="text-hint hover:text-[var(--text)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
-            <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
-          </div>
-        </div>
-      `;
-      listContainer.appendChild(card);
-      attachSwipeHandlers(card, t.id);
-    });
-
-    listContainer.querySelectorAll('.task-card').forEach(card=>{
-      card.addEventListener('click', (e)=>{
-        if (e.target.closest('button, input, textarea, select, .subtask-checkbox')) return;
-        listContainer.querySelectorAll('.task-card').forEach(c=>c.classList.remove('selected'));
-        card.classList.add('selected');
-        state.selectedTaskId = card.dataset.id;
-      });
-    });
-
-    listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
-      inp.addEventListener('click', e=> e.stopPropagation());
-      inp.addEventListener('change', ()=>{
-        const t = state.tasks.find(x=>x.id===inp.dataset.id);
-        if (t){
-          t.completed = inp.checked;
-          if (t.completed){ t.status='done'; t.completedAt = nowISO(); }
-          else { if (t.status==='done') t.status='backlog'; t.completedAt = undefined; }
-          save(); renderAll();
-        }
-      });
-    });
-
-    listContainer.querySelectorAll('[data-act="inline-title"]').forEach(elm=>{
-      elm.addEventListener('click', ()=>{
-        const id = elm.dataset.id;
-        const t = state.tasks.find(x=>x.id===id);
-        if (!t) return;
-        if (elm.querySelector('input')) return;
-        const input = document.createElement('input');
-        input.type='text';
-        input.value = t.title;
-        input.className = 'title-input';
-        elm.replaceWith(input);
-        input.focus();
-        input.select();
-        const commit = ()=>{
-          const newTitle = input.value.trim() || t.title;
-          t.title = newTitle;
-          save(); renderList();
-        };
-        input.addEventListener('keydown', (e)=>{
-          if (e.key==='Enter') commit();
-          if (e.key==='Escape') renderList();
-        });
-        input.addEventListener('blur', commit);
-      });
-    });
-
-    listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const t = state.tasks.find(x=>x.id===b.dataset.id);
-      if (t) openTaskModal(t);
-    }));
-
-    listContainer.querySelectorAll('[data-act="delete"]').forEach(b=> b.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const t = state.tasks.find(x=>x.id===b.dataset.id);
-      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
-    }));
-
-    listContainer.querySelectorAll('[data-act="toggle-subtask"]').forEach(ch=>{
-      ch.addEventListener('change', ()=>{
-        const id = ch.dataset.id;
-        const idx = +ch.dataset.idx;
-        const t = state.tasks.find(x=>x.id===id);
-        if (!t) return;
-        if (!Array.isArray(t.subtasksDone)) t.subtasksDone = [];
-        t.subtasksDone[idx] = ch.checked;
-        save(); renderList();
-      });
-    });
-
-    // Обновить панель активных проектов
+    emptyState.classList.toggle('hidden', VIRT.total>0);
     renderActiveProjects();
   }
 
+  function renderListFull(items){
+    listContainer.innerHTML = '';
+    if (!items.length){ emptyState.classList.remove('hidden'); return; }
+    emptyState.classList.add('hidden');
+    const frag = document.createDocumentFragment();
+    for (let i=0;i<items.length;i++){
+      frag.appendChild(buildTaskCard(items[i]));
+    }
+    listContainer.appendChild(frag);
+    renderActiveProjects();
+  }
+
+  function buildTaskCard(t){
+    const project = projectById(t.project);
+    const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
+    const doneSub = (t.subtasksDone||[]).filter(Boolean).length;
+    const totalSub = (t.subtasks||[]).length;
+    const progressPct = totalSub ? Math.round(doneSub/totalSub*100) : 0;
+
+    const card = document.createElement('div');
+    card.className = 'task-card bg-secondary rounded-lg p-4 relative';
+    card.dataset.id = t.id;
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-start gap-3">
+          <div class="mt-1">
+            <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" class="rounded border-secondary text-[var(--button)] focus:ring-[var(--button)]">
+          </div>
+          <div class="w-full">
+            <h3 class="font-medium ${t.completed?'line-through opacity-70':''}" data-act="inline-title">${escapeHtml(t.title)}</h3>
+            <p class="text-sm text-hint mt-1">${t.dueDate?('Срок: '+fmtDateHuman(t.dueDate)):'Без срока'}</p>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+              <span class="${statusClass(t.status)} text-xs px-2 py-1 rounded-full">${statusRu(t.status)}</span>
+              ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
+              ${(t.tags||[]).map(tag=>`<span class="bg-[var(--bg)] border border-secondary text-xs px-2 py-1 rounded-full">${escapeHtml(tag)}</span>`).join('')}
+            </div>
+            ${ totalSub ? `
+              <div class="mt-3">
+                <div class="progress-wrap" aria-label="Прогресс подзадач">
+                  <div class="progress-bar" style="width:${progressPct}%"></div>
+                </div>
+                <div class="text-xs text-hint mt-1">${doneSub}/${totalSub} выполнено</div>
+                <div class="mt-2 space-y-1">
+                  ${t.subtasks.map((s,i)=>`
+                    <label class="flex items-center gap-2 text-sm">
+                      <input type="checkbox" class="subtask-checkbox" data-act="toggle-subtask" data-idx="${i}" ${t.subtasksDone?.[i]?'checked':''}>
+                      <span class="subtask-label">${escapeHtml(s)}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            ` : '' }
+          </div>
+        </div>
+        <div class="flex flex-col items-end gap-1">
+          <button class="text-hint hover:text-[var(--text)]" data-act="edit" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+          <button class="text-red-500 hover:text-red-600" data-act="delete" aria-label="Удалить"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+    // swipe handlers (passive)
+    attachSwipeHandlers(card, t.id);
+    return card;
+  }
+
+  /* ---- Delegated actions in list ---- */
+  listContainer.addEventListener('click', (e)=>{
+    const card = e.target.closest('.task-card'); if (!card) return;
+    const id = card.dataset.id;
+    const actBtn = e.target.closest('[data-act]');
+    if (!actBtn){
+      $$('.task-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected'); state.selectedTaskId = id; return;
+    }
+    const act = actBtn.dataset.act;
+    if (act==='toggle'){
+      const t = state.tasks.find(x=>x.id===id);
+      if (t){ t.completed = !t.completed; if (t.completed){ t.status='done'; t.completedAt=nowISO(); } else { if (t.status==='done') t.status='backlog'; t.completedAt=undefined; } saveDebounced(); scheduleRenderAll(); }
+      return;
+    }
+    if (act==='inline-title'){
+      // handled on h3 click (below)
+      return;
+    }
+    if (act==='edit'){
+      const t = state.tasks.find(x=>x.id===id);
+      if (t) window.__TP_TASK_MODAL__?.openTaskModal?.(t);
+      return;
+    }
+    if (act==='delete'){
+      const t = state.tasks.find(x=>x.id===id);
+      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); saveDebounced(); scheduleRenderAll(); }
+      return;
+    }
+    if (act==='toggle-subtask'){
+      const idx = +actBtn.dataset.idx;
+      const t = state.tasks.find(x=>x.id===id);
+      if (!t) return;
+      if (!Array.isArray(t.subtasksDone)) t.subtasksDone = [];
+      t.subtasksDone[idx] = !t.subtasksDone[idx];
+      saveDebounced(); // локально перерисовать одну карточку:
+      raf(()=>{ const bar = card.querySelector('.progress-bar'); if (bar){ const done = (t.subtasksDone||[]).filter(Boolean).length; const total = (t.subtasks||[]).length; bar.style.width = (total?Math.round(done/total*100):0) + '%'; }});
+      return;
+    }
+  });
+
+  // inline title edit (delegated)
+  listContainer.addEventListener('click', (e)=>{
+    const h = e.target.closest('h3[data-act="inline-title"]'); if (!h) return;
+    const card = h.closest('.task-card'); if (!card) return;
+    const id = card.dataset.id;
+    const t = state.tasks.find(x=>x.id===id); if (!t) return;
+    if (h.querySelector('input')) return;
+    const input = document.createElement('input');
+    input.type='text'; input.value = t.title; input.className='title-input';
+    h.replaceWith(input); input.focus(); input.select();
+    const commit = ()=>{
+      const newTitle = input.value.trim() || t.title;
+      t.title = newTitle; saveDebounced(); // replace back fast
+      const h3 = document.createElement('h3');
+      h3.className = 'font-medium '+(t.completed?'line-through opacity-70':'');
+      h3.dataset.act='inline-title'; h3.textContent = newTitle;
+      input.replaceWith(h3);
+    };
+    input.addEventListener('keydown', ev=>{ if (ev.key==='Enter') commit(); if (ev.key==='Escape'){ input.blur(); } });
+    input.addEventListener('blur', commit);
+  });
+
+  /* ---- Swipe helpers (mobile) ---- */
   function attachSwipeHandlers(card, id){
-    let startX=0, currentX=0, swiping=false;
+    let startX=0,currentX=0,swiping=false;
     card.addEventListener('touchstart', (e)=>{ startX = e.touches[0].clientX; swiping=true; card.style.transition='transform .0s, opacity .0s'; }, {passive:true});
     card.addEventListener('touchmove', (e)=>{
       if(!swiping) return;
@@ -1952,30 +2315,30 @@
       card.style.transform='translateX(0)';
       card.style.opacity='1';
       swiping=false;
-      if (dx > 80){
-        const t = state.tasks.find(x=>x.id===id);
-        if (t){ t.completed = true; t.status='done'; t.completedAt = nowISO(); save(); renderAll(); }
-      } else if (dx < -80){
-        const t = state.tasks.find(x=>x.id===id);
-        if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==id); save(); renderAll(); }
-      }
-    });
+      const t = state.tasks.find(x=>x.id===id); if (!t) return;
+      if (dx > 80){ t.completed = true; t.status='done'; t.completedAt = nowISO(); saveDebounced(); scheduleRenderAll(); }
+      else if (dx < -80){ if (confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==id); saveDebounced(); scheduleRenderAll(); } }
+    }, {passive:true});
   }
 
-  function priorityClass(p){ return ({low:'priority-low',medium:'priority-medium',high:'priority-high',critical:'priority-critical'})[p]; }
-  function statusClass(s){ return ({'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'})[s]; }
-
-  /* ========= Канбан (Premium) ========= */
+  /* ==========================================================
+     KANBAN (kept lightweight)
+     ========================================================== */
   function renderKanban(){
-    if (!isPremiumActive()){ openPremiumModal(); showView('list'); return; }
-    const columns = document.querySelectorAll('.kanban-column');
-    columns.forEach(col=>{
+    if (!isPremiumActive()){ window.__TP_PREMIUM__?.openPremiumModal?.(); showView('list'); return; }
+    const cols = $$('.kanban-column');
+    const grouped = { 'backlog':[], 'in-progress':[], 'review':[], 'done':[] };
+    const items = getFilteredTasks();
+    for (let i=0;i<items.length;i++){ const it=items[i]; (grouped[it.status]||grouped.backlog).push(it); }
+
+    cols.forEach(col=>{
       const body = col.querySelector('.column-body');
-      body.innerHTML = '';
       const status = col.getAttribute('data-col');
-      const tasks = getFilteredTasks().filter(t=>t.status===status);
-      tasks.forEach(t=>{
-        const project = projectById(t.project);
+      const arr = grouped[status]||[];
+      const frag = document.createDocumentFragment();
+      body.innerHTML='';
+      for (let i=0;i<arr.length;i++){
+        const t = arr[i], project = projectById(t.project);
         const badgeStyle = project ? `style="background:${rgba(project.color,.15)};color:${textColorForBg(project.color)};border:1px solid ${rgba(project.color,.35)}"` : '';
         const card = document.createElement('div');
         card.className='task-card bg-[var(--bg)] rounded-lg p-3 cursor-move';
@@ -1984,7 +2347,7 @@
         card.innerHTML = `
           <div class="flex justify-between gap-2">
             <div class="${t.completed?'line-through opacity-70':''}">
-              <h4 class="font-medium" data-act="inline-title" data-id="${t.id}">${escapeHtml(t.title)}</h4>
+              <h4 class="font-medium" data-act="inline-title">${escapeHtml(t.title)}</h4>
               <div class="flex flex-wrap gap-2 mt-2">
                 <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
                 ${project ? `<span class="text-xs px-2 py-1 rounded-full" ${badgeStyle}>${project.name}</span>` : ''}
@@ -1992,94 +2355,95 @@
               <div class="text-xs text-hint mt-1">${t.dueDate? 'Срок: '+fmtDateHuman(t.dueDate):'Без срока'}</div>
             </div>
             <div class="flex flex-col items-end gap-1">
-              <button class="text-hint hover:text-[var(--text)]" data-act="edit" data-id="${t.id}" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
-              <button class="text-red-500 hover:text-red-600" data-act="delete" data-id="${t.id}" aria-label="Удалить"><i class="fas fa-trash"></i></button>
+              <button class="text-hint hover:text-[var(--text)]" data-act="edit" aria-label="Редактировать"><i class="fas fa-pen"></i></button>
+              <button class="text-red-500 hover:text-red-600" data-act="delete" aria-label="Удалить"><i class="fas fa-trash"></i></button>
             </div>
           </div>
         `;
-        body.appendChild(card);
-      });
+        frag.appendChild(card);
+      }
+      body.appendChild(frag);
     });
+
     ['backlog','in-progress','review','done'].forEach(s=>{
-      const cntEl = document.getElementById('cnt-'+s);
+      const cntEl = $('#cnt-'+s);
       if (cntEl) cntEl.textContent = state.tasks.filter(t=>t.status===s).length;
     });
 
+    // drag-n-drop (delegated)
+    $$('.kanban-column').forEach(col=>{
+      col.addEventListener('dragover', e=>{ e.preventDefault(); col.classList.add('bg-opacity-50'); }, {passive:false});
+      col.addEventListener('dragleave', ()=> col.classList.remove('bg-opacity-50'), {passive:true});
+      col.addEventListener('drop', e=>{
+        e.preventDefault(); col.classList.remove('bg-opacity-50');
+        const dragged = col.querySelector('.task-card.opacity-50'); // might be null
+        const status = col.getAttribute('data-col');
+      }, {passive:false});
+    });
     document.querySelectorAll('.kanban-column .task-card').forEach(card=>{
       card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
-      card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
-    });
-    document.querySelectorAll('.kanban-column').forEach(col=>{
-      col.addEventListener('dragover', (e)=>{ e.preventDefault(); col.classList.add('bg-opacity-50'); });
-      col.addEventListener('dragleave', ()=> col.classList.remove('bg-opacity-50'));
-      col.addEventListener('drop', (e)=>{
-        e.preventDefault(); col.classList.remove('bg-opacity-50');
-        const dragged = document.querySelector('.kanban-column .task-card.opacity-50');
-        const status = col.getAttribute('data-col');
-        if(!dragged) return;
-        const id = dragged.dataset.id;
-        const t = state.tasks.find(x=>x.id===id);
-        if(t){ t.status = status; if(status==='done'){ t.completed=true; t.completedAt=nowISO(); } else { t.completed=false; t.completedAt=undefined; } save(); renderKanban(); renderList(); renderCalendar(); }
+      card.addEventListener('dragend', ()=>{
+        const id = card.dataset.id;
+        card.classList.remove('opacity-50');
+        const col = card.closest('.kanban-column');
+        const status = col?.getAttribute('data-col') || 'backlog';
+        const t = state.tasks.find(x=>x.id===id); if (t){
+          t.status = status; if(status==='done'){ t.completed=true; t.completedAt=nowISO(); } else { t.completed=false; t.completedAt=undefined; }
+          saveDebounced(); renderKanban(); renderList();
+        }
       });
     });
 
-    document.querySelectorAll('#kanban-view [data-act="inline-title"]').forEach(elm=>{
-      elm.addEventListener('click', ()=>{
-        const id = elm.dataset.id;
-        const t = state.tasks.find(x=>x.id===id);
-        if (!t || elm.querySelector('input')) return;
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = t.title;
-        input.className = 'title-input';
-        elm.replaceWith(input);
-        input.focus(); input.select();
-        const commit = ()=>{ t.title = input.value.trim() || t.title; save(); renderKanban(); };
-        input.addEventListener('keydown', (e)=>{ if (e.key==='Enter') commit(); if (e.key==='Escape') renderKanban(); });
-        input.addEventListener('blur', commit);
-      });
-    });
-
-    document.querySelectorAll('#kanban-view [data-act="edit"]').forEach(b=> b.addEventListener('click', ()=>{
-      const t = state.tasks.find(x=>x.id===b.dataset.id);
-      if (t) openTaskModal(t);
-    }));
-    document.querySelectorAll('#kanban-view [data-act="delete"]').forEach(b=> b.addEventListener('click', ()=>{
-      const t = state.tasks.find(x=>x.id===b.dataset.id);
-      if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
-    }));
+    // delegated actions
+    $('#kanban-view')?.addEventListener?.('click', (e)=>{
+      const act = e.target.closest('[data-act]'); if (!act) return;
+      const card = e.target.closest('.task-card'); if (!card) return;
+      const id = card.dataset.id;
+      if (act.dataset.act==='edit'){ const t=state.tasks.find(x=>x.id===id); if (t) window.__TP_TASK_MODAL__?.openTaskModal?.(t); }
+      if (act.dataset.act==='delete'){
+        const t=state.tasks.find(x=>x.id===id);
+        if (t && confirm('Удалить задачу?')){ state.tasks = state.tasks.filter(x=>x.id!==id); saveDebounced(); scheduleRenderAll(); }
+      }
+      if (act.dataset.act==='inline-title'){
+        // inline rename like in list
+      }
+    }, {passive:true});
   }
 
-  /* ========= Календарь (Premium) ========= */
+  /* ==========================================================
+     CALENDAR
+     ========================================================== */
   const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
   const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
   function renderCalendar(){
-    if (!isPremiumActive()){ openPremiumModal(); showView('list'); return; }
+    if (!isPremiumActive()){ window.__TP_PREMIUM__?.openPremiumModal?.(); showView('list'); return; }
     weekdayRow.innerHTML = '';
-    WEEKDAYS.forEach(w=>{
+    const fragW = document.createDocumentFragment();
+    for (let i=0;i<WEEKDAYS.length;i++){
       const div = document.createElement('div');
       div.className = 'text-center text-sm font-medium py-2';
-      div.textContent = w;
-      weekdayRow.appendChild(div);
-    });
+      div.textContent = WEEKDAYS[i];
+      fragW.appendChild(div);
+    }
+    weekdayRow.appendChild(fragW);
 
     const d = new Date(state.currentMonth);
-    d.setDate(1);
-    const month = d.getMonth();
-    const year = d.getFullYear();
+    d.setDate(1); const month = d.getMonth(); const year = d.getFullYear();
     monthTitle.textContent = `${MONTHS_NOM[month]} ${year}`;
 
     let startIdx = (d.getDay() + 6) % 7;
     const daysInMonth = new Date(year, month+1, 0).getDate();
 
+    const frag = document.createDocumentFragment();
     calendarGrid.innerHTML = '';
     for(let i=0;i<startIdx;i++){
       const cell = document.createElement('div');
       cell.className = 'calendar-day border border-secondary rounded p-1 opacity-50';
-      calendarGrid.appendChild(cell);
+      frag.appendChild(cell);
     }
     const todayStr = todayISO(0);
+    const items = getFilteredTasks();
     for(let day=1; day<=daysInMonth; day++){
       const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
       const cell = document.createElement('div');
@@ -2089,120 +2453,59 @@
 
       cell.innerHTML = `<div class="text-right text-sm mb-1 ${iso===todayStr?'font-bold':''}">${day}</div>`;
 
-      const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
-      tasks.slice(0,6).forEach(t=>{
+      let printed=0;
+      for (let i=0;i<items.length&&printed<6;i++){
+        const t=items[i]; if (t.dueDate!==iso) continue;
         const badge = document.createElement('div');
         badge.className = `text-xs truncate px-1 py-0.5 rounded mb-1 ${t.status==='done'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}`;
         badge.textContent = t.title;
         badge.draggable = true;
         badge.dataset.id = t.id;
-        badge.addEventListener('dragstart', (e)=>{
-          e.dataTransfer.setData('text/task-id', t.id);
-          e.dataTransfer.effectAllowed = 'move';
-        });
-        cell.appendChild(badge);
-      });
-      if (tasks.length>6){
-        const more = document.createElement('div');
-        more.className='text-hint text-xs px-1';
-        more.textContent = `+ ещё ${tasks.length-6}`;
-        cell.appendChild(more);
+        badge.addEventListener('dragstart', (e)=>{ e.dataTransfer.setData('text/task-id', t.id); e.dataTransfer.effectAllowed='move'; });
+        cell.appendChild(badge); printed++;
+      }
+      const more = items.reduce((acc,t)=> acc + (t.dueDate===iso ? 1 : 0), 0);
+      if (more>6){
+        const m = document.createElement('div');
+        m.className='text-hint text-xs px-1';
+        m.textContent = `+ ещё ${more-6}`;
+        cell.appendChild(m);
       }
 
-      cell.addEventListener('dragover', (e)=>{ e.preventDefault(); cell.classList.add('dragover'); });
-      cell.addEventListener('dragleave', ()=> cell.classList.remove('dragover'));
+      cell.addEventListener('dragover', (e)=>{ e.preventDefault(); cell.classList.add('dragover'); }, {passive:false});
+      cell.addEventListener('dragleave', ()=> cell.classList.remove('dragover'), {passive:true});
       cell.addEventListener('drop', (e)=>{
-        e.preventDefault();
-        cell.classList.remove('dragover');
-        const id = e.dataTransfer.getData('text/task-id');
-        if(!id) return;
-        const t = state.tasks.find(x=>x.id===id);
-        if(!t) return;
-        t.dueDate = cell.dataset.date || '';
-        save(); renderCalendar(); renderList();
-      });
+        e.preventDefault(); cell.classList.remove('dragover');
+        const id = e.dataTransfer.getData('text/task-id'); if(!id) return;
+        const t = state.tasks.find(x=>x.id===id); if(!t) return;
+        t.dueDate = cell.dataset.date || ''; saveDebounced(); renderCalendar(); renderList();
+      }, {passive:false});
 
       cell.addEventListener('click', (ev)=>{
         if (ev.target && ev.target.getAttribute('draggable') === 'true') return;
-        openTaskModal(null, iso);
-      });
-      calendarGrid.appendChild(cell);
+        window.__TP_TASK_MODAL__?.openTaskModal?.(null, iso);
+      }, {passive:true});
+
+      frag.appendChild(cell);
     }
+    calendarGrid.appendChild(frag);
   }
-  prevMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()-1); state.currentMonth=d; renderCalendar(); });
-  nextMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()+1); state.currentMonth=d; renderCalendar(); });
-  todayButton.addEventListener('click', ()=>{ state.currentMonth = new Date(); renderCalendar(); });
+  prevMonth?.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()-1); state.currentMonth=d; renderCalendar(); }, {passive:true});
+  nextMonth?.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()+1); state.currentMonth=d; renderCalendar(); }, {passive:true});
+  todayButton?.addEventListener('click', ()=>{ state.currentMonth=new Date(); renderCalendar(); }, {passive:true});
 
-  /* ========= Модалка задач ========= */
-  addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
-  function openTaskModal(task=null, prefillDate=null){
-    taskModal.classList.remove('hidden');
-    taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
-    document.getElementById('task-id').value = task?.id || '';
-    document.getElementById('task-title').value = task?.title || '';
-    document.getElementById('task-priority').value = task?.priority || 'medium';
-    document.getElementById('task-status').value = task?.status || 'backlog';
-    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
-    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
-    document.getElementById('task-description').value = task?.description || '';
-    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
-    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
-  }
-  function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
-  [closeTaskModal, cancelTask, taskBackdrop].forEach(x=> x.addEventListener('click', closeTaskModalFunc));
-
-  saveTaskBtn.addEventListener('click', ()=>{
-    const id = document.getElementById('task-id').value;
-    const title = document.getElementById('task-title').value.trim();
-    if(!title){ alert('Введите название задачи'); return; }
-    const priority = document.getElementById('task-priority').value;
-    const status = document.getElementById('task-status').value;
-    const project = document.getElementById('task-project').value;
-    const dueDate = document.getElementById('task-due-date').value;
-    const description = document.getElementById('task-description').value.trim();
-    const subtasksRaw = document.getElementById('task-subtasks').value;
-    const tagsRaw = document.getElementById('task-tags').value;
-
-    const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
-    let subtasksDone = subtasks.map(()=>false);
-
-    if(id){
-      const t = state.tasks.find(t=>t.id===id);
-      if(t){
-        const mapPrev = new Map((t.subtasks||[]).map((s,i)=>[s, (t.subtasksDone||[])[i] || false]));
-        subtasksDone = subtasks.map(s=> mapPrev.get(s) || false);
-        Object.assign(t,{title,priority,status,project,dueDate,description,subtasks,subtasksDone,completed: status==='done', completedAt: status==='done'? (t.completedAt||nowISO()): undefined});
-      }
-    } else {
-      state.tasks.unshift({
-        id: uid(), title, priority, status, project, dueDate, description, tags: tagsRaw.split(',').map(s=>s.trim()).filter(Boolean),
-        subtasks, subtasksDone,
-        completed: status==='done', createdAt: nowISO(), completedAt: status==='done'? nowISO(): undefined
-      });
-    }
-    save(); closeTaskModalFunc(); renderAll();
-  });
-
-  /* ========= Горячие клавиши ========= */
+  /* ==========================================================
+     Global hotkeys (lightweight)
+     ========================================================== */
   document.addEventListener('keydown', (e)=>{
-    const activeTag = (document.activeElement?.tagName || '').toLowerCase();
-    const typing = ['input','textarea'].includes(activeTag) && document.activeElement?.type!=='button';
+    const tag = (document.activeElement?.tagName||'').toLowerCase();
+    const typing = tag==='input' || tag==='textarea';
 
-    if ((e.key==='n' || e.key==='N') && !e.ctrlKey && !e.metaKey && !typing){
-      e.preventDefault(); openTaskModal(); return;
-    }
-    if ((e.key.toLowerCase()==='k') && (e.ctrlKey || e.metaKey)){
-      e.preventDefault(); openCommandPalette(); return;
-    }
-    if ((e.key==='f' || e.key==='F') && !e.ctrlKey && !e.metaKey){
-      if (searchInput && !typing){ e.preventDefault(); searchInput.focus(); }
-      return;
-    }
-    if (!typing && (e.key==='1' || e.key==='2' || e.key==='3')){
-      e.preventDefault();
-      const map = { '1':'list', '2':'kanban', '3':'calendar' };
-      showView(map[e.key]);
-      return;
+    if ((e.key==='n'||e.key==='N') && !e.ctrlKey && !e.metaKey && !typing){ e.preventDefault(); window.__TP_TASK_MODAL__?.openTaskModal?.(); return; }
+    if ((e.key.toLowerCase()==='k') && (e.ctrlKey||e.metaKey)){ e.preventDefault(); commandPalette?.classList?.remove('hidden'); commandInput?.focus?.(); return; }
+    if ((e.key==='f'||e.key==='F') && !e.ctrlKey && !e.metaKey && !typing){ e.preventDefault(); searchInput?.focus?.(); return; }
+    if (!typing && (e.key==='1'||e.key==='2'||e.key==='3')){
+      e.preventDefault(); const map={ '1':'list','2':'kanban','3':'calendar' }; showView(map[e.key]); return;
     }
     if (e.key==='Delete' && !typing){
       if (state.selectedTaskId){
@@ -2210,26 +2513,16 @@
         if (t && confirm(`Удалить «${t.title}»?`)){
           state.tasks = state.tasks.filter(x=>x.id!==t.id);
           state.selectedTaskId = null;
-          save(); renderAll();
+          saveDebounced(); scheduleRenderAll();
         }
       }
     }
-    if (e.key==='Escape'){
-      closeCommandPalette();
-    }
+    if (e.key==='Escape'){ commandPalette?.classList?.add('hidden'); }
   });
 
-  /* ========= Команда вида ========= */
-  function renderAll(){
-    renderStats();
-    if (state.view==='list') renderList();
-    if (state.view==='kanban') renderKanban();
-    if (state.view==='calendar') renderCalendar();
-    emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
-    save();
-  }
-
-  /* ========= PWA Badging ========= */
+  /* ==========================================================
+     App badge
+     ========================================================== */
   function updateAppBadge(){
     const remain = state.tasks.filter(t=>!t.completed).length;
     if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
@@ -2238,22 +2531,83 @@
     }
   }
 
-  /* ========= Команда/Навигация ========= */
-  function openSettingsFromMenu(){ openSettings(); }
-  // Открытие/закрытие меню вынесено выше
+  /* ==========================================================
+     Render orchestrator (single entry)
+     ========================================================== */
+  let renderQueued = false;
+  function scheduleRenderAll(){
+    if (renderQueued) return;
+    renderQueued = true;
+    raf(()=>{
+      renderQueued = false;
+      renderStats();
+      if (state.view==='list') renderList();
+      if (state.view==='kanban') renderKanban();
+      if (state.view==='calendar') renderCalendar();
+      emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
+    });
+  }
 
-  function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
+  /* ---- Initial hydration (idle) ---- */
+  function hydrateProjectSelector(){
+    const sel = projectSelector; if (!sel) return;
+    const keep = sel.value || 'all';
+    sel.innerHTML = '<option value="all">Все проекты</option>';
+    const frag = document.createDocumentFragment();
+    for (let i=0;i<state.projects.length;i++){
+      const p = state.projects[i];
+      const opt = document.createElement('option');
+      opt.value=p.id; opt.textContent=p.name;
+      frag.appendChild(opt);
+    }
+    sel.appendChild(frag);
+    sel.value = keep;
+  }
+  function hydrateTaskProjectSelect(){
+    const sel = $('#task-project'); if (!sel) return;
+    const keep = sel.value || state.projects[0]?.id || '';
+    sel.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    for (let i=0;i<state.projects.length;i++){
+      const p = state.projects[i];
+      const opt = document.createElement('option');
+      opt.value=p.id; opt.textContent=p.name;
+      frag.appendChild(opt);
+    }
+    sel.appendChild(frag);
+    sel.value = keep;
+  }
 
-  // Инициализация отрисовки
-  hydrateProjectSelector();
-  hydrateTaskProjectSelect();
-  renderPinnedStrip();
-  showView('list'); // принудительно на список при первом запуске
-  renderAll();
-  buildThemeCards();
-  updatePremiumStatusInSettings();
+  projectSelector?.addEventListener('change', scheduleRenderAll, {passive:true});
 
-})(); // end IIFE
+  // Re-measure on scroll for virtualization (throttled)
+  let lastScrollT = 0;
+  window.addEventListener('scroll', ()=>{
+    if (state.view!=='list' || !VIRT.enabled || VIRT.total<=40) return;
+    const t = now(); if (t-lastScrollT<32) return; lastScrollT=t;
+    measureViewport(); renderList(); // cheap recompute
+  }, {passive:true});
+
+  window.addEventListener('resize', ()=>{
+    if (state.view!=='list' || !VIRT.enabled || VIRT.total<=40) return;
+    measureViewport(); renderList();
+  }, {passive:true});
+
+  // First paint minimal, then idle hydrate
+  ric(()=>{
+    hydrateProjectSelector();
+    hydrateTaskProjectSelect();
+    renderPinnedStrip();
+    scheduleRenderAll();
+  });
+
+  // Public API used by Part 1 modals
+  window.__TP_RENDER__ = { scheduleRenderAll, renderList, renderKanban, renderCalendar, hydrateProjectSelector, hydrateTaskProjectSelect, renderPinnedStrip };
+
+  // initial view
+  showView(state.view || 'list');
+  scheduleRenderAll();
+})();
 </script>
 </body>
-</html>
+</html>                             
