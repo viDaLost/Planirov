@@ -53,7 +53,7 @@
       --button:#fb7185;
       --button-text:#1f2937;
       --ring:rgba(251,113,133,.35);
-      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68a);
+      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68а);
     }
     /* 3) Sand */
     html[data-theme="sand"]{
@@ -90,11 +90,11 @@
     }
     /* 6) OLIVE (новая градиентовая тема) */
     html[data-theme="olive"]{
-      --bg:#f5f7f2;              /* мягкий оливковый фон */
+      --bg:#f5f7f2;
       --text:#1f2937;
       --hint:#6b7280;
-      --secondary:#e8efe1;       /* карточки с лёгкой зеленью */
-      --button:#7da453;          /* оливковая кнопка */
+      --secondary:#e8efe1;
+      --button:#7da453;
       --button-text:#111827;
       --ring:rgba(125,164,83,.35);
       --header-gradient:linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6);
@@ -499,6 +499,8 @@
             <!-- Карточки тем генерируются JS -->
           </div>
         </div>
+        <!-- Админский раздел будет добавлен динамически (если текущий пользователь — админ) -->
+        <div id="admin-slot" class="space-y-4"></div>
         <div class="text-xs text-hint">Тема сохраняется локально для вашего профиля и применяется ко всему приложению.</div>
       </div>
     </div>
@@ -588,6 +590,33 @@
 </div>
 <script>
 (() => {
+  /* ========= ЗАПРЕТ ОТКРЫТИЯ В БРАУЗЕРЕ (только Telegram WebApp) ========= */
+  (function enforceTelegramOnly(){
+    const isTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
+    const platform = Telegram?.WebApp?.platform || '';
+    if (!isTg || platform === '') {
+      const gate = document.createElement('div');
+      gate.style.position = 'fixed';
+      gate.style.inset = '0';
+      gate.style.zIndex = '9999';
+      gate.style.background = 'var(--bg)';
+      gate.innerHTML = `
+        <div class="h-full w-full flex items-center justify-center p-6 text-center">
+          <div class="max-w-md">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <i class="fas fa-lock text-2xl"></i>
+            </div>
+            <h2 class="text-xl font-semibold mb-2">Доступ только через Telegram</h2>
+            <p class="text-sm text-hint mb-4">Откройте приложение внутри Telegram — через кнопку мини-приложения или ссылку в чате.</p>
+            <a href="https://t.me/D_a_n_Vi" target="_blank" class="px-4 py-2 rounded-lg btn-main inline-block">Написать администратору</a>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(gate);
+      throw new Error('Blocked: Not inside Telegram WebApp');
+    }
+  })();
+
   /* ========= TELEGRAM AUTOLOGIN / ПРОФИЛЬ / КЛЮЧИ ХРАНИЛИЩА ========= */
   const tg = window.Telegram?.WebApp;
   const tgUser = tg?.initDataUnsafe?.user || null;
@@ -605,6 +634,19 @@
   const userSuffix    = tgUser?.id ? `tg_${tgUser.id}` : 'guest';
   const LS_THEME      = `${LS_THEME_BASE}_${userSuffix}`;
   const LS_DATA       = `${LS_DATA_BASE}_${userSuffix}`;
+
+  // ==== PREMIUM: Константы/ключи/админ ====
+  const ADMIN_TG_ID = 1288379477; // твой Telegram ID
+  const PREMIUM_SECRET = 'tp$S3cr3t@v1'; // "подпись" промокодов (клиентская обфускация)
+  const PREMIUM_LS_KEY = tgUser?.id ? `tp_premium_${tgUser.id}` : null;
+
+  // Бейдж и статус премиума
+  const premium = {
+    tier: 'free',   // 'free' | 'premium'
+    mode: null,     // null | 'trial' | 'paid'
+    expiresAt: null, // 'YYYY-MM-DD' (локально)
+    daysLeft: 0
+  };
 
   // Мягкая миграция старых общих данных в профильные (если есть TG-пользователь)
   if (tgUser?.id) {
@@ -630,7 +672,6 @@
     nameEl.textContent = fullName;
     usernameEl.textContent = 'autologin: on • ' + uname;
 
-    // Аватар: если есть photo_url — используем фон-картинку, иначе инициалы
     if (tgUser.photo_url) {
       avatarEl.style.backgroundImage = `url('${tgUser.photo_url}')`;
       avatarEl.style.backgroundSize = 'cover';
@@ -654,7 +695,7 @@
     { id:'sand',   name:'Sand',     grad:'linear-gradient(90deg,#f5eede,#f1ebe2,#fde68a)' },
     { id:'coral',  name:'Coral',    grad:'linear-gradient(90deg,#ffd1c7,#ffe0d5,#fff0e5)' },
     { id:'plum',   name:'Plum',     grad:'linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6)' },
-    { id:'olive',  name:'Olive',    grad:'linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6)' }, // новая оливковая
+    { id:'olive',  name:'Olive',    grad:'linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6)' },
   ];
 
   const el  = (sel) => document.querySelector(sel);
@@ -691,72 +732,548 @@
     localStorage.setItem(LS_THEME, id);
   }
 
-  /* ========= ЭЛЕМЕНТЫ UI ========= */
-  const sideMenu = el('#side-menu');
-  const menuBtn = el('#menu-button');
-  const closeMenu = el('#close-menu');
-  const btnSettings = el('#btn-settings');
+  /* ========= ПРЕМИУМ / ТРИАЛ / ПРОМО ========= */
+  function daysLeftUntil(dateISO){
+    if (!dateISO) return 0;
+    const now = new Date();
+    const end = new Date(dateISO);
+    return Math.ceil((end - now) / (1000*60*60*24));
+  }
+  function isoAddDaysStr(dateISO, n){
+    const d = new Date(dateISO);
+    d.setDate(d.getDate()+n);
+    return d.toISOString();
+  }
+  function isPremiumActiveRec(rec){
+    const now = new Date();
+    const paid = rec?.end_ts && new Date(rec.end_ts) > now;
+    const trialStart = rec?.trial_start_ts ? new Date(rec.trial_start_ts) : null;
+    const trialActive = trialStart && (new Date(isoAddDaysStr(rec.trial_start_ts, 3)) > now);
+    return { paid, trialActive };
+  }
+  function premiumLabel(){
+    if (premium.mode === 'trial') return `Пробный • осталось ${premium.daysLeft} дн.`;
+    if (premium.tier === 'premium') return `Премиум • осталось ${premium.daysLeft} дн.`;
+    return 'Free';
+  }
+  function isPremiumActive(){ return premium.tier==='premium'; }
+  function requirePremium(orShowLock=true){
+    if (!isPremiumActive()){
+      if (orShowLock){ openPremiumModal(); }
+      return false;
+    }
+    return true;
+  }
 
-  const statsBar = el('#stats-bar');
-  const projectSelector = el('#project-selector');
-  const addProjectButton = el('#add-project-button');
-  const deleteProjectButton = el('#delete-project-button');
+  function reflectPremiumUI(){
+    let badge = document.getElementById('premium-badge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'premium-badge';
+      badge.className = 'ml-2 text-xs px-2 py-1 rounded-full';
+      document.querySelector('h1').after(badge);
+    }
+    const txt = premiumLabel();
+    if (isPremiumActive()){
+      badge.textContent = txt;
+      badge.className = 'ml-2 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300';
+    } else {
+      badge.textContent = 'Free';
+      badge.className = 'ml-2 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 border border-secondary';
+    }
+  }
 
-  const pinnedStrip = el('#pinned-strip');
+  function maybeShowExpiryBanner(){
+    if (!isPremiumActive() || !premium.expiresAt) return;
+    const today = new Date().toISOString().slice(0,10);
+    const store = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY) || '{}');
+    const daysLeft = premium.daysLeft;
+    if (daysLeft === 1){
+      const last = store.last_expiry_warn_for;
+      if (last !== today){
+        store.last_expiry_warn_for = today;
+        localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(store));
+        const banner = document.createElement('div');
+        banner.className = 'mb-3 p-3 rounded-lg border border-secondary bg-[var(--secondary)]';
+        banner.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <div>⚠️ Подписка заканчивается завтра (${premium.expiresAt}).</div>
+            <button id="btn-renew" class="px-3 py-1 rounded-lg btn-main">Продлить</button>
+          </div>`;
+        document.querySelector('main').prepend(banner);
+        banner.querySelector('#btn-renew').addEventListener('click', ()=> openPremiumModal());
+      }
+    }
+  }
+  function maybeShowTrialBanner(){
+    if (premium.mode === 'trial' && premium.daysLeft <= 3 && premium.daysLeft >= 1){
+      const banner = document.createElement('div');
+      banner.className = 'mb-3 p-3 rounded-lg border border-secondary bg-[var(--secondary)]';
+      banner.innerHTML = `
+        <div class="flex items-center justify-between gap-3">
+          <div>⏳ Пробный период: осталось ${premium.daysLeft} дн. (до ${premium.expiresAt}).</div>
+          <button id="btn-trial-upgrade" class="px-3 py-1 rounded-lg btn-main">Купить</button>
+        </div>`;
+      document.querySelector('main').prepend(banner);
+      banner.querySelector('#btn-trial-upgrade').addEventListener('click', ()=> openPremiumModal());
+    }
+  }
+  function showTrialEndedBanner(){
+    const banner = document.createElement('div');
+    banner.className = 'mb-3 p-3 rounded-lg border border-secondary bg-[var(--secondary)]';
+    banner.innerHTML = `
+      <div class="flex items-center justify-between gap-3">
+        <div>⚠️ Пробный период завершён. Оформите подписку, чтобы пользоваться премиум-возможностями.</div>
+        <button id="btn-trial-ended-upgrade" class="px-3 py-1 rounded-lg btn-main">Купить</button>
+      </div>`;
+    document.querySelector('main').prepend(banner);
+    banner.querySelector('#btn-trial-ended-upgrade').addEventListener('click', ()=> openPremiumModal());
+  }
 
-  const searchButton = el('#search-button');
-  const searchInput = el('#search-input');
-  const quickAddInput = el('#quick-add-input');
+  function fetchPremiumStatus(){
+    premium.tier = 'free';
+    premium.mode = null;
+    premium.expiresAt = null;
+    premium.daysLeft = 0;
 
-  const filterButton = el('#filter-button');
-  const filterPanel = el('#filter-panel');
-  const filterDue = el('#filter-due');
-  const filterPriority = el('#filter-priority');
-  const filterStatus = el('#filter-status');
+    if (!PREMIUM_LS_KEY){ reflectPremiumUI(); return; }
+    const rec = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY) || '{}');
 
-  const sortButton = el('#sort-button');
-  const sortPanel = el('#sort-panel');
-  const sortSelect = el('#sort-select');
+    // 1) Авто-триал на 3 дня при первом заходе (если нет платной подписки)
+    if (!rec.trial_start_ts && !rec.end_ts){
+      rec.trial_start_ts = new Date().toISOString();
+      localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(rec));
+    }
 
-  const listContainer = el('#list-container');
-  const emptyState = el('#empty-state');
+    const { paid, trialActive } = isPremiumActiveRec(rec);
 
-  // модалки задач/проектов
-  const taskModal = el('#task-modal');
-  const taskBackdrop = el('#task-backdrop');
-  const taskModalTitle = el('#task-modal-title');
+    if (paid){
+      premium.tier = 'premium';
+      premium.mode = 'paid';
+      premium.expiresAt = new Date(rec.end_ts).toISOString().slice(0,10);
+      premium.daysLeft = Math.max(1, daysLeftUntil(rec.end_ts));
+    } else if (trialActive){
+      premium.tier = 'premium'; // гейтинг фич
+      premium.mode = 'trial';
+      const trialEnd = isoAddDaysStr(rec.trial_start_ts, 3);
+      premium.expiresAt = new Date(trialEnd).toISOString().slice(0,10);
+      premium.daysLeft = Math.max(1, daysLeftUntil(trialEnd));
+    } else {
+      premium.tier = 'free';
+      premium.mode = null;
+      premium.expiresAt = null;
+      premium.daysLeft = 0;
+
+      if (!rec.trial_end_notified){
+        rec.trial_end_notified = new Date().toISOString();
+        localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(rec));
+        showTrialEndedBanner();
+      }
+    }
+
+    reflectPremiumUI();
+    maybeShowExpiryBanner();
+    maybeShowTrialBanner();
+  }
+
+  // Простая "подпись" промокода (не криптостойкая, но достаточно для UX)
+  function hashFn(str){
+    // FNV-1a 32-bit
+    let h = 0x811c9dc5;
+    for (let i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24);
+    }
+    return ('0000000' + (h>>>0).toString(16)).slice(-8);
+  }
+  function b64u(str){ return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  function b64uDec(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return atob(s); }
+
+  // Формат кода: TP1.{b64u(JSON payload)}.{sig}
+  // payload: { tgId, plan:"M1"|"M6", iat:number, durDays:number, expISO:string }
+  function signPayload(obj){
+    const payload = JSON.stringify(obj);
+    const sig = hashFn(PREMIUM_SECRET + '|' + payload + '|v1');
+    return `TP1.${b64u(payload)}.${sig}`;
+  }
+  function verifyAndParse(code){
+    if (!code || typeof code!=='string') return null;
+    const parts = code.trim().split('.');
+    if (parts.length !== 3 || parts[0] !== 'TP1') return null;
+    try{
+      const payloadStr = b64uDec(parts[1]);
+      const sig = parts[2];
+      const ok = hashFn(PREMIUM_SECRET + '|' + payloadStr + '|v1') === sig;
+      if (!ok) return null;
+      const obj = JSON.parse(payloadStr);
+      return obj;
+    }catch(e){ return null; }
+  }
+
+  function redeemPromo(code){
+    const data = verifyAndParse(code);
+    if (!data){ alert('Неверный промокод'); return; }
+    if (!tgUser?.id){ alert('Нужен вход через Telegram'); return; }
+    if (String(data.tgId) !== String(tgUser.id)){ alert('Этот промокод выдан для другого аккаунта'); return; }
+
+    const days = data.durDays || (data.plan==='M6'? 183 : 31);
+    const now = new Date();
+    const store = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY) || '{}');
+
+    let base = now;
+    if (store.end_ts){
+      const oldEnd = new Date(store.end_ts);
+      if (oldEnd > now) base = oldEnd;
+    }
+    const newEnd = new Date(base);
+    newEnd.setDate(newEnd.getDate() + days);
+    store.end_ts = newEnd.toISOString();
+    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify(store));
+
+    fetchPremiumStatus();
+    alert('Премиум активирован!');
+  }
+
+  /* ========= ОКНО «Перейдите к боту и нажмите /start» ========= */
+  function showStartBotPopup(){
+    const wrap = document.createElement('div');
+    wrap.className = 'fixed inset-0 z-50';
+    wrap.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold">Как купить подписку</h3>
+          <button id="bot-hint-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="text-sm space-y-2">
+          <p>1) Перейдите к боту и нажмите <b>/start</b> — он пришлёт ваш уникальный ID.</p>
+          <p>2) Скопируйте ID и отправьте его администрации.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <a href="https://t.me/userinfobot" target="_blank" class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary text-center">
+            Перейти к боту
+          </a>
+          <a href="https://t.me/D_a_n_Vi" target="_blank" class="px-3 py-2 rounded-lg btn-main text-center">
+            Чат с админом
+          </a>
+        </div>
+        <div class="text-xs text-hint">Ваш Telegram ID будет привязан к премиум-доступу.</div>
+      </div>
+    `;
+    document.body.appendChild(wrap);
+    wrap.querySelector('#bot-hint-close').addEventListener('click', ()=> wrap.remove());
+  }
+
+  /* ========= МОДАЛКА ПРЕМИУМА ========= */
+  function openPremiumModal(){
+    const id = 'premium-modal';
+    let modal = document.getElementById(id);
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'fixed inset-0 z-50';
+    const statusText = isPremiumActive()
+      ? (premium.mode==='trial' ? `Пробный до ${premium.expiresAt} (${premium.daysLeft} дн.)` : `Активен до ${premium.expiresAt} (${premium.daysLeft} дн.)`)
+      : 'Free';
+
+    modal.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold">Премиум</h3>
+          <button id="prem-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
+          <div class="text-sm">Статус: <b>${statusText}</b></div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium">Оформить подписку</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-buy" class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary">Купить</button>
+            <a href="https://t.me/D_a_n_Vi" target="_blank" class="px-3 py-2 rounded-lg btn-main text-center">Связаться с владельцем</a>
+          </div>
+          <div class="text-xs text-hint">Оплата производится напрямую владельцу. После оплаты вы получите промокод.</div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium">У меня есть промокод</div>
+          <div class="flex gap-2">
+            <input id="promo-input" class="flex-1 px-3 py-2 rounded-lg bg-secondary ring-focus" placeholder="TP1.xxxxx.yyyyy"/>
+            <button id="btn-redeem" class="px-3 py-2 rounded-lg btn-main">Активировать</button>
+          </div>
+        </div>
+
+        <div class="text-xs text-hint">
+          Подписка привязана к вашему Telegram ID: <b>${tgUser?.id ?? '—'}</b>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('#prem-close').addEventListener('click', ()=> modal.remove());
+    modal.querySelector('#btn-redeem').addEventListener('click', ()=>{
+      const code = modal.querySelector('#promo-input').value.trim();
+      redeemPromo(code);
+      modal.remove();
+    });
+    modal.querySelector('#btn-buy').addEventListener('click', showStartBotPopup);
+  }
+      /* ========= КНОПКА «Премиум» в боковом меню ========= */
+    (function injectPremiumButton(){
+      const sideMenu = document.getElementById('side-menu');
+      const existing = sideMenu?.querySelector('#btn-premium');
+      if (!existing && sideMenu){
+        const wrap = sideMenu.querySelector('.p-3.space-y-1');
+        if (wrap){
+          const btn = document.createElement('button');
+          btn.id = 'btn-premium';
+          btn.className = 'w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
+          btn.innerHTML = `<i class="fas fa-crown mr-2"></i>Премиум`;
+          btn.addEventListener('click', openPremiumModal);
+          wrap.appendChild(btn);
+        }
+      }
+    })();
+
+  /* ========= PREMIUM: Гейтинг тем и секция «Премиум» в настройках ========= */
+  const adminSlot = document.getElementById('admin-slot');
+  const btnSettings = document.getElementById('btn-settings');
+
+  btnSettings?.addEventListener('click', ()=> {
+    openSettings();
+    ensurePremiumSection();
+    ensureAdminPanel();
+  });
+
+  function ensurePremiumSection(){
+    // Вставим небольшой раздел с управлением премиумом в модалку Настроек
+    let block = document.getElementById('premium-settings-block');
+    if (!block){
+      block = document.createElement('div');
+      block.id = 'premium-settings-block';
+      block.className = 'p-3 rounded-lg border border-secondary bg-[var(--secondary)]';
+      block.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <div class="text-sm font-medium">Статус премиума</div>
+            <div class="text-xs text-hint" id="premium-status-line">—</div>
+          </div>
+          <div class="flex gap-2">
+            <button id="prem-manage" class="px-3 py-1 rounded-lg btn-main">Управление</button>
+          </div>
+        </div>
+      `;
+      const modalBody = document.querySelector('#settings-modal .p-4.space-y-6');
+      modalBody?.insertBefore(block, document.getElementById('admin-slot'));
+      block.querySelector('#prem-manage').addEventListener('click', openPremiumModal);
+    }
+    // обновим текст
+    const statusLine = document.getElementById('premium-status-line');
+    statusLine.textContent = premiumLabel();
+  }
+
+  // Переопределяем buildThemeCards, добавляя замок на все темы, кроме light/dark
+  const _origBuildThemeCards = typeof buildThemeCards === 'function' ? buildThemeCards : null;
+  function buildThemeCards(){
+    const themeGrid = document.getElementById('theme-grid');
+    themeGrid.innerHTML = '';
+    const current = document.documentElement.getAttribute('data-theme');
+
+    THEMES.forEach(t=>{
+      const isFree = (t.id === 'light' || t.id === 'dark');
+      const locked = !isFree && !isPremiumActive();
+      const card = document.createElement('button');
+      card.className = 'w-full text-left rounded-xl border border-secondary p-3 ring-focus ' + (locked ? 'opacity-70 cursor-not-allowed' : 'hover:bg-secondary');
+      card.setAttribute('data-theme-id', t.id);
+      card.innerHTML = `
+        <div class="h-10 w-full rounded-md mb-2" style="background:${t.grad}"></div>
+        <div class="flex items-center justify-between">
+          <div class="font-medium">${t.name} ${locked ? '<span class="text-xs ml-2">🔒</span>' : ''}</div>
+          ${current===t.id ? '<i class="fas fa-check"></i>' : ''}
+        </div>
+      `;
+      card.addEventListener('click', ()=>{
+        if (locked){
+          openPremiumModal();
+          return;
+        }
+        setTheme(t.id);
+        buildThemeCards();
+      });
+      themeGrid.appendChild(card);
+    });
+  }
+
+  // Безопасная установка темы: блокируем премиум-темы для free
+  const _origSetTheme = setTheme;
+  function setTheme(id){
+    const isFree = (id === 'light' || id === 'dark');
+    if (!isFree && !isPremiumActive()){
+      openPremiumModal();
+      return;
+    }
+    _origSetTheme(id);
+  }
+
+  /* ========= АДМИН-ПАНЕЛЬ В НАСТРОЙКАХ ========= */
+  const ADMIN_TOGGLE_KEY = 'tp_admin_unlocked';
+  function isAdmin(){
+    try{
+      const flag = localStorage.getItem(ADMIN_TOGGLE_KEY);
+      return flag === '1' && String(tgUser?.id) === String(ADMIN_TG_ID);
+    }catch(_){ return false; }
+  }
+
+  function ensureAdminPanel(){
+    adminSlot.innerHTML = '';
+    // Ввод Admin ID
+    const lockBox = document.createElement('div');
+    lockBox.className = 'p-3 rounded-lg border border-secondary';
+    lockBox.innerHTML = `
+      <div class="text-sm font-medium mb-2">Доступ администратора</div>
+      <div class="flex gap-2">
+        <input id="admin-id-input" class="flex-1 px-3 py-2 rounded-lg bg-secondary ring-focus" placeholder="Введите админ ID"/>
+        <button id="admin-id-apply" class="px-3 py-2 rounded-lg btn-main">Войти</button>
+      </div>
+      <div class="text-xs text-hint mt-1">Ваш ID: <b>${tgUser?.id ?? '—'}</b>. Только ${ADMIN_TG_ID} может войти как админ.</div>
+    `;
+    adminSlot.appendChild(lockBox);
+
+    lockBox.querySelector('#admin-id-apply').addEventListener('click', ()=>{
+      const v = lockBox.querySelector('#admin-id-input').value.trim();
+      if (String(v) === String(ADMIN_TG_ID) && String(tgUser?.id) === String(ADMIN_TG_ID)){
+        localStorage.setItem(ADMIN_TOGGLE_KEY, '1');
+        ensureAdminPanel();
+      } else {
+        alert('Неверный админ ID или вы не являетесь владельцем этого аккаунта.');
+      }
+    });
+
+    if (!isAdmin()) return;
+
+    // Отрисуем панель промокодов
+    const panel = document.createElement('div');
+    panel.className = 'p-3 rounded-lg border border-secondary bg-[var(--secondary)] space-y-3';
+    panel.innerHTML = `
+      <div class="text-sm font-medium">Генерация промокодов</div>
+      <div class="grid sm:grid-cols-2 gap-2">
+        <input id="promo-user-id" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary" placeholder="User Telegram ID"/>
+        <select id="promo-plan" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary">
+          <option value="M1">1 месяц</option>
+          <option value="M6">6 месяцев</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button id="promo-generate" class="px-3 py-2 rounded-lg btn-main">Сгенерировать</button>
+        <button id="promo-refresh" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Обновить код</button>
+      </div>
+      <div>
+        <label class="block text-xs text-hint mb-1">Сгенерированный промокод</label>
+        <input id="promo-output" readonly class="w-full px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary"/>
+        <div class="text-xs text-hint mt-1">Код однократно предназначен для конкретного ID — другой пользователь активировать не сможет.</div>
+      </div>
+      <div class="text-xs text-hint">Подпись меняется при каждом создании, поэтому «код дня» фактически обновляется кнопкой «Обновить код».</div>
+    `;
+    adminSlot.appendChild(panel);
+
+    const uidInput = panel.querySelector('#promo-user-id');
+    const planSel  = panel.querySelector('#promo-plan');
+    const out      = panel.querySelector('#promo-output');
+
+    // Если админ хочет быстро сгенерировать себе — подставим свой id
+    if (!uidInput.value && tgUser?.id) uidInput.value = String(tgUser.id);
+
+    function doGen(){
+      const targetId = uidInput.value.trim();
+      const plan = planSel.value;
+      if (!/^\d+$/.test(targetId)) { alert('Укажите корректный Telegram ID'); return; }
+      const days = plan === 'M6' ? 183 : 31;
+      const payload = {
+        tgId: Number(targetId),
+        plan,
+        durDays: days,
+        iat: Date.now(),
+        expISO: new Date(Date.now() + days*24*60*60*1000).toISOString()
+      };
+      const code = signPayload(payload);
+      out.value = code;
+      navigator.clipboard?.writeText(code).catch(()=>{});
+    }
+    panel.querySelector('#promo-generate').addEventListener('click', doGen);
+    panel.querySelector('#promo-refresh').addEventListener('click', doGen);
+  }
+
+  /* ========= ИНИЦИАЛИЗАЦИЯ СТАТУСА ПРЕМИУМА ========= */
+  fetchPremiumStatus();
+
+  /* ========= ДАЛЕЕ — исходный код приложения (управление, списки, и т.д.) ========= */
+  // Ниже идёт неизменённая логика из вашего приложения (за исключением мест,
+  // где мы переопределили buildThemeCards/setTheme и добавили UI для премиума).
+
+  /* ========= КОНСТАНТЫ / ТЕМЫ уже объявлены выше ========= */
+
+  /* ========= ЭЛЕМЕНТЫ UI (они уже объявлены в исходном коде) ========= */
+  const sideMenu = document.getElementById('side-menu');
+  const menuBtn = document.getElementById('menu-button');
+  const closeMenu = document.getElementById('close-menu');
+
+  const statsBar = document.getElementById('stats-bar');
+  const projectSelector = document.getElementById('project-selector');
+  const addProjectButton = document.getElementById('add-project-button');
+  const deleteProjectButton = document.getElementById('delete-project-button');
+
+  const pinnedStrip = document.getElementById('pinned-strip');
+
+  const searchButton = document.getElementById('search-button');
+  const searchInput = document.getElementById('search-input');
+  const quickAddInput = document.getElementById('quick-add-input');
+
+  const filterButton = document.getElementById('filter-button');
+  const filterPanel = document.getElementById('filter-panel');
+  const filterDue = document.getElementById('filter-due');
+  const filterPriority = document.getElementById('filter-priority');
+  const filterStatus = document.getElementById('filter-status');
+
+  const sortButton = document.getElementById('sort-button');
+  const sortPanel = document.getElementById('sort-panel');
+  const sortSelect = document.getElementById('sort-select');
+
+  const listContainer = document.getElementById('list-container');
+  const emptyState = document.getElementById('empty-state');
+
+  const taskModal = document.getElementById('task-modal');
+  const taskBackdrop = document.getElementById('task-backdrop');
+  const taskModalTitle = document.getElementById('task-modal-title');
   const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
-  const closeTaskModal = el('#close-task-modal');
-  const cancelTask = el('#cancel-task');
-  const saveTaskBtn = el('#save-task');
+  const closeTaskModal = document.getElementById('close-task-modal');
+  const cancelTask = document.getElementById('cancel-task');
+  const saveTaskBtn = document.getElementById('save-task');
 
-  const projectModal = el('#project-modal');
-  const projectBackdrop = el('#project-backdrop');
-  const closeProjectModal = el('#close-project-modal');
-  const cancelProject = el('#cancel-project');
-  const saveProject = el('#save-project');
-  const deleteProject = el('#delete-project');
-  const projectNameInput = el('#project-name');
-  const projectColorInput = el('#project-color');
+  const projectModal = document.getElementById('project-modal');
+  const projectBackdrop = document.getElementById('project-backdrop');
+  const closeProjectModal = document.getElementById('close-project-modal');
+  const cancelProject = document.getElementById('cancel-project');
+  const saveProject = document.getElementById('save-project');
+  const deleteProject = document.getElementById('delete-project');
+  const projectNameInput = document.getElementById('project-name');
+  const projectColorInput = document.getElementById('project-color');
 
-  // Настройки (темы)
-  const settingsModal = el('#settings-modal');
-  const settingsBackdrop = el('#settings-backdrop');
-  const closeSettings = el('#close-settings');
-  const themeGrid = el('#theme-grid');
+  const settingsModal = document.getElementById('settings-modal');
+  const settingsBackdrop = document.getElementById('settings-backdrop');
+  const closeSettings = document.getElementById('close-settings');
+  const themeGrid = document.getElementById('theme-grid');
 
-  // Командная палитра
-  const commandPalette = el('#command-palette');
-  const commandInput = el('#command-input');
+  const commandPalette = document.getElementById('command-palette');
+  const commandInput = document.getElementById('command-input');
   const commandOptions = document.querySelectorAll('.command-option');
 
-  // Календарь
-  const prevMonth = el('#prev-month');
-  const nextMonth = el('#next-month');
-  const todayButton = el('#today-button');
-  const monthTitle = el('#month-title');
-  const weekdayRow = el('#weekday-row');
-  const calendarGrid = el('#calendar-grid');
+  const prevMonth = document.getElementById('prev-month');
+  const nextMonth = document.getElementById('next-month');
+  const todayButton = document.getElementById('today-button');
+  const monthTitle = document.getElementById('month-title');
+  const weekdayRow = document.getElementById('weekday-row');
+  const calendarGrid = document.getElementById('calendar-grid');
 
   const viewContents = document.querySelectorAll('.view-content');
   const viewSelectors = document.querySelectorAll('.view-selector');
@@ -779,7 +1296,7 @@
   function parseRussianWeekdayToken(tok){ const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 }; return map[tok] ?? null; }
   function nextWeekdayISO(target){ const d=new Date(); const today=d.getDay(); let delta=(target-today+7)%7; if(delta===0) delta=7; d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); }
 
-  /* ========= ЗАГРУЗКА/СОХРАНЕНИЕ (ПРИВЯЗАНО К ПРОФИЛЮ) ========= */
+  /* ========= ЗАГРУЗКА/СОХРАНЕНИЕ ========= */
   function load(){
     const raw = localStorage.getItem(LS_DATA);
     if(!raw) return;
@@ -830,37 +1347,13 @@
     }
   });
 
-  /* ========= НАСТРОЙКИ (Тема) ========= */
-  btnSettings.addEventListener('click', ()=> openSettings());
-  closeSettings.addEventListener('click', closeSettingsModal);
-  settingsBackdrop.addEventListener('click', closeSettingsModal);
-
+  /* ========= НАСТРОЙКИ ========= */
   function openSettings(){
     settingsModal.classList.remove('hidden');
   }
   function closeSettingsModal(){ settingsModal.classList.add('hidden'); }
-
-  function buildThemeCards(){
-    themeGrid.innerHTML = '';
-    const current = document.documentElement.getAttribute('data-theme');
-    THEMES.forEach(t=>{
-      const card = document.createElement('button');
-      card.className = 'w-full text-left rounded-xl border border-secondary p-3 hover:bg-secondary ring-focus';
-      card.setAttribute('data-theme-id', t.id);
-      card.innerHTML = `
-        <div class="h-10 w-full rounded-md mb-2" style="background:${t.grad}"></div>
-        <div class="flex items-center justify-between">
-          <div class="font-medium">${t.name}</div>
-          ${current===t.id ? '<i class="fas fa-check"></i>' : ''}
-        </div>
-      `;
-      card.addEventListener('click', ()=>{
-        setTheme(t.id);
-        buildThemeCards(); // перерисовать галочки
-      });
-      themeGrid.appendChild(card);
-    });
-  }
+  closeSettings.addEventListener('click', closeSettingsModal);
+  settingsBackdrop.addEventListener('click', closeSettingsModal);
 
   /* ========= ПРОЕКТЫ ========= */
   function hydrateProjectSelector(){
@@ -897,10 +1390,10 @@
 
   function openProjectModal(){
     projectModal.classList.remove('hidden');
-    el('#project-id').value='';
+    document.getElementById('project-id').value='';
     projectNameInput.value='';
     projectColorInput.value='#3b82f6';
-    el('#project-description').value='';
+    document.getElementById('project-description').value='';
   }
   function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
   [closeProjectModal, cancelProject, projectBackdrop].forEach(x=> x.addEventListener('click', closeProjectModalFunc));
@@ -913,7 +1406,6 @@
     const existing = state.projects.find(p=>p.id===id);
     if(!existing){
       state.projects.push({ id, name, color });
-      // авто-добавление в закреплённые, если есть место
       if (state.pinned.length < 6) state.pinned.push(id);
     }else{
       existing.name = name; existing.color = color;
@@ -933,10 +1425,10 @@
     }
   });
 
-  /* ========= PINNED STRIP (закреплённые) ========= */
+  /* ========= PINNED STRIP ========= */
   function renderPinnedStrip(){
     pinnedStrip.innerHTML = '';
-    const makeChip = (pid, idx)=>{
+    const makeChip = (pid)=>{
       const p = projectById(pid);
       if (!p) return;
       const chip = document.createElement('div');
@@ -948,31 +1440,21 @@
         <span class="text-sm">${escapeHtml(p.name)}</span>
         <button class="text-red-500 hover:text-red-600 ml-1" title="Убрать из закреплённых" data-act="unpin"><i class="fas fa-times"></i></button>
       `;
-      // навигация в проект
       chip.addEventListener('click', (e)=>{
         if (e.target.closest('[data-act="unpin"]')) return;
         projectSelector.value = pid;
         renderAll();
       });
-      // удалить из закреплённых
       chip.querySelector('[data-act="unpin"]').addEventListener('click', (e)=>{
         e.stopPropagation();
         state.pinned = state.pinned.filter(x=>x!==pid);
         save(); renderPinnedStrip();
-      });
-      // dnd
-      chip.addEventListener('dragstart', ()=>{
-        chip.classList.add('dragging');
-      });
-      chip.addEventListener('dragend', ()=>{
-        chip.classList.remove('dragging');
       });
       pinnedStrip.appendChild(chip);
     };
 
     state.pinned.slice(0,6).forEach(makeChip);
 
-    // Кнопка добавления
     if (state.pinned.length < 6){
       const addChip = document.createElement('button');
       addChip.className = 'pin-chip px-3 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 ring-focus';
@@ -980,40 +1462,11 @@
       addChip.addEventListener('click', ()=> addPinnedFlow());
       pinnedStrip.appendChild(addChip);
     }
-
-    // Область для dnd сортировки (горизонтально)
-    pinnedStrip.addEventListener('dragover', (e)=>{
-      e.preventDefault();
-      const dragging = pinnedStrip.querySelector('.dragging');
-      if (!dragging) return;
-      const chips = [...pinnedStrip.querySelectorAll('.pin-chip:not(.dragging)')];
-      // вычислим ближайшую позицию
-      const x = e.clientX;
-      let afterElement = null;
-      let afterOffset = Number.NEGATIVE_INFINITY;
-      chips.forEach(ch=>{
-        const rect = ch.getBoundingClientRect();
-        const offset = x - rect.left - rect.width/2;
-        if (offset > 0 && offset > afterOffset){ afterOffset = offset; afterElement = ch; }
-      });
-      if (afterElement == null) pinnedStrip.insertBefore(dragging, pinnedStrip.firstChild);
-      else pinnedStrip.insertBefore(dragging, afterElement.nextSibling);
-    });
-
-    pinnedStrip.addEventListener('drop', ()=>{
-      // пересчитать порядок по DOM
-      const newOrder = [...pinnedStrip.querySelectorAll('.pin-chip')]
-        .map(ch => ch.dataset.id)
-        .filter(Boolean);
-      state.pinned = newOrder.slice(0,6);
-      save();
-    }, { once:true });
   }
 
   function addPinnedFlow(){
     const available = state.projects.filter(p=> !state.pinned.includes(p.id));
     if (!available.length){ alert('Нет проектов для добавления.'); return; }
-    // простой выбор через prompt с номерами
     const lines = available.map((p,i)=> `${i+1}) ${p.name}`).join('\n');
     const ans = prompt(`Выберите проект для закрепления (введите номер):\n${lines}`);
     const idx = parseInt(ans,10)-1;
@@ -1038,7 +1491,7 @@
   }
   viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
 
-  /* ========= ПОИСК / ФИЛЬТРЫ / СОРТРОВКА ========= */
+  /* ========= ПОИСК / ФИЛЬТРЫ / СОРТИРОВКА ========= */
   searchButton.addEventListener('click', ()=> { openCommandPalette(); commandInput.value=''; commandInput.placeholder='Введите текст для поиска...'; });
   if (searchInput) searchInput.addEventListener('input', ()=>{ state.search = searchInput.value.trim().toLowerCase(); renderAll(); });
 
@@ -1566,30 +2019,30 @@
   function openTaskModal(task=null, prefillDate=null){
     taskModal.classList.remove('hidden');
     taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
-    el('#task-id').value = task?.id || '';
-    el('#task-title').value = task?.title || '';
-    el('#task-priority').value = task?.priority || 'medium';
-    el('#task-status').value = task?.status || 'backlog';
-    el('#task-project').value = task?.project || state.projects[0]?.id || '';
-    el('#task-due-date').value = prefillDate || (task?.dueDate || '');
-    el('#task-description').value = task?.description || '';
-    el('#task-subtasks').value = (task?.subtasks||[]).join('\n');
-    el('#task-tags').value = (task?.tags||[]).join(', ');
+    document.getElementById('task-id').value = task?.id || '';
+    document.getElementById('task-title').value = task?.title || '';
+    document.getElementById('task-priority').value = task?.priority || 'medium';
+    document.getElementById('task-status').value = task?.status || 'backlog';
+    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
+    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
+    document.getElementById('task-description').value = task?.description || '';
+    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
+    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
   }
   function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
   [closeTaskModal, cancelTask, taskBackdrop].forEach(x=> x.addEventListener('click', closeTaskModalFunc));
 
   saveTaskBtn.addEventListener('click', ()=>{
-    const id = el('#task-id').value;
-    const title = el('#task-title').value.trim();
+    const id = document.getElementById('task-id').value;
+    const title = document.getElementById('task-title').value.trim();
     if(!title){ alert('Введите название задачи'); return; }
-    const priority = el('#task-priority').value;
-    const status = el('#task-status').value;
-    const project = el('#task-project').value;
-    const dueDate = el('#task-due-date').value;
-    const description = el('#task-description').value.trim();
-    const subtasksRaw = el('#task-subtasks').value;
-    const tagsRaw = el('#task-tags').value;
+    const priority = document.getElementById('task-priority').value;
+    const status = document.getElementById('task-status').value;
+    const project = document.getElementById('task-project').value;
+    const dueDate = document.getElementById('task-due-date').value;
+    const description = document.getElementById('task-description').value.trim();
+    const subtasksRaw = document.getElementById('task-subtasks').value;
+    const tagsRaw = document.getElementById('task-tags').value;
 
     const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
     let subtasksDone = subtasks.map(()=>false);
@@ -1647,7 +2100,7 @@
     }
   });
 
-  /* ========= PWA Badging (не обязательно) ========= */
+  /* ========= PWA Badging ========= */
   function updateAppBadge(){
     const remain = state.tasks.filter(t=>!t.completed).length;
     if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
@@ -1656,7 +2109,7 @@
     }
   }
 
-  /* ========= ОБЩИЙ РЕНДЕР ========= */
+  /* ========= Итого ========= */
   function renderAll(){
     renderStats();
     if (state.view==='list') renderList();
@@ -1665,5 +2118,13 @@
     emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
     save();
   }
-})();
+
+  // Покажем бейдж, баннеры и т.п. после полной инициализации
+  reflectPremiumUI();
+  maybeShowExpiryBanner();
+  if (premium.mode === 'trial') maybeShowTrialBanner();
+
+})(); // end IIFE
 </script>
+</body>
+</html>
