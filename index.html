@@ -789,6 +789,12 @@
     const rec = JSON.parse(localStorage.getItem(PREMIUM_LS) || '{}');
     const now = new Date();
 
+    /* ✅ Проверяем, что premium-запись привязана к текущему Telegram ID */
+    if (rec.tgId && String(rec.tgId) !== String(tgUser?.id)) {
+      updateSubscriptionChip();
+      return;
+    }
+
     if (rec.end_ts && new Date(rec.end_ts) > now){
       premium.tier='premium';
       premium.mode='paid';
@@ -821,10 +827,11 @@
     if (store.end_ts && new Date(store.end_ts)>now) base = new Date(store.end_ts);
     const end = new Date(base); end.setDate(end.getDate()+days);
     store.end_ts = end.toISOString();
+    store.tgId   = tgUser.id;   /* ✅ Привязываем к текущему Telegram ID */
     localStorage.setItem(PREMIUM_LS, JSON.stringify(store));
     fetchPremiumStatus();
     showToast('Премиум активирован ✅');
-  }
+  }  }
 
   /* ====== Бейдж «Подписка | …» ====== */
   const subChip = document.getElementById('subscription-chip');
