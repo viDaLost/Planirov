@@ -22,6 +22,10 @@
       --badge-ok:#10b981;
       --badge-warn:#f59e0b;
       --badge-err:#ef4444;
+
+      /* Premium shimmer */
+      --premium-grad: linear-gradient(90deg, #ffd700, #ff9f1c, #ffd700, #fff3b0);
+      --premium-grad-dark: linear-gradient(90deg, #ffe08a, #ffc857, #ffe08a, #fff3b0);
     }
     html[data-theme="dark"]{
       --bg:#0f1115;
@@ -53,7 +57,7 @@
       --button:#fb7185;
       --button-text:#1f2937;
       --ring:rgba(251,113,133,.35);
-      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68a);
+      --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68а);
     }
     /* 3) Sand */
     html[data-theme="sand"]{
@@ -75,7 +79,7 @@
       --button:#f43f5e;
       --button-text:#fff;
       --ring:rgba(244,63,94,.35);
-      --header-gradient:linear-gradient(90deg,#ffd1c7,#ffe0d5,#fff0e5);
+      --header-gradient:linear-gradient(90deg,#ffd1c7,#ffe0д5,#fff0e5);
     }
     /* 5) Plum */
     html[data-theme="plum"]{
@@ -88,13 +92,13 @@
       --ring:rgba(168,85,247,.35);
       --header-gradient:linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6);
     }
-    /* 6) OLIVE (новая градиентовая тема) */
+    /* 6) OLIVE */
     html[data-theme="olive"]{
-      --bg:#f5f7f2;              /* мягкий оливковый фон */
+      --bg:#f5f7f2;
       --text:#1f2937;
       --hint:#6b7280;
-      --secondary:#e8efe1;       /* карточки с лёгкой зеленью */
-      --button:#7da453;          /* оливковая кнопка */
+      --secondary:#e8efe1;
+      --button:#7da453;
       --button-text:#111827;
       --ring:rgba(125,164,83,.35);
       --header-gradient:linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6);
@@ -143,6 +147,48 @@
     /* Пин-панель проектов */
     .pin-chip{background:var(--secondary); border:1px solid var(--secondary)}
     .pin-chip.dragging{opacity:.5}
+
+    /* === BADGE подписки === */
+    .badge-subscription{
+      display:inline-flex;align-items:center;gap:.4rem;
+      font-size:.75rem;line-height:1rem;
+      border-radius:999px;border:1px solid var(--secondary);
+      padding:.25rem .6rem;background:var(--secondary);user-select:none;cursor:default;
+    }
+    .badge-subscription .sep{opacity:.5}
+    .premium-glow{
+      font-weight:700;letter-spacing:.02em;
+      background: var(--premium-grad);
+      -webkit-background-clip:text;background-clip:text;
+      color:transparent;
+      animation: premiumShimmer 2.5s linear infinite;
+      white-space:nowrap;
+    }
+    html[data-theme="dark"] .premium-glow{ background: var(--premium-grad-dark); }
+    @keyframes premiumShimmer{
+      0%{ background-position:0% 50%; }
+      100%{ background-position:200% 50%; }
+    }
+
+    .toast{
+      position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+      background:var(--bg);color:var(--text);
+      border:1px solid var(--secondary);box-shadow:0 10px 30px rgb(0 0 0 / .18);
+      padding:.75rem .9rem;border-radius:.75rem;z-index:60;max-width:92vw
+    }
+    .toast .toast-title{font-weight:600;margin-bottom:.25rem}
+    .toast .toast-sub{font-size:.8rem;color:var(--hint)}
+
+    .plan-card{border:1px solid var(--secondary);border-radius:.75rem;padding:.75rem;display:flex;align-items:center;gap:.65rem;background:var(--secondary)}
+    .plan-card input{accent-color:var(--button)}
+
+    /* === УПРОЩЁННЫЙ UPSALE-оверлей === */
+    .locked::after{
+      content:'Premium';
+      position:absolute;inset:auto 8px 8px auto;
+      font-size:.7rem;padding:.25rem .5rem;border-radius:.5rem;
+      background:rgba(0,0,0,.08);color:var(--text);border:1px dashed var(--secondary)
+    }
   </style>
 </head>
 <body class="min-h-screen">
@@ -165,7 +211,7 @@
               </button>
             </div>
 
-            <!-- Профиль (автовход Telegram) -->
+            <!-- Профиль -->
             <div id="profile-box" class="p-4 border-b border-secondary flex items-center gap-3">
               <div id="profile-avatar" class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold">?</div>
               <div class="min-w-0">
@@ -178,10 +224,12 @@
               <button id="btn-settings" class="w-full text-left px-4 py-2 rounded-lg hover:bg-secondary">
                 <i class="fas fa-gear mr-2"></i>Настройки
               </button>
+              <!-- Кнопка «Премиум» и «Админ панель» добавляются скриптом -->
             </div>
           </aside>
         </div>
         <h1 class="text-xl font-semibold">Планировщик задач</h1>
+        <!-- Бейдж подписки вставляется скриптом -->
       </div>
       <div class="flex items-center gap-2">
         <button id="search-button" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Поиск">
@@ -196,16 +244,16 @@
 
   <main class="flex-1 container mx-auto px-4 py-4">
 
-    <!-- View Selector -->
+    <!-- View Selector (Календарь/Доска только Premium) -->
     <div class="flex justify-center mb-4">
       <div class="inline-flex rounded-md shadow-sm" role="group">
         <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-secondary hover:bg-secondary">
           <i class="fas fa-list mr-2"></i> Список
         </button>
-        <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-y border-secondary hover:bg-secondary">
+        <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-y border-secondary hover:bg-secondary" id="btn-view-kanban">
           <i class="fas fa-columns mr-2"></i> Доска
         </button>
-        <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-secondary hover:bg-secondary">
+        <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-secondary hover:bg-secondary" id="btn-view-calendar">
           <i class="fas fa-calendar-alt mr-2"></i> Календарь
         </button>
       </div>
@@ -233,10 +281,17 @@
         <div class="text-sm text-hint">Закреплённые проекты</div>
         <div class="text-xs text-hint">Перетаскивайте для изменения порядка</div>
       </div>
-      <div id="pinned-strip" class="flex gap-2 overflow-x-auto pb-1">
-        <!-- Chips генерируются JS -->
-      </div>
+      <div id="pinned-strip" class="flex gap-2 overflow-x-auto pb-1"></div>
     </div>
+
+    <!-- Быстрый список активных проектов (Premium) -->
+    <section id="active-projects-panel" class="mb-4 hidden">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm font-medium"><i class="fas fa-bolt mr-1"></i> Активные проекты</div>
+        <div class="text-xs text-hint">Клик по карточке — редактировать</div>
+      </div>
+      <div id="active-projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+    </section>
 
     <!-- List View -->
     <section id="list-view" class="view-content">
@@ -244,6 +299,7 @@
         <h2 class="text-lg font-semibold">Задачи</h2>
         <div class="relative flex items-center gap-2">
           <input id="search-input" placeholder="Поиск..." class="hidden md:block px-3 py-2 rounded-lg bg-secondary ring-focus"/>
+          <!-- Фильтр и сортировка — Premium -->
           <button id="filter-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary">
             <i class="fas fa-filter mr-1"></i> Фильтр
           </button>
@@ -305,7 +361,7 @@
       <div id="list-container" class="space-y-3"></div>
     </section>
 
-    <!-- Kanban View -->
+    <!-- Kanban View (Premium) -->
     <section id="kanban-view" class="view-content hidden">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div data-col="backlog" class="kanban-column bg-secondary rounded-lg p-3">
@@ -339,7 +395,7 @@
       </div>
     </section>
 
-    <!-- Calendar View -->
+    <!-- Calendar View (Premium) -->
     <section id="calendar-view" class="view-content hidden">
       <div class="mb-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
@@ -369,10 +425,10 @@
       <button data-view="list" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Список">
         <i class="fas fa-list text-lg"></i>
       </button>
-      <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Доска">
+      <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Доска" id="btn-mobile-kanban">
         <i class="fas fa-columns text-lg"></i>
       </button>
-      <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Календарь">
+      <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Календарь" id="btn-mobile-calendar">
         <i class="fas fa-calendar-alt text-lg"></i>
       </button>
       <button id="mobile-add-task-button" class="p-2 rounded-full btn-main" aria-label="Новая задача">
@@ -384,7 +440,7 @@
   <!-- Task Modal -->
   <div id="task-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
     <div class="modal-backdrop" id="task-backdrop"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
+    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-height-[90vh] max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--bg)] p-4 flex justify-between items-center border-b border-secondary">
         <h2 id="task-modal-title" class="text-xl font-semibold">Новая задача</h2>
         <button id="close-task-modal" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Закрыть">
@@ -495,8 +551,19 @@
       <div class="p-4 space-y-6">
         <div>
           <div class="text-sm font-medium mb-2">Тема оформления</div>
-          <div id="theme-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <!-- Карточки тем генерируются JS -->
+          <div id="theme-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+          <div id="theme-upsell" class="text-xs text-hint mt-1 hidden">Расширенные темы доступны в Premium.</div>
+        </div>
+        <div id="admin-slot" class="hidden"></div>
+        <div id="premium-settings-block" class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="text-sm font-medium">Статус подписки</div>
+              <div class="text-xs text-hint" id="premium-status-line">—</div>
+            </div>
+            <div class="flex gap-2">
+              <button id="prem-manage" class="px-3 py-1 rounded-lg btn-main">Управление</button>
+            </div>
           </div>
         </div>
         <div class="text-xs text-hint">Тема сохраняется локально для вашего профиля и применяется ко всему приложению.</div>
@@ -551,22 +618,16 @@
 
           <div class="px-4 py-2 text-sm text-hint">Виды</div>
           <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
-            <div class="flex items-center">
-              <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3"><i class="fas fa-list"></i></div>
-              <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-hint">Простой список задач</div></div>
-            </div>
+            <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3"><i class="fas fa-list"></i></div>
+            <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-hint">Простой список задач</div></div>
           </div>
           <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
-            <div class="flex items-center">
-              <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3"><i class="fas fa-columns"></i></div>
-              <div><div class="font-medium">Переключить на Доску</div><div class="text-xs text-hint">Канбан</div></div>
-            </div>
+            <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3"><i class="fas fa-columns"></i></div>
+            <div><div class="font-medium">Переключить на Доску</div><div class="text-xs text-hint">Канбан</div></div>
           </div>
           <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
-            <div class="flex items-center">
-              <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3"><i class="fas fa-calendar-alt"></i></div>
-              <div><div class="font-medium">Переключить на Календарь</div><div class="text-xs text-hint">Показ задач по датам</div></div>
-            </div>
+            <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3"><i class="fas fa-calendar-alt"></i></div>
+            <div><div class="font-medium">Переключить на Календарь</div><div class="text-xs text-hint">Показ задач по датам</div></div>
           </div>
         </div>
         <div class="p-2 text-xs text-center text-hint border-t border-secondary">
@@ -588,25 +649,50 @@
 </div>
 <script>
 (() => {
-  /* ========= TELEGRAM AUTOLOGIN / ПРОФИЛЬ / КЛЮЧИ ХРАНИЛИЩА ========= */
+  /* ========= ЗАПРЕТ ОТКРЫТИЯ В БРАУЗЕРЕ (только Telegram WebApp) ========= */
+  (function enforceTelegramOnly(){
+    const isTg = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
+    const platform = Telegram?.WebApp?.platform || '';
+    if (!isTg || platform === '') {
+      const gate = document.createElement('div');
+      gate.style.position = 'fixed';
+      gate.style.inset = '0';
+      gate.style.zIndex = '9999';
+      gate.style.background = 'var(--bg)';
+      gate.innerHTML = `
+        <div class="h-full w-full flex items-center justify-center p-6 text-center">
+          <div class="max-w-md">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <i class="fas fa-lock text-2xl"></i>
+            </div>
+            <h2 class="text-xl font-semibold mb-2">Доступ только через Telegram</h2>
+            <p class="text-sm text-hint mb-4">Откройте приложение внутри Telegram — через кнопку мини-приложения или ссылку в чате.</p>
+            <a href="https://t.me/D_a_n_Vi" target="_blank" class="px-4 py-2 rounded-lg btn-main inline-block">Написать администратору</a>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(gate);
+      throw new Error('Blocked: Not inside Telegram WebApp');
+    }
+  })();
+
+  /* ========= TELEGRAM / ПРОФИЛЬ / КЛЮЧИ ========= */
   const tg = window.Telegram?.WebApp;
   const tgUser = tg?.initDataUnsafe?.user || null;
 
-  // Авто-инициализация Telegram WebApp
-  try {
-    tg?.ready();
-    tg?.expand?.();
-    tg?.MainButton?.hide?.();
-  } catch(_) {}
+  try { tg?.ready(); tg?.expand?.(); tg?.MainButton?.hide?.(); } catch(_) {}
 
-  // Персональные ключи localStorage (привязка к Telegram ID)
   const LS_THEME_BASE = 'tp_theme_v2';
   const LS_DATA_BASE  = 'tp_data_default';
   const userSuffix    = tgUser?.id ? `tg_${tgUser.id}` : 'guest';
   const LS_THEME      = `${LS_THEME_BASE}_${userSuffix}`;
   const LS_DATA       = `${LS_DATA_BASE}_${userSuffix}`;
 
-  // Мягкая миграция старых общих данных в профильные (если есть TG-пользователь)
+  const ADMIN_TG_ID = 1288379477;
+  const PREMIUM_SECRET = 'tp$S3cr3t@v1';
+  const PREMIUM_LS_KEY = tgUser?.id ? `tp_premium_${tgUser.id}` : `tp_premium_guest`;
+
+  // Миграция общих ключей в персональные
   if (tgUser?.id) {
     try {
       if (!localStorage.getItem(LS_DATA) && localStorage.getItem(LS_DATA_BASE)) {
@@ -618,19 +704,15 @@
     } catch(e) { console.warn('migrate error', e); }
   }
 
-  // Обновление UI профиля в боковом меню
-  const profileBox = document.getElementById('profile-box');
-  const avatarEl   = document.getElementById('profile-avatar');
-  const nameEl     = document.getElementById('profile-name');
+  // Профиль в боковом меню
+  const nameEl = document.getElementById('profile-name');
   const usernameEl = document.getElementById('profile-username');
-
+  const avatarEl = document.getElementById('profile-avatar');
   if (tgUser) {
     const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || 'Пользователь';
     const uname    = tgUser.username ? '@' + tgUser.username : `id:${tgUser.id}`;
     nameEl.textContent = fullName;
     usernameEl.textContent = 'autologin: on • ' + uname;
-
-    // Аватар: если есть photo_url — используем фон-картинку, иначе инициалы
     if (tgUser.photo_url) {
       avatarEl.style.backgroundImage = `url('${tgUser.photo_url}')`;
       avatarEl.style.backgroundSize = 'cover';
@@ -645,7 +727,7 @@
     usernameEl.textContent = 'autologin: off';
   }
 
-  /* ========= КОНСТАНТЫ / ТЕМЫ ========= */
+  /* ========= ТЕМЫ ========= */
   const THEMES = [
     { id:'light',  name:'Светлая',  grad:'linear-gradient(90deg,#ffffff,#f9fafb)' },
     { id:'dark',   name:'Тёмная',   grad:'linear-gradient(90deg,#0f1115,#171a21)' },
@@ -654,20 +736,484 @@
     { id:'sand',   name:'Sand',     grad:'linear-gradient(90deg,#f5eede,#f1ebe2,#fde68a)' },
     { id:'coral',  name:'Coral',    grad:'linear-gradient(90deg,#ffd1c7,#ffe0d5,#fff0e5)' },
     { id:'plum',   name:'Plum',     grad:'linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6)' },
-    { id:'olive',  name:'Olive',    grad:'linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6)' }, // новая оливковая
+    { id:'olive',  name:'Olive',    grad:'linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6)' },
   ];
 
-  const el  = (sel) => document.querySelector(sel);
-  const els = (sel) => document.querySelectorAll(sel);
+  const savedTheme = localStorage.getItem(LS_THEME) || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  function setTheme(id){ document.documentElement.setAttribute('data-theme', id); localStorage.setItem(LS_THEME, id); }
 
-  /* ========= СОСТОЯНИЕ ========= */
+  /* ========= PREMIUM / TRIAL (3 дня новым пользователям) ========= */
+  const ADMIN_TG_ID_STR = String(ADMIN_TG_ID);
+  const premium = { tier:'free', expiresAt:null, trial:false };
+
+  function showToast(html){
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = html;
+    document.body.appendChild(t);
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; t.style.transition='opacity .3s, transform .3s'; }, 2200);
+    setTimeout(()=> t.remove(), 2700);
+  }
+  function b64u(str){ return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  function b64uDec(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return atob(s); }
+  function hashFn(str){
+    let h = 0x811c9dc5;
+    for (let i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24);
+    }
+    return ('0000000' + (h>>>0).toString(16)).slice(-8);
+  }
+  function signPayload(obj){
+    const payload = JSON.stringify(obj);
+    const sig = hashFn(PREMIUM_SECRET + '|' + payload + '|v1');
+    return `TP1.${b64u(payload)}.${sig}`;
+  }
+  function verifyAndParse(code){
+    if (!code || typeof code!=='string') return null;
+    const parts = code.trim().split('.');
+    if (parts.length !== 3 || parts[0] !== 'TP1') return null;
+    try{
+      const payloadStr = b64uDec(parts[1]);
+      const sig = parts[2];
+      const ok = hashFn(PREMIUM_SECRET + '|' + payloadStr + '|v1') === sig;
+      if (!ok) return null;
+      return JSON.parse(payloadStr);
+    }catch{ return null; }
+  }
+  function fmtISOdate(iso){ if(!iso) return ''; try{ const d=new Date(iso); return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(_){return iso?.slice(0,10)||'';} }
+  function isPremiumActive(){ return premium.tier==='premium'; }
+
+  // Инициализация / триал
+  function ensureTrialIfFirstRun(){
+    const rec = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY)||'{}');
+    if (rec.end_ts) return; // уже что-то было
+    // Новый пользователь: даём 3 дня
+    const now = new Date();
+    const end = new Date(now);
+    end.setDate(end.getDate()+3);
+    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify({ end_ts:end.toISOString(), source:'trial' }));
+  }
+
+  function fetchPremiumStatus(){
+    if (String(tgUser?.id) === ADMIN_TG_ID_STR){
+      premium.tier='premium'; premium.expiresAt='2099-12-31T00:00:00.000Z'; premium.trial=false;
+      reflectPremiumUI(); return;
+    }
+    // если ключа нет — создаём триал
+    if (!localStorage.getItem(PREMIUM_LS_KEY)) ensureTrialIfFirstRun();
+
+    premium.tier='free'; premium.expiresAt=null; premium.trial=false;
+    const rec = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY)||'{}');
+    if (rec.end_ts){
+      const end = new Date(rec.end_ts);
+      if (end > new Date()){
+        premium.tier = 'premium';
+        premium.expiresAt = end.toISOString();
+        premium.trial = rec.source==='trial';
+      }
+    }
+    reflectPremiumUI();
+  }
+
+  function reflectPremiumUI(){
+    let badge = document.getElementById('premium-badge');
+    if (!badge) {
+      badge = document.createElement('button');
+      badge.id = 'premium-badge';
+      badge.type = 'button';
+      badge.className = 'badge-subscription ring-focus';
+      document.querySelector('h1').after(badge);
+      attachLongPress(badge, 600, showPremiumToast);
+      badge.addEventListener('click', ()=> openPremiumModal());
+    }
+    if (isPremiumActive()){
+      badge.innerHTML = `<span class="sep">Подписка</span> <i class="fas fa-crown"></i> <span class="premium-glow">Premium${premium.trial?' · Trial':''}</span>`;
+      badge.title = 'Премиум активен';
+    } else {
+      badge.innerHTML = `<span class="sep">Подписка</span> <span>Базовая</span>`;
+      badge.title = 'Базовая версия';
+    }
+    // Гейтинг функций
+    gateFeaturesByPlan();
+  }
+
+  function showPremiumToast(){
+    if (isPremiumActive()){
+      const until = premium.expiresAt ? `<div class="toast-sub">Активна до: ${fmtISOdate(premium.expiresAt)}${premium.trial?' (пробный период)':''}</div>` : '';
+      showToast(`<div class="toast-title">Ваш статус: Премиум</div>${until}`);
+    } else {
+      showToast(`<div class="toast-title">Ваш статус: Базовая подписка</div><div class="toast-sub">Оформите Premium в разделе «Премиум»</div>`);
+    }
+  }
+  function attachLongPress(el, ms, cb){
+    let t=null;
+    const start = ()=>{ t=setTimeout(()=>cb?.(), ms); };
+    const cancel = ()=>{ if(t){ clearTimeout(t); t=null; } };
+    el.addEventListener('mousedown', start);
+    el.addEventListener('touchstart', start, {passive:true});
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=> el.addEventListener(ev, cancel));
+  }
+
+  // Активировать промокод
+  function redeemPromo(code){
+    const data = verifyAndParse(code);
+    if (!data){ alert('Неверный промокод'); return; }
+    if (!tgUser?.id){ alert('Нужен вход через Telegram'); return; }
+    if (String(data.tgId) !== String(tgUser.id)){ alert('Этот промокод выдан для другого аккаунта'); return; }
+    const PLAN_DAYS = { M1:31, M3:92, M6:183 };
+    const days = data.durDays || PLAN_DAYS[data.plan] || 31;
+    const now = new Date();
+    const store = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY) || '{}');
+
+    let base = now;
+    if (store.end_ts){
+      const oldEnd = new Date(store.end_ts);
+      if (oldEnd > now) base = oldEnd;
+    }
+    const newEnd = new Date(base);
+    newEnd.setDate(newEnd.getDate() + days);
+    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify({ end_ts:newEnd.toISOString(), source:'promo' }));
+
+    fetchPremiumStatus();
+    alert('Премиум активирован!');
+  }
+
+  /* ========= Премиум модалки ========= */
+  function openPremiumModal(){
+    const id = 'premium-modal';
+    let modal = document.getElementById(id);
+    if (modal) modal.remove();
+
+    const statusText = isPremiumActive()
+      ? (premium.expiresAt ? `Premium ${premium.trial?'(Trial) ':''}активна до ${fmtISOdate(premium.expiresAt)}` : 'Premium активна')
+      : 'Базовая подписка';
+
+    modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'fixed inset-0 z-50';
+    modal.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold"><i class="fas fa-crown mr-2"></i>Премиум</h3>
+          <button id="prem-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
+          <div class="text-sm">Статус: <b>${statusText}</b></div>
+          ${(!isPremiumActive() ? '<div class="text-xs text-hint mt-1">Новым пользователям уже выдан 3-дневный пробный период автоматически.</div>' : '')}
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium">Оформить подписку</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-buy" class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary">Купить</button>
+            <a href="https://t.me/D_a_n_Vi" target="_blank" class="px-3 py-2 rounded-lg btn-main text-center">Связаться с владельцем</a>
+          </div>
+          <div class="text-xs text-hint">После оплаты вы получите промокод для активации.</div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium">У меня есть промокод</div>
+          <div class="flex gap-2">
+            <input id="promo-input" class="flex-1 px-3 py-2 rounded-lg bg-secondary ring-focus" placeholder="TP1.xxxxx.yyyyy"/>
+            <button id="btn-redeem" class="px-3 py-2 rounded-lg btn-main">Активировать</button>
+          </div>
+        </div>
+
+        <div class="text-xs text-hint">
+          Подписка привязана к вашему Telegram ID: <b>${tgUser?.id ?? '—'}</b>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('#prem-close').addEventListener('click', ()=> modal.remove());
+    modal.querySelector('#btn-redeem').addEventListener('click', ()=>{
+      const code = modal.querySelector('#promo-input').value.trim();
+      redeemPromo(code);
+      modal.remove();
+    });
+    modal.querySelector('#btn-buy').addEventListener('click', ()=>{
+      modal.remove();
+      openPurchaseMenu();
+    });
+  }
+
+  function openPurchaseMenu(){
+    const id = 'purchase-modal';
+    let m = document.getElementById(id);
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = id;
+    m.className = 'fixed inset-0 z-50';
+    m.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold"><i class="fas fa-crown mr-2"></i>Оформить подписку</h3>
+          <button id="pur-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="space-y-2">
+          <label class="plan-card"><input type="radio" name="plan" value="1 месяц" checked><div><div class="font-medium">1 месяц</div><div class="text-xs text-hint">Стандартный период</div></div></label>
+          <label class="plan-card"><input type="radio" name="plan" value="3 месяца"><div><div class="font-medium">3 месяца</div><div class="text-xs text-hint">Выгодно при оплате за квартал</div></div></label>
+          <label class="plan-card"><input type="radio" name="plan" value="6 месяцев"><div><div class="font-medium">6 месяцев</div><div class="text-xs text-hint">Максимальная экономия</div></div></label>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="pur-send" class="px-4 py-2 rounded-lg btn-main flex-1">Отправить</button>
+          <button id="pur-cancel" class="px-4 py-2 rounded-lg border border-secondary hover:bg-secondary">Отмена</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    const close = ()=> m.remove();
+    m.querySelector('#pur-close').addEventListener('click', close);
+    m.querySelector('#pur-cancel').addEventListener('click', close);
+    m.querySelector('#pur-send').addEventListener('click', ()=>{
+      const val = m.querySelector('input[name="plan"]:checked')?.value || '1 месяц';
+      const msg = `добрый день хотел бы приобрести подписку на ${val}`;
+      const url = `https://t.me/D_a_n_Vi?text=${encodeURIComponent(msg)}`;
+      if (tg?.openTelegramLink){ tg.openTelegramLink(url); }
+      else if (tg?.openLink){ tg.openLink(url, { try_instant_view: false }); }
+      else { window.open(url, '_blank'); }
+      close();
+    });
+  }
+
+  // Кнопка «Премиум» в меню
+  (function injectPremiumButton(){
+    const sideMenu = document.getElementById('side-menu');
+    const existing = sideMenu?.querySelector('#btn-premium');
+    if (!existing && sideMenu){
+      const wrap = sideMenu.querySelector('.p-3.space-y-1');
+      if (wrap){
+        const btn = document.createElement('button');
+        btn.id = 'btn-premium';
+        btn.className = 'w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
+        btn.innerHTML = `<i class="fas fa-crown mr-2"></i>Премиум`;
+        btn.addEventListener('click', openPremiumModal);
+        wrap.appendChild(btn);
+      }
+    }
+  })();
+
+  /* ========= Админ панель ========= */
+  function isAdmin(){ return String(tgUser?.id) === ADMIN_TG_ID_STR; }
+  const sideMenu = document.getElementById('side-menu');
+  const menuBtn = document.getElementById('menu-button');
+  const closeMenu = document.getElementById('close-menu');
+  const btnSettings = document.getElementById('btn-settings');
+
+  btnSettings?.addEventListener('click', ()=>{
+    sideMenu.classList.add('hidden');
+    openSettings();
+  });
+
+  function injectAdminButtonIfNeeded(){
+    if (!isAdmin()) return;
+    const wrap = sideMenu?.querySelector('.p-3.space-y-1');
+    if (!wrap || wrap.querySelector('#btn-admin-panel')) return;
+    const btn = document.createElement('button');
+    btn.id = 'btn-admin-panel';
+    btn.className = 'w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
+    btn.innerHTML = `<i class="fas fa-user-shield mr-2"></i>Админ панель`;
+    btn.addEventListener('click', openAdminPanelModal);
+    wrap.appendChild(btn);
+  }
+  injectAdminButtonIfNeeded();
+
+  function openAdminPanelModal(){
+    if (!isAdmin()){ alert('Доступ запрещён'); return; }
+    const id = 'admin-modal';
+    let m = document.getElementById(id);
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = id;
+    m.className = 'fixed inset-0 z-50';
+    m.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold"><i class="fas fa-user-shield mr-2"></i>Админ панель</h3>
+          <button id="adm-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)] space-y-3">
+          <div class="text-sm font-medium">Генерация промокодов</div>
+          <div class="grid sm:grid-cols-2 gap-2">
+            <input id="promo-user-id" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary" placeholder="User Telegram ID"/>
+            <select id="promo-plan" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary">
+              <option value="M1">1 месяц</option>
+              <option value="M3">3 месяца</option>
+              <option value="M6">6 месяцев</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button id="promo-generate" class="px-3 py-2 rounded-lg btn-main">Сгенерировать</button>
+            <button id="promo-refresh" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Обновить код</button>
+          </div>
+          <div>
+            <label class="block text-xs text-hint mb-1">Сгенерированный промокод</label>
+            <input id="promo-output" readonly class="w-full px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary"/>
+            <div class="mt-2 flex gap-2">
+              <button id="promo-copy" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">
+                <i class="fas fa-copy mr-1"></i>Скопировать
+              </button>
+            </div>
+            <div class="text-xs text-hint mt-1">Код предназначен для конкретного Telegram ID — другой пользователь активировать не сможет.</div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)] space-y-3">
+          <div class="text-sm font-medium">Генерация ссылки в личный чат</div>
+          <div class="grid sm:grid-cols-2 gap-2">
+            <select id="chat-plan" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary">
+              <option value="1 месяц">1 месяц</option>
+              <option value="3 месяца">3 месяца</option>
+              <option value="6 месяцев">6 месяцев</option>
+            </select>
+            <input id="chat-link" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary" placeholder="Ссылка будет здесь" readonly/>
+          </div>
+          <div class="flex gap-2">
+            <button id="chat-build" class="px-3 py-2 rounded-lg btn-main">Сформировать ссылку</button>
+            <button id="chat-open" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Открыть чат</button>
+          </div>
+        </div>
+
+      </div>
+    `;
+    document.body.appendChild(m);
+    const close = ()=> m.remove();
+    m.querySelector('#adm-close').addEventListener('click', close);
+
+    const uidInput = m.querySelector('#promo-user-id');
+    const planSel  = m.querySelector('#promo-plan');
+    const out      = m.querySelector('#promo-output');
+
+    if (!uidInput.value && tgUser?.id) uidInput.value = String(tgUser.id);
+
+    function doGen(){
+      const targetId = uidInput.value.trim();
+      const plan = planSel.value;
+      if (!/^\d+$/.test(targetId)) { alert('Укажите корректный Telegram ID'); return; }
+      const PLAN_DAYS = { M1:31, M3:92, M6:183 };
+      const days = PLAN_DAYS[plan] || 31;
+      const payload = {
+        tgId: Number(targetId),
+        plan,
+        durDays: days,
+        iat: Date.now(),
+        expISO: new Date(Date.now() + days*24*60*60*1000).toISOString()
+      };
+      const code = signPayload(payload);
+      out.value = code;
+      navigator.clipboard?.writeText(code).then(()=>{
+        showToast('<div class="toast-title">Промокод скопирован</div><div class="toast-sub">Готов к отправке</div>');
+      }).catch(()=>{});
+    }
+    m.querySelector('#promo-generate').addEventListener('click', doGen);
+    m.querySelector('#promo-refresh').addEventListener('click', doGen);
+    m.querySelector('#promo-copy').addEventListener('click', ()=>{
+      const code = out.value.trim();
+      if (!code){ showToast('<div class="toast-title">Нечего копировать</div><div class="toast-sub">Сначала сгенерируйте код</div>'); return; }
+      navigator.clipboard?.writeText(code).then(()=>{
+        showToast('<div class="toast-title">Скопировано</div><div class="toast-sub">Промокод в буфере</div>');
+      }).catch(()=>{});
+    });
+
+    const chatPlanSel = m.querySelector('#chat-plan');
+    const chatLinkInp = m.querySelector('#chat-link');
+    function buildChatLink(){
+      const msg = `добрый день хотел бы приобрести подписку на ${chatPlanSel.value}`;
+      const url = `https://t.me/D_a_n_Vi?text=${encodeURIComponent(msg)}`;
+      chatLinkInp.value = url;
+      navigator.clipboard?.writeText(url).catch(()=>{});
+      showToast('<div class="toast-title">Ссылка скопирована</div><div class="toast-sub">Можно отправлять клиенту</div>');
+    }
+    m.querySelector('#chat-build').addEventListener('click', buildChatLink);
+    m.querySelector('#chat-open').addEventListener('click', ()=>{
+      if (!chatLinkInp.value) buildChatLink();
+      const url = chatLinkInp.value;
+      if (tg?.openTelegramLink){ tg.openTelegramLink(url); }
+      else if (tg?.openLink){ tg.openLink(url, { try_instant_view:false }); }
+      else { window.open(url, '_blank'); }
+    });
+  }
+
+  /* ========= Ссылки на элементы ========= */
+  const statsBar = document.getElementById('stats-bar');
+  const projectSelector = document.getElementById('project-selector');
+  const addProjectButton = document.getElementById('add-project-button');
+  const deleteProjectButton = document.getElementById('delete-project-button');
+
+  const pinnedStrip = document.getElementById('pinned-strip');
+  const activeProjectsPanel = document.getElementById('active-projects-panel');
+  const activeProjectsGrid = document.getElementById('active-projects-grid');
+
+  const searchButton = document.getElementById('search-button');
+  const searchInput = document.getElementById('search-input');
+  const quickAddInput = document.getElementById('quick-add-input');
+
+  const filterButton = document.getElementById('filter-button');
+  const filterPanel = document.getElementById('filter-panel');
+  const filterDue = document.getElementById('filter-due');
+  const filterPriority = document.getElementById('filter-priority');
+  const filterStatus = document.getElementById('filter-status');
+
+  const sortButton = document.getElementById('sort-button');
+  const sortPanel = document.getElementById('sort-panel');
+  const sortSelect = document.getElementById('sort-select');
+
+  const listContainer = document.getElementById('list-container');
+  const emptyState = document.getElementById('empty-state');
+
+  const taskModal = document.getElementById('task-modal');
+  const taskBackdrop = document.getElementById('task-backdrop');
+  const taskModalTitle = document.getElementById('task-modal-title');
+  const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
+  const closeTaskModal = document.getElementById('close-task-modal');
+  const cancelTask = document.getElementById('cancel-task');
+  const saveTaskBtn = document.getElementById('save-task');
+
+  const projectModal = document.getElementById('project-modal');
+  const projectBackdrop = document.getElementById('project-backdrop');
+  const closeProjectModal = document.getElementById('close-project-modal');
+  const cancelProject = document.getElementById('cancel-project');
+  const saveProject = document.getElementById('save-project');
+  const deleteProject = document.getElementById('delete-project');
+  const projectNameInput = document.getElementById('project-name');
+  const projectColorInput = document.getElementById('project-color');
+
+  const settingsModal = document.getElementById('settings-modal');
+  const settingsBackdrop = document.getElementById('settings-backdrop');
+  const closeSettings = document.getElementById('close-settings');
+  const themeGrid = document.getElementById('theme-grid');
+  const themeUpsell = document.getElementById('theme-upsell');
+
+  const commandPalette = document.getElementById('command-palette');
+  const commandInput = document.getElementById('command-input');
+  const commandOptions = document.querySelectorAll('.command-option');
+
+  const prevMonth = document.getElementById('prev-month');
+  const nextMonth = document.getElementById('next-month');
+  const todayButton = document.getElementById('today-button');
+  const monthTitle = document.getElementById('month-title');
+  const weekdayRow = document.getElementById('weekday-row');
+  const calendarGrid = document.getElementById('calendar-grid');
+
+  const viewContents = document.querySelectorAll('.view-content');
+  const viewSelectors = document.querySelectorAll('.view-selector');
+
+  /* ========= Состояние ========= */
   const state = {
     projects: [
       { id:'work',     name:'Работа',   color:'#3b82f6' },
       { id:'personal', name:'Личное',   color:'#10b981' },
       { id:'team',     name:'Команда',  color:'#8b5cf6' }
     ],
-    pinned: ['work','personal','team'], // до 6
+    pinned: ['work','personal','team'],
     tasks: [
       { id: uid(), title:'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], subtasksDone:[false,false], completed:false, createdAt: nowISO() },
       { id: uid(), title:'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], subtasksDone:[], completed:false, createdAt: nowISO() },
@@ -682,86 +1228,7 @@
     selectedTaskId:null
   };
 
-  /* ========= ПРИМЕНЕНИЕ ТЕМЫ (ПРОФИЛЬНОЕ ХРАНЕНИЕ) ========= */
-  const savedTheme = localStorage.getItem(LS_THEME) || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-
-  function setTheme(id){
-    document.documentElement.setAttribute('data-theme', id);
-    localStorage.setItem(LS_THEME, id);
-  }
-
-  /* ========= ЭЛЕМЕНТЫ UI ========= */
-  const sideMenu = el('#side-menu');
-  const menuBtn = el('#menu-button');
-  const closeMenu = el('#close-menu');
-  const btnSettings = el('#btn-settings');
-
-  const statsBar = el('#stats-bar');
-  const projectSelector = el('#project-selector');
-  const addProjectButton = el('#add-project-button');
-  const deleteProjectButton = el('#delete-project-button');
-
-  const pinnedStrip = el('#pinned-strip');
-
-  const searchButton = el('#search-button');
-  const searchInput = el('#search-input');
-  const quickAddInput = el('#quick-add-input');
-
-  const filterButton = el('#filter-button');
-  const filterPanel = el('#filter-panel');
-  const filterDue = el('#filter-due');
-  const filterPriority = el('#filter-priority');
-  const filterStatus = el('#filter-status');
-
-  const sortButton = el('#sort-button');
-  const sortPanel = el('#sort-panel');
-  const sortSelect = el('#sort-select');
-
-  const listContainer = el('#list-container');
-  const emptyState = el('#empty-state');
-
-  // модалки задач/проектов
-  const taskModal = el('#task-modal');
-  const taskBackdrop = el('#task-backdrop');
-  const taskModalTitle = el('#task-modal-title');
-  const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
-  const closeTaskModal = el('#close-task-modal');
-  const cancelTask = el('#cancel-task');
-  const saveTaskBtn = el('#save-task');
-
-  const projectModal = el('#project-modal');
-  const projectBackdrop = el('#project-backdrop');
-  const closeProjectModal = el('#close-project-modal');
-  const cancelProject = el('#cancel-project');
-  const saveProject = el('#save-project');
-  const deleteProject = el('#delete-project');
-  const projectNameInput = el('#project-name');
-  const projectColorInput = el('#project-color');
-
-  // Настройки (темы)
-  const settingsModal = el('#settings-modal');
-  const settingsBackdrop = el('#settings-backdrop');
-  const closeSettings = el('#close-settings');
-  const themeGrid = el('#theme-grid');
-
-  // Командная палитра
-  const commandPalette = el('#command-palette');
-  const commandInput = el('#command-input');
-  const commandOptions = document.querySelectorAll('.command-option');
-
-  // Календарь
-  const prevMonth = el('#prev-month');
-  const nextMonth = el('#next-month');
-  const todayButton = el('#today-button');
-  const monthTitle = el('#month-title');
-  const weekdayRow = el('#weekday-row');
-  const calendarGrid = el('#calendar-grid');
-
-  const viewContents = document.querySelectorAll('.view-content');
-  const viewSelectors = document.querySelectorAll('.view-selector');
-
-  /* ========= УТИЛИТЫ ========= */
+  /* ========= Утилиты ========= */
   function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
   function todayISO(shift=0){ const d=new Date(); d.setDate(d.getDate()+shift); return d.toISOString().slice(0,10); }
   function nowISO(){ return new Date().toISOString(); }
@@ -779,7 +1246,7 @@
   function parseRussianWeekdayToken(tok){ const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 }; return map[tok] ?? null; }
   function nextWeekdayISO(target){ const d=new Date(); const today=d.getDay(); let delta=(target-today+7)%7; if(delta===0) delta=7; d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); }
 
-  /* ========= ЗАГРУЗКА/СОХРАНЕНИЕ (ПРИВЯЗАНО К ПРОФИЛЮ) ========= */
+  /* ========= Хранение ========= */
   function load(){
     const raw = localStorage.getItem(LS_DATA);
     if(!raw) return;
@@ -806,46 +1273,45 @@
     updateAppBadge();
   }
 
-  /* ========= ИНИЦИАЛИЗАЦИЯ ========= */
+  /* ========= Инициализация Premium/Trial и UI ========= */
+  fetchPremiumStatus();
   load();
-  hydrateProjectSelector();
-  hydrateTaskProjectSelect();
-  renderPinnedStrip();
-  showView('list');
-  renderAll();
-  updateAppBadge();
+
+  // Тема
   buildThemeCards();
 
-  /* ========= МЕНЮ ========= */
-  const menuBtnEl = document.getElementById('menu-button');
-  const sideMenuEl = document.getElementById('side-menu');
-  const closeMenuEl = document.getElementById('close-menu');
-
-  menuBtnEl.addEventListener('click', ()=> sideMenuEl.classList.remove('hidden'));
-  closeMenuEl.addEventListener('click', ()=> sideMenuEl.classList.add('hidden'));
+  // Меню
+  menuBtn.addEventListener('click', ()=> sideMenu.classList.remove('hidden'));
+  closeMenu.addEventListener('click', ()=> sideMenu.classList.add('hidden'));
   document.addEventListener('click', (e)=>{
-    if (!sideMenuEl.classList.contains('hidden')) {
-      const inside = sideMenuEl.contains(e.target) || menuBtnEl.contains(e.target);
-      if (!inside) sideMenuEl.classList.add('hidden');
+    if (!sideMenu.classList.contains('hidden')) {
+      const inside = sideMenu.contains(e.target) || menuBtn.contains(e.target);
+      if (!inside) sideMenu.classList.add('hidden');
     }
   });
 
-  /* ========= НАСТРОЙКИ (Тема) ========= */
-  btnSettings.addEventListener('click', ()=> openSettings());
-  closeSettings.addEventListener('click', closeSettingsModal);
-  settingsBackdrop.addEventListener('click', closeSettingsModal);
-
+  // Настройки
   function openSettings(){
     settingsModal.classList.remove('hidden');
+    buildThemeCards();
+    updatePremiumStatusInSettings();
   }
   function closeSettingsModal(){ settingsModal.classList.add('hidden'); }
+  closeSettings.addEventListener('click', closeSettingsModal);
+  settingsBackdrop.addEventListener('click', closeSettingsModal);
 
   function buildThemeCards(){
     themeGrid.innerHTML = '';
     const current = document.documentElement.getAttribute('data-theme');
+    const isPrem = isPremiumActive();
+    const allowed = isPrem ? THEMES.map(t=>t.id) : ['light','dark'];
+    themeUpsell.classList.toggle('hidden', isPrem);
+
     THEMES.forEach(t=>{
+      const locked = !allowed.includes(t.id);
       const card = document.createElement('button');
-      card.className = 'w-full text-left rounded-xl border border-secondary p-3 hover:bg-secondary ring-focus';
+      card.className = 'w-full text-left rounded-xl border border-secondary p-3 ring-focus hover:bg-secondary relative ' + (locked?'opacity-60':'');
+      if (locked) card.classList.add('locked');
       card.setAttribute('data-theme-id', t.id);
       card.innerHTML = `
         <div class="h-10 w-full rounded-md mb-2" style="background:${t.grad}"></div>
@@ -855,14 +1321,61 @@
         </div>
       `;
       card.addEventListener('click', ()=>{
+        if (locked){ openPremiumModal(); return; }
         setTheme(t.id);
-        buildThemeCards(); // перерисовать галочки
+        buildThemeCards();
       });
       themeGrid.appendChild(card);
     });
   }
+  function updatePremiumStatusInSettings(){
+    const line = document.getElementById('premium-status-line');
+    const btn = document.getElementById('prem-manage');
+    if (line){
+      line.textContent = isPremiumActive()
+        ? (premium.expiresAt ? `Premium ${premium.trial?'(Trial) ':''}активна до ${fmtISOdate(premium.expiresAt)}` : 'Premium активна')
+        : 'Базовая';
+    }
+    if (btn && !btn._wired){
+      btn._wired = true;
+      btn.addEventListener('click', openPremiumModal);
+    }
+  }
 
-  /* ========= ПРОЕКТЫ ========= */
+  /* ========= Гейтинг функций ========= */
+  function gateFeaturesByPlan(){
+    const prem = isPremiumActive();
+
+    // Виды (Календарь, Доска) — только премиум
+    const lockViewBtn = (el)=>{ if (!el) return; el.dataset.requiresPremium='1'; };
+    lockViewBtn(document.getElementById('btn-view-kanban'));
+    lockViewBtn(document.getElementById('btn-view-calendar'));
+    lockViewBtn(document.getElementById('btn-mobile-kanban'));
+    lockViewBtn(document.getElementById('btn-mobile-calendar'));
+
+    // Фильтр и сортировка — только премиум
+    [filterButton, sortButton].forEach(btn=>{
+      if (!btn) return;
+      btn.disabled = !prem;
+      btn.classList.toggle('opacity-60', !prem);
+      btn.title = prem ? '' : 'Доступно в Premium';
+    });
+
+    // Панели тоже скрыть если не премиум
+    if (!prem){ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); }
+
+    // Активные проекты (панель)
+    activeProjectsPanel.classList.toggle('hidden', !prem);
+
+    // Если пользователь в бесплатной и открыл канбан/календарь — вернуть на список
+    const currentView = state.view;
+    if (!prem && (currentView==='kanban' || currentView==='calendar')){
+      state.view='list';
+      showToast('<div class="toast-title">Канбан и Календарь — Premium</div><div class="toast-sub">Откройте раздел «Премиум», чтобы активировать</div>');
+    }
+  }
+
+  /* ========= Проекты ========= */
   function hydrateProjectSelector(){
     projectSelector.innerHTML = '<option value="all">Все проекты</option>';
     state.projects.forEach(p=>{
@@ -880,7 +1393,9 @@
       sel.appendChild(opt);
     });
   }
-  projectSelector.addEventListener('change', renderAll);
+
+  hydrateProjectSelector();
+  hydrateTaskProjectSelect();
 
   addProjectButton.addEventListener('click', openProjectModal);
   deleteProjectButton.addEventListener('click', ()=>{
@@ -897,10 +1412,10 @@
 
   function openProjectModal(){
     projectModal.classList.remove('hidden');
-    el('#project-id').value='';
+    document.getElementById('project-id').value='';
     projectNameInput.value='';
     projectColorInput.value='#3b82f6';
-    el('#project-description').value='';
+    document.getElementById('project-description').value='';
   }
   function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
   [closeProjectModal, cancelProject, projectBackdrop].forEach(x=> x.addEventListener('click', closeProjectModalFunc));
@@ -913,7 +1428,6 @@
     const existing = state.projects.find(p=>p.id===id);
     if(!existing){
       state.projects.push({ id, name, color });
-      // авто-добавление в закреплённые, если есть место
       if (state.pinned.length < 6) state.pinned.push(id);
     }else{
       existing.name = name; existing.color = color;
@@ -933,10 +1447,10 @@
     }
   });
 
-  /* ========= PINNED STRIP (закреплённые) ========= */
+  /* ========= Закреплённые проекты: НОВЫЙ ФЛОУ (по названию или создание) ========= */
   function renderPinnedStrip(){
     pinnedStrip.innerHTML = '';
-    const makeChip = (pid, idx)=>{
+    const makeChip = (pid)=>{
       const p = projectById(pid);
       if (!p) return;
       const chip = document.createElement('div');
@@ -948,31 +1462,23 @@
         <span class="text-sm">${escapeHtml(p.name)}</span>
         <button class="text-red-500 hover:text-red-600 ml-1" title="Убрать из закреплённых" data-act="unpin"><i class="fas fa-times"></i></button>
       `;
-      // навигация в проект
       chip.addEventListener('click', (e)=>{
         if (e.target.closest('[data-act="unpin"]')) return;
         projectSelector.value = pid;
         renderAll();
       });
-      // удалить из закреплённых
       chip.querySelector('[data-act="unpin"]').addEventListener('click', (e)=>{
         e.stopPropagation();
         state.pinned = state.pinned.filter(x=>x!==pid);
         save(); renderPinnedStrip();
       });
-      // dnd
-      chip.addEventListener('dragstart', ()=>{
-        chip.classList.add('dragging');
-      });
-      chip.addEventListener('dragend', ()=>{
-        chip.classList.remove('dragging');
-      });
+      chip.addEventListener('dragstart', ()=> chip.classList.add('dragging'));
+      chip.addEventListener('dragend', ()=> chip.classList.remove('dragging'));
       pinnedStrip.appendChild(chip);
     };
 
     state.pinned.slice(0,6).forEach(makeChip);
 
-    // Кнопка добавления
     if (state.pinned.length < 6){
       const addChip = document.createElement('button');
       addChip.className = 'pin-chip px-3 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 ring-focus';
@@ -981,51 +1487,95 @@
       pinnedStrip.appendChild(addChip);
     }
 
-    // Область для dnd сортировки (горизонтально)
+    // Перестановка
     pinnedStrip.addEventListener('dragover', (e)=>{
       e.preventDefault();
       const dragging = pinnedStrip.querySelector('.dragging');
       if (!dragging) return;
-      const chips = [...pinnedStrip.querySelectorAll('.pin-chip:not(.dragging)')];
-      // вычислим ближайшую позицию
-      const x = e.clientX;
-      let afterElement = null;
-      let afterOffset = Number.NEGATIVE_INFINITY;
-      chips.forEach(ch=>{
-        const rect = ch.getBoundingClientRect();
-        const offset = x - rect.left - rect.width/2;
-        if (offset > 0 && offset > afterOffset){ afterOffset = offset; afterElement = ch; }
+      const siblings = [...pinnedStrip.querySelectorAll('.pin-chip:not(.dragging)')];
+      const afterEl = siblings.find(s=>{
+        const rect = s.getBoundingClientRect();
+        return e.clientX < rect.left + rect.width/2;
       });
-      if (afterElement == null) pinnedStrip.insertBefore(dragging, pinnedStrip.firstChild);
-      else pinnedStrip.insertBefore(dragging, afterElement.nextSibling);
+      if (afterEl) pinnedStrip.insertBefore(dragging, afterEl);
+      else pinnedStrip.appendChild(dragging);
     });
-
     pinnedStrip.addEventListener('drop', ()=>{
-      // пересчитать порядок по DOM
-      const newOrder = [...pinnedStrip.querySelectorAll('.pin-chip')]
-        .map(ch => ch.dataset.id)
-        .filter(Boolean);
-      state.pinned = newOrder.slice(0,6);
+      const ids = [...pinnedStrip.querySelectorAll('.pin-chip')].map(c=>c.dataset.id).filter(Boolean);
+      state.pinned = ids.slice(0,6);
       save();
-    }, { once:true });
+    });
   }
 
+  // Новый UX: ввод названия (существующего или нового)
   function addPinnedFlow(){
-    const available = state.projects.filter(p=> !state.pinned.includes(p.id));
-    if (!available.length){ alert('Нет проектов для добавления.'); return; }
-    // простой выбор через prompt с номерами
-    const lines = available.map((p,i)=> `${i+1}) ${p.name}`).join('\n');
-    const ans = prompt(`Выберите проект для закрепления (введите номер):\n${lines}`);
-    const idx = parseInt(ans,10)-1;
-    if (Number.isInteger(idx) && idx>=0 && idx<available.length){
-      state.pinned.push(available[idx].id);
+    const name = (prompt('Введите название проекта, чтобы закрепить.\nЕсли такого проекта нет — он будет создан:') || '').trim();
+    if (!name) return;
+    const found = state.projects.find(p=>p.name.toLowerCase()===name.toLowerCase());
+    let targetId;
+    if (found){
+      targetId = found.id;
+    } else {
+      // Создаём новый проект
+      const id = name.toLowerCase().replace(/\s+/g,'-');
+      const color = '#f59e0b';
+      state.projects.push({ id, name, color });
+      hydrateProjectSelector();
+      hydrateTaskProjectSelect();
+      targetId = id;
+    }
+    if (!state.pinned.includes(targetId)){
+      state.pinned.push(targetId);
       state.pinned = state.pinned.slice(0,6);
       save(); renderPinnedStrip();
+    } else {
+      alert('Проект уже закреплён.');
     }
   }
 
-  /* ========= ВИДЫ ========= */
+  /* ========= Активные проекты (Premium) ========= */
+  function renderActiveProjects(){
+    if (activeProjectsPanel.classList.contains('hidden')) return;
+    const activeIds = new Set(state.tasks.filter(t=>!t.completed).map(t=>t.project).filter(Boolean));
+    const cards = [...activeIds].map(pid=> projectById(pid)).filter(Boolean);
+    activeProjectsGrid.innerHTML = '';
+    if (!cards.length){
+      activeProjectsGrid.innerHTML = `<div class="text-sm text-hint">Нет активных проектов</div>`;
+      return;
+    }
+    cards.forEach(p=>{
+      const textColor = textColorForBg(p.color);
+      const card = document.createElement('button');
+      card.className = 'w-full text-left rounded-xl border border-secondary p-3 hover:bg-secondary';
+      card.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full" style="background:${p.color}"></span>
+            <span class="font-medium">${escapeHtml(p.name)}</span>
+          </div>
+          <span class="text-xs px-2 py-0.5 rounded-full" style="background:${rgba(p.color,.15)};color:${textColor};border:1px solid ${rgba(p.color,.35)}">
+            ${state.tasks.filter(t=>t.project===p.id && !t.completed).length} задач
+          </span>
+        </div>
+      `;
+      card.addEventListener('click', ()=>{
+        // Открыть редактор проекта, предзаполненный
+        projectModal.classList.remove('hidden');
+        document.getElementById('project-id').value=p.id;
+        projectNameInput.value=p.name;
+        projectColorInput.value=p.color;
+      });
+      activeProjectsGrid.appendChild(card);
+    });
+  }
+
+  /* ========= Виды ========= */
   function showView(view){
+    // Если нужна премиум-фича
+    if ((view==='kanban' || view==='calendar') && !isPremiumActive()){
+      openPremiumModal();
+      view='list';
+    }
     state.view = view;
     viewContents.forEach(el=> el.classList.toggle('hidden', el.id !== `${view}-view`));
     viewSelectors.forEach(btn=>{
@@ -1036,13 +1586,19 @@
     if (view==='kanban') renderKanban();
     if (view==='list') renderList();
   }
-  viewSelectors.forEach(b=> b.addEventListener('click', ()=> showView(b.dataset.view)));
+  viewSelectors.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      if (b.dataset.requiresPremium==='1' && !isPremiumActive()){ openPremiumModal(); return; }
+      showView(b.dataset.view);
+    });
+  });
 
-  /* ========= ПОИСК / ФИЛЬТРЫ / СОРТРОВКА ========= */
+  /* ========= Поиск / Фильтры / Сортировка ========= */
   searchButton.addEventListener('click', ()=> { openCommandPalette(); commandInput.value=''; commandInput.placeholder='Введите текст для поиска...'; });
   if (searchInput) searchInput.addEventListener('input', ()=>{ state.search = searchInput.value.trim().toLowerCase(); renderAll(); });
 
   filterButton.addEventListener('click', (e)=>{
+    if (!isPremiumActive()){ openPremiumModal(); return; }
     filterPanel.style.left = 'auto';
     filterPanel.style.right = '0';
     filterPanel.classList.toggle('hidden');
@@ -1054,6 +1610,7 @@
   });
 
   sortButton.addEventListener('click', (e)=>{
+    if (!isPremiumActive()){ openPremiumModal(); return; }
     sortPanel.style.left = 'auto';
     sortPanel.style.right = '0';
     sortPanel.classList.toggle('hidden');
@@ -1063,7 +1620,7 @@
   sortSelect.addEventListener('change', ()=>{ state.sort = sortSelect.value; renderAll(); });
   document.addEventListener('click', ()=>{ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); });
 
-  /* ========= БЫСТРОЕ ДОБАВЛЕНИЕ ========= */
+  /* ========= Быстрое добавление ========= */
   quickAddInput.addEventListener('keydown', (e)=>{
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -1135,7 +1692,7 @@
     return res;
   }
 
-  /* ========= КОМАНДНАЯ ПАЛИТРА ========= */
+  /* ========= Командная палитра ========= */
   function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
   function closeCommandPalette(){ commandPalette.classList.add('hidden'); }
   commandOptions.forEach(opt=>{
@@ -1152,7 +1709,7 @@
   });
   commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
 
-  /* ========= ФИЛЬТРАЦИЯ/СОРТИРОВКА ========= */
+  /* ========= Фильтрация/Сортировка ========= */
   function getFilteredTasks(){
     const q = state.search;
     const proj = projectSelector.value;
@@ -1164,42 +1721,52 @@
         const hay = (t.title+' '+(t.description||'')+' '+(t.tags||[]).join(' ')).toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (due!=='all') {
-        const today = new Date(todayISO(0)+'T00:00:00');
-        const d = t.dueDate ? new Date(t.dueDate+'T00:00:00') : null;
-        if (due==='today' && (!d || d.toDateString()!==today.toDateString())) return false;
-        if (due==='week') {
-          const s = startOfWeek(today), e = endOfWeek(today);
-          if (!d || d<s || d>e) return false;
+      // если нет премиума — не фильтруем по этим критериям (кроме поиска/проекта)
+      if (isPremiumActive()){
+        if (due!=='all') {
+          const today = new Date(todayISO(0)+'T00:00:00');
+          const d = t.dueDate ? new Date(t.dueDate+'T00:00:00') : null;
+          if (due==='today' && (!d || d.toDateString()!==today.toDateString())) return false;
+          if (due==='week') {
+            const s = startOfWeek(today), e = endOfWeek(today);
+            if (!d || d<s || d>e) return false;
+          }
+          if (due==='overdue') {
+            if (!t.dueDate) return false;
+            if (t.completed) return false;
+            if (new Date(t.dueDate+'T00:00:00') >= today) return false;
+          }
         }
-        if (due==='overdue') {
-          if (!t.dueDate) return false;
-          if (t.completed) return false;
-          if (new Date(t.dueDate+'T00:00:00') >= today) return false;
-        }
+        if (priority!=='all' && t.priority!==priority) return false;
+        if (status!=='all' && t.status!==status) return false;
       }
-      if (priority!=='all' && t.priority!==priority) return false;
-      if (status!=='all' && t.status!==status) return false;
       return true;
     });
 
     const prRank = { critical:3, high:2, medium:1, low:0 };
     const stRank = { 'backlog':0,'in-progress':1,'review':2,'done':3 };
-    const cmp = {
-      'due-asc': (a,b)=> (a.dueDate||'9999') < (b.dueDate||'9999') ? -1 : (a.dueDate||'9999') > (b.dueDate||'9999') ? 1 : 0,
-      'due-desc': (a,b)=> (a.dueDate||'0000') > (b.dueDate||'0000') ? -1 : (a.dueDate||'0000') < (b.dueDate||'0000') ? 1 : 0,
-      'priority-desc': (a,b)=> prRank[b.priority]-prRank[a.priority],
-      'priority-asc': (a,b)=> prRank[a.priority]-prRank[b.priority],
-      'project-asc': (a,b)=> projectName(a.project).localeCompare(projectName(b.project),'ru'),
-      'status-asc': (a,b)=> stRank[a.status]-stRank[b.status],
-      'title-asc': (a,b)=> a.title.localeCompare(b.title,'ru')
-    }[state.sort] || (()=>0);
+
+    let cmp = (a,b)=>0;
+    if (isPremiumActive()){
+      cmp = {
+        'due-asc': (a,b)=> (a.dueDate||'9999') < (b.dueDate||'9999') ? -1 : (a.dueDate||'9999') > (b.dueDate||'9999') ? 1 : 0,
+        'due-desc': (a,b)=> (a.dueDate||'0000') > (b.dueDate||'0000') ? -1 : (a.dueDate||'0000') < (b.dueDate||'0000') ? 1 : 0,
+        'priority-desc': (a,b)=> prRank[b.priority]-prRank[a.priority],
+        'priority-asc': (a,b)=> prRank[a.priority]-prRank[b.priority],
+        'project-asc': (a,b)=> projectName(a.project).localeCompare(projectName(b.project),'ru'),
+        'status-asc': (a,b)=> stRank[a.status]-stRank[b.status],
+        'title-asc': (a,b)=> a.title.localeCompare(b.title,'ru')
+      }[state.sort] || (()=>0);
+    } else {
+      // Базовая — сортируем только по названию
+      cmp = (a,b)=> a.title.localeCompare(b.title,'ru');
+    }
 
     arr.sort(cmp);
     return arr;
   }
 
-  /* ========= СТАТИСТИКА ========= */
+  /* ========= Статистика ========= */
   function renderStats(){
     const total = state.tasks.length;
     const todayStr = todayISO(0);
@@ -1231,7 +1798,7 @@
     });
   }
 
-  /* ========= СПИСОК ========= */
+  /* ========= Список ========= */
   function renderList(){
     const tasks = getFilteredTasks();
     listContainer.innerHTML = '';
@@ -1363,6 +1930,9 @@
         save(); renderList();
       });
     });
+
+    // Обновить панель активных проектов
+    renderActiveProjects();
   }
 
   function attachSwipeHandlers(card, id){
@@ -1395,8 +1965,9 @@
   function priorityClass(p){ return ({low:'priority-low',medium:'priority-medium',high:'priority-high',critical:'priority-critical'})[p]; }
   function statusClass(s){ return ({'backlog':'status-backlog','in-progress':'status-in-progress','review':'status-review','done':'status-done'})[s]; }
 
-  /* ========= КАНБАН ========= */
+  /* ========= Канбан (Premium) ========= */
   function renderKanban(){
+    if (!isPremiumActive()){ openPremiumModal(); showView('list'); return; }
     const columns = document.querySelectorAll('.kanban-column');
     columns.forEach(col=>{
       const body = col.querySelector('.column-body');
@@ -1479,11 +2050,12 @@
     }));
   }
 
-  /* ========= КАЛЕНДАРЬ ========= */
+  /* ========= Календарь (Premium) ========= */
   const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
   const MONTHS_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
   function renderCalendar(){
+    if (!isPremiumActive()){ openPremiumModal(); showView('list'); return; }
     weekdayRow.innerHTML = '';
     WEEKDAYS.forEach(w=>{
       const div = document.createElement('div');
@@ -1561,35 +2133,35 @@
   nextMonth.addEventListener('click', ()=>{ const d=new Date(state.currentMonth); d.setMonth(d.getMonth()+1); state.currentMonth=d; renderCalendar(); });
   todayButton.addEventListener('click', ()=>{ state.currentMonth = new Date(); renderCalendar(); });
 
-  /* ========= МОДАЛКА ЗАДАЧ ========= */
+  /* ========= Модалка задач ========= */
   addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
   function openTaskModal(task=null, prefillDate=null){
     taskModal.classList.remove('hidden');
     taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
-    el('#task-id').value = task?.id || '';
-    el('#task-title').value = task?.title || '';
-    el('#task-priority').value = task?.priority || 'medium';
-    el('#task-status').value = task?.status || 'backlog';
-    el('#task-project').value = task?.project || state.projects[0]?.id || '';
-    el('#task-due-date').value = prefillDate || (task?.dueDate || '');
-    el('#task-description').value = task?.description || '';
-    el('#task-subtasks').value = (task?.subtasks||[]).join('\n');
-    el('#task-tags').value = (task?.tags||[]).join(', ');
+    document.getElementById('task-id').value = task?.id || '';
+    document.getElementById('task-title').value = task?.title || '';
+    document.getElementById('task-priority').value = task?.priority || 'medium';
+    document.getElementById('task-status').value = task?.status || 'backlog';
+    document.getElementById('task-project').value = task?.project || state.projects[0]?.id || '';
+    document.getElementById('task-due-date').value = prefillDate || (task?.dueDate || '');
+    document.getElementById('task-description').value = task?.description || '';
+    document.getElementById('task-subtasks').value = (task?.subtasks||[]).join('\n');
+    document.getElementById('task-tags').value = (task?.tags||[]).join(', ');
   }
   function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
   [closeTaskModal, cancelTask, taskBackdrop].forEach(x=> x.addEventListener('click', closeTaskModalFunc));
 
   saveTaskBtn.addEventListener('click', ()=>{
-    const id = el('#task-id').value;
-    const title = el('#task-title').value.trim();
+    const id = document.getElementById('task-id').value;
+    const title = document.getElementById('task-title').value.trim();
     if(!title){ alert('Введите название задачи'); return; }
-    const priority = el('#task-priority').value;
-    const status = el('#task-status').value;
-    const project = el('#task-project').value;
-    const dueDate = el('#task-due-date').value;
-    const description = el('#task-description').value.trim();
-    const subtasksRaw = el('#task-subtasks').value;
-    const tagsRaw = el('#task-tags').value;
+    const priority = document.getElementById('task-priority').value;
+    const status = document.getElementById('task-status').value;
+    const project = document.getElementById('task-project').value;
+    const dueDate = document.getElementById('task-due-date').value;
+    const description = document.getElementById('task-description').value.trim();
+    const subtasksRaw = document.getElementById('task-subtasks').value;
+    const tagsRaw = document.getElementById('task-tags').value;
 
     const subtasks = subtasksRaw.split('\n').map(s=>s.trim()).filter(Boolean);
     let subtasksDone = subtasks.map(()=>false);
@@ -1611,7 +2183,7 @@
     save(); closeTaskModalFunc(); renderAll();
   });
 
-  /* ========= ГОРЯЧИЕ КЛАВИШИ ========= */
+  /* ========= Горячие клавиши ========= */
   document.addEventListener('keydown', (e)=>{
     const activeTag = (document.activeElement?.tagName || '').toLowerCase();
     const typing = ['input','textarea'].includes(activeTag) && document.activeElement?.type!=='button';
@@ -1647,16 +2219,7 @@
     }
   });
 
-  /* ========= PWA Badging (не обязательно) ========= */
-  function updateAppBadge(){
-    const remain = state.tasks.filter(t=>!t.completed).length;
-    if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
-      if (remain>0) { navigator.setAppBadge(remain).catch(()=>{}); }
-      else { navigator.clearAppBadge().catch(()=>{}); }
-    }
-  }
-
-  /* ========= ОБЩИЙ РЕНДЕР ========= */
+  /* ========= Команда вида ========= */
   function renderAll(){
     renderStats();
     if (state.view==='list') renderList();
@@ -1665,5 +2228,33 @@
     emptyState.classList.toggle('hidden', getFilteredTasks().length>0);
     save();
   }
-})();
+
+  /* ========= PWA Badging ========= */
+  function updateAppBadge(){
+    const remain = state.tasks.filter(t=>!t.completed).length;
+    if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
+      if (remain>0) { navigator.setAppBadge(remain).catch(()=>{}); }
+      else { navigator.clearAppBadge().catch(()=>{}); }
+    }
+  }
+
+  /* ========= Команда/Навигация ========= */
+  function openSettingsFromMenu(){ openSettings(); }
+  // Открытие/закрытие меню вынесено выше
+
+  function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
+
+  // Инициализация отрисовки
+  hydrateProjectSelector();
+  hydrateTaskProjectSelect();
+  renderPinnedStrip();
+  showView('list'); // принудительно на список при первом запуске
+  renderAll();
+  buildThemeCards();
+  updatePremiumStatusInSettings();
+
+})(); // end IIFE
 </script>
+</body>
+</html>
+  
