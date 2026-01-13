@@ -1,1033 +1,802 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
+<html lang="ru" data-theme="glass">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Task Master Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Task Master Premium</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', '-apple-system', 'system-ui', 'sans-serif'] },
+          colors: {
+            glass: {
+              bg: '#09090b',         /* Очень темный фон */
+              panel: 'rgba(24, 24, 27, 0.6)', /* Полупрозрачная панель */
+              border: 'rgba(255, 255, 255, 0.08)',
+              highlight: 'rgba(255, 255, 255, 0.03)',
+              text: '#e4e4e7',
+              muted: '#a1a1aa',
+              accent: '#3b82f6',     /* Синий неон */
+              success: '#10b981',
+              danger: '#ef4444'
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out forwards',
+            'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    /* === НАСТРОЙКИ ТЕМ И ПЕРЕМЕННЫЕ === */
     :root {
-      --bg: #f3f4f6;
-      --surface: #ffffff;
-      --text: #111827;
-      --hint: #6b7280;
-      --border: #e5e7eb;
-      --primary: #3b82f6;
-      --primary-fg: #ffffff;
-      --danger: #ef4444;
-      --success: #10b981;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      --glass: rgba(255, 255, 255, 0.7);
-      --glass-border: rgba(255, 255, 255, 0.5);
+      --safe-area-top: env(safe-area-inset-top, 0px);
+      --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    
+    body {
+      background-color: #000;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%), 
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+      color: #e4e4e7;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden; /* App-like feel */
     }
 
-    html[data-theme="dark"] {
-      --bg: #111827;
-      --surface: #1f2937;
-      --text: #f9fafb;
-      --hint: #9ca3af;
-      --border: #374151;
-      --primary: #60a5fa;
-      --primary-fg: #111827;
-      --glass: rgba(31, 41, 55, 0.7);
-      --glass-border: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Доп. темы (примеры) */
-    html[data-theme="olive"] { --bg:#f0fdf4; --surface:#ffffff; --primary:#15803d; }
-    html[data-theme="sunset"] { --bg:#fff7ed; --surface:#ffffff; --primary:#ea580c; }
-
-    /* === БАЗОВЫЕ СТИЛИ === */
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { background-color: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; transition: background-color 0.3s, color 0.3s; padding-bottom: 80px; }
-
-    /* === УТИЛИТЫ === */
+    /* Glassmorphism Classes */
     .glass-panel {
-      background: var(--glass);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--glass-border);
+      background: var(--tw-colors-glass-panel);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--tw-colors-glass-border);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
     
-    .card-3d {
-      background: var(--surface);
-      border-radius: 1rem;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    .glass-input {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      transition: all 0.2s;
     }
-    .card-3d:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--primary);
+    .glass-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      outline: none;
     }
-    
-    .btn-primary {
-      background: var(--primary);
-      color: var(--primary-fg);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-      transition: transform 0.1s;
-    }
-    .btn-primary:active { transform: scale(0.96); }
 
-    .input-field {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      transition: border-color 0.2s;
-    }
-    .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-
-    /* Скроллбар */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--hint); border-radius: 3px; opacity: 0.5; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
-    /* Премиум анимация */
-    @keyframes shine {
-      0% { background-position: 200% center; }
-      100% { background-position: -200% center; }
+    /* Hide standard checkboxes */
+    .custom-check {
+      appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid #52525b;
+      border-radius: 50%;
+      display: grid;
+      place-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .premium-text {
-      background: linear-gradient(to right, #facc15, #f59e0b, #facc15);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+    .custom-check::before {
+      content: "";
+      width: 0.65rem;
+      height: 0.65rem;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em white;
+      transform-origin: center;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+    .custom-check:checked {
+      background-color: #3b82f6;
+      border-color: #3b82f6;
+    }
+    .custom-check:checked::before { transform: scale(1); }
+
+    /* Animations */
+    .premium-shimmer {
+      background: linear-gradient(90deg, #ffd700, #fff3b0, #ffd700);
       background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       animation: shine 3s linear infinite;
-      font-weight: 800;
+      font-weight: 700;
     }
+    @keyframes shine { to { background-position: 200% center; } }
 
-    /* Модальные окна */
-    .modal-enter { animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    @keyframes modalIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.95); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    /* Kanban */
-    .kanban-col { min-height: 50vh; background: rgba(0,0,0,0.03); border-radius: 12px; }
+    /* Layout tweaks */
+    .view-container { height: calc(100vh - 80px - var(--safe-area-top) - var(--safe-area-bottom)); overflow-y: auto; padding-bottom: 80px; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="h-screen flex flex-col">
 
-<!-- HEADER -->
-<header class="fixed top-0 inset-x-0 z-30 glass-panel border-b border-gray-200/50 dark:border-gray-700/50">
-  <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <button id="menu-btn" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition">
-        <i class="fas fa-bars text-xl"></i>
-      </button>
-      <h1 class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-purple-500">
-        TaskMaster
-      </h1>
-      <div id="premium-badge-header" class="hidden text-xs font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-300 ml-2 shadow-sm">
-        PRO
-      </div>
-    </div>
-    <div class="flex items-center gap-2">
-      <button id="sync-status" class="text-xs text-[var(--hint)] mr-2 animate-pulse hidden"><i class="fas fa-sync"></i></button>
-      <button id="search-toggle" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition">
-        <i class="fas fa-search"></i>
-      </button>
-    </div>
-  </div>
-</header>
-
-<!-- SIDE MENU -->
-<div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-40 hidden backdrop-blur-sm transition-opacity"></div>
-<aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-72 bg-[var(--surface)] z-50 transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col">
-  <div class="p-6 border-b border-[var(--border)] flex items-center gap-4">
-    <div id="user-avatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">?</div>
-    <div>
-      <div id="user-name" class="font-bold text-lg truncate">Гость</div>
-      <div id="user-status" class="text-xs text-[var(--hint)]">Free Plan</div>
-    </div>
-  </div>
-  <div class="flex-1 overflow-y-auto p-4 space-y-2">
-    <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-[var(--bg)] flex items-center gap-3 font-medium transition" onclick="app.openSettings()">
-      <i class="fas fa-cog text-[var(--primary)]"></i> Настройки
-    </button>
-    <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-[var(--bg)] flex items-center gap-3 font-medium transition" onclick="app.backup.exportData()">
-      <i class="fas fa-file-export text-green-500"></i> Бэкап (JSON)
-    </button>
-    <div class="mt-4 border-t border-[var(--border)] pt-4">
-      <div class="text-xs font-bold text-[var(--hint)] uppercase mb-2 px-4">Проекты</div>
-      <div id="sidebar-projects" class="space-y-1"></div>
-    </div>
-  </div>
-  <div class="p-4 border-t border-[var(--border)]">
-    <button id="btn-premium-sidebar" class="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold shadow-lg transform hover:scale-[1.02] transition">
-      <i class="fas fa-crown mr-2"></i> Получить Premium
-    </button>
-    <div id="admin-link-container" class="mt-2 hidden">
-        <button onclick="app.openAdmin()" class="w-full py-2 text-xs text-[var(--hint)] hover:text-[var(--text)]">Админ панель</button>
-    </div>
-  </div>
-</aside>
-
-<!-- MAIN CONTENT -->
-<main class="container mx-auto px-4 pt-20 pb-24">
+<div id="app" class="flex-1 flex flex-col relative max-w-2xl mx-auto w-full h-full shadow-2xl overflow-hidden bg-glass-bg">
   
-  <!-- DASHBOARD STATS -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-    <div class="card-3d p-4 flex flex-col justify-between">
-      <div class="text-[var(--hint)] text-xs font-bold uppercase">В работе</div>
-      <div class="text-2xl font-black text-[var(--primary)]" id="stat-progress">0</div>
-    </div>
-    <div class="card-3d p-4 flex flex-col justify-between">
-      <div class="text-[var(--hint)] text-xs font-bold uppercase">Сегодня</div>
-      <div class="text-2xl font-black text-orange-500" id="stat-today">0</div>
-    </div>
-    <div class="card-3d p-4 flex flex-col justify-between">
-      <div class="text-[var(--hint)] text-xs font-bold uppercase">Готово</div>
-      <div class="text-2xl font-black text-green-500" id="stat-done">0</div>
-    </div>
-    <div class="card-3d p-4 flex flex-col justify-between bg-gradient-to-br from-[var(--primary)] to-purple-600 text-white border-none">
-      <div class="text-white/80 text-xs font-bold uppercase">Всего</div>
-      <div class="text-2xl font-black" id="stat-total">0</div>
-    </div>
-  </div>
-
-  <!-- VIEW CONTROLS -->
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-xl font-bold" id="view-title">Мои задачи</h2>
-    <div class="flex bg-[var(--surface)] p-1 rounded-xl border border-[var(--border)] shadow-sm">
-      <button onclick="app.switchView('list')" class="p-2 rounded-lg text-[var(--hint)] hover:bg-[var(--bg)] active-view" data-view="list"><i class="fas fa-list"></i></button>
-      <button onclick="app.switchView('kanban')" class="p-2 rounded-lg text-[var(--hint)] hover:bg-[var(--bg)]" data-view="kanban"><i class="fas fa-columns"></i></button>
-      <button onclick="app.switchView('calendar')" class="p-2 rounded-lg text-[var(--hint)] hover:bg-[var(--bg)]" data-view="calendar"><i class="fas fa-calendar-alt"></i></button>
-    </div>
-  </div>
-
-  <!-- SEARCH BAR (Toggleable) -->
-  <div id="search-bar" class="hidden mb-4 relative animate-fade-in-down">
-    <input type="text" id="search-input" placeholder="Поиск задач..." class="w-full pl-10 pr-4 py-3 rounded-xl input-field shadow-sm">
-    <i class="fas fa-search absolute left-3 top-3.5 text-[var(--hint)]"></i>
-  </div>
-
-  <!-- VIEWS CONTAINERS -->
-  <div id="view-container" class="relative min-h-[50vh]">
-    <!-- LIST VIEW -->
-    <div id="view-list" class="space-y-3"></div>
-
-    <!-- KANBAN VIEW -->
-    <div id="view-kanban" class="hidden overflow-x-auto pb-4">
-      <div class="flex gap-4 min-w-[800px]">
-        <div class="flex-1 kanban-col p-3" data-status="backlog">
-          <div class="flex justify-between mb-3 px-1"><span class="font-bold text-gray-500">Бэклог</span><span class="bg-gray-200 text-xs px-2 py-0.5 rounded-full count">0</span></div>
-          <div class="space-y-2 k-body"></div>
-        </div>
-        <div class="flex-1 kanban-col p-3" data-status="in-progress">
-          <div class="flex justify-between mb-3 px-1"><span class="font-bold text-blue-500">В работе</span><span class="bg-blue-100 text-xs px-2 py-0.5 rounded-full count">0</span></div>
-          <div class="space-y-2 k-body"></div>
-        </div>
-        <div class="flex-1 kanban-col p-3" data-status="done">
-          <div class="flex justify-between mb-3 px-1"><span class="font-bold text-green-500">Готово</span><span class="bg-green-100 text-xs px-2 py-0.5 rounded-full count">0</span></div>
-          <div class="space-y-2 k-body"></div>
-        </div>
+  <header class="glass-panel sticky top-0 z-20 px-4 py-3 flex justify-between items-center border-b-0 border-b-glass-border">
+    <div class="flex items-center gap-3">
+      <div id="avatar-container" class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-blue-500/20 cursor-pointer">
+        G
+      </div>
+      <div>
+        <h1 class="text-base font-semibold leading-tight tracking-wide">Task Master</h1>
+        <div id="premium-indicator" class="text-[10px] uppercase tracking-wider text-glass-muted">Basic Plan</div>
       </div>
     </div>
-
-    <!-- CALENDAR VIEW -->
-    <div id="view-calendar" class="hidden">
-      <div class="bg-[var(--surface)] rounded-2xl shadow p-4">
-        <div class="text-center text-[var(--hint)] py-10"><i class="fas fa-crown text-4xl text-yellow-400 mb-3"></i><br>Календарь доступен в Premium</div>
-      </div>
+    <div class="flex gap-2">
+      <button id="btn-focus" class="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-glass-text hover:text-white transition active:scale-95" title="Фокус режим">
+        <i class="fas fa-stopwatch"></i>
+      </button>
+      <button id="btn-settings" class="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-glass-text hover:text-white transition active:scale-95">
+        <i class="fas fa-cog"></i>
+      </button>
     </div>
-  </div>
+  </header>
 
-</main>
-
-<!-- FLOATING ACTION BUTTON -->
-<button onclick="app.openTaskModal()" class="fixed bottom-6 right-6 w-14 h-14 bg-[var(--primary)] text-white rounded-full shadow-lg shadow-blue-500/40 flex items-center justify-center text-2xl active:scale-90 transition z-30 hover:rotate-90 duration-300">
-  <i class="fas fa-plus"></i>
-</button>
-
-<!-- TASK MODAL -->
-<div id="task-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="app.closeTaskModal()"></div>
-  <div class="relative bg-[var(--surface)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden modal-enter flex flex-col max-h-[90vh]">
-    <div class="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg)]">
-      <h3 class="font-bold text-lg" id="modal-title">Задача</h3>
-      <button onclick="app.closeTaskModal()" class="w-8 h-8 rounded-full hover:bg-black/10 flex items-center justify-center"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="p-5 overflow-y-auto space-y-4 flex-1">
-      <input type="hidden" id="task-id">
-      <input type="text" id="task-title" placeholder="Что нужно сделать?" class="w-full text-xl font-bold bg-transparent border-none focus:ring-0 p-0 placeholder-gray-400">
+  <main id="main-content" class="flex-1 relative overflow-hidden">
+    
+    <div id="view-dashboard" class="view-container px-4 py-4 space-y-6 animate-fade-in">
       
-      <div class="grid grid-cols-2 gap-4">
+      <div class="flex justify-between items-end mb-2">
         <div>
-          <label class="text-xs font-bold text-[var(--hint)] uppercase mb-1 block">Дата</label>
-          <input type="date" id="task-date" class="w-full input-field rounded-lg px-3 py-2 text-sm">
+          <h2 class="text-2xl font-bold text-white">Мои задачи</h2>
+          <p class="text-sm text-glass-muted" id="date-display">Понедельник, 12 мая</p>
         </div>
-        <div>
-          <label class="text-xs font-bold text-[var(--hint)] uppercase mb-1 block">Приоритет</label>
-          <select id="task-priority" class="w-full input-field rounded-lg px-3 py-2 text-sm">
-            <option value="low">Низкий</option>
-            <option value="medium" selected>Средний</option>
-            <option value="high">Высокий</option>
+        <div class="text-right">
+          <div class="text-2xl font-bold text-blue-400" id="stat-done">0/0</div>
+          <div class="text-[10px] text-glass-muted uppercase">Выполнено</div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+        <button data-filter="all" class="filter-btn active px-4 py-1.5 rounded-full text-xs font-medium glass-panel bg-white/10 text-white border-white/20">Все</button>
+        <button data-filter="today" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium glass-panel text-glass-muted">Сегодня</button>
+        <button data-filter="high" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium glass-panel text-glass-muted">Важные</button>
+        <button id="btn-add-habit" class="ml-auto px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i class="fas fa-plus mr-1"></i> Привычка</button>
+      </div>
+
+      <div id="habits-section" class="hidden">
+        <h3 class="text-xs font-bold text-glass-muted uppercase mb-2 tracking-wider">Привычки</h3>
+        <div id="habits-grid" class="grid grid-cols-4 gap-2"></div>
+      </div>
+
+      <div id="task-list" class="space-y-3 pb-20">
+        </div>
+      
+      <div id="empty-state" class="hidden flex flex-col items-center justify-center py-12 text-glass-muted">
+        <i class="fas fa-clipboard-check text-4xl mb-3 opacity-20"></i>
+        <p class="text-sm">Задач нет. Отличная работа!</p>
+      </div>
+    </div>
+
+    <div id="view-focus" class="hidden view-container flex flex-col items-center justify-center text-center px-6">
+      <div class="w-64 h-64 rounded-full border-4 border-white/5 flex items-center justify-center relative mb-8">
+        <svg class="absolute inset-0 w-full h-full transform -rotate-90 text-blue-500" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" stroke-width="4" stroke-dasharray="289" stroke-dashoffset="0" id="timer-progress" class="transition-all duration-1000 ease-linear"></circle>
+        </svg>
+        <div class="text-5xl font-mono font-bold text-white" id="timer-display">25:00</div>
+      </div>
+      <h3 class="text-xl font-medium text-white mb-2" id="focus-status">Время фокусировки</h3>
+      <p class="text-sm text-glass-muted mb-8 max-w-xs">Сконцентрируйтесь на одной задаче. Отложите уведомления.</p>
+      
+      <div class="flex gap-4">
+        <button id="timer-toggle" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center text-xl shadow-lg hover:scale-105 transition">
+          <i class="fas fa-play ml-1"></i>
+        </button>
+        <button id="timer-reset" class="w-16 h-16 rounded-full glass-panel text-white flex items-center justify-center text-xl hover:bg-white/10 transition">
+          <i class="fas fa-redo"></i>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <button id="fab-add" class="absolute bottom-6 right-6 w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full shadow-lg shadow-blue-600/40 flex items-center justify-center text-white text-2xl z-30 transition transform hover:scale-110 active:scale-90 ring-4 ring-black/50">
+    <i class="fas fa-plus"></i>
+  </button>
+
+  <div id="modal-task" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" id="modal-backdrop"></div>
+    <div class="absolute bottom-0 left-0 right-0 bg-[#18181b] rounded-t-3xl border-t border-glass-border shadow-2xl p-6 animate-slide-up pb-[env(safe-area-inset-bottom,20px)]">
+      <div class="w-12 h-1 bg-white/10 rounded-full mx-auto mb-6"></div>
+      
+      <input type="text" id="inp-task-title" placeholder="Что нужно сделать?" class="w-full bg-transparent text-xl font-medium text-white placeholder-glass-muted mb-4 border-none focus:ring-0 p-0" autocomplete="off">
+      
+      <div class="flex gap-3 mb-6">
+        <div class="flex-1">
+          <label class="block text-xs text-glass-muted mb-1">Категория</label>
+          <select id="inp-task-project" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none">
+            <option value="work">Работа</option>
+            <option value="personal">Личное</option>
+            <option value="shopping">Покупки</option>
           </select>
         </div>
-      </div>
-
-      <div>
-        <label class="text-xs font-bold text-[var(--hint)] uppercase mb-1 block">Проект</label>
-        <div class="flex gap-2">
-            <select id="task-project" class="flex-1 input-field rounded-lg px-3 py-2 text-sm"></select>
-            <button onclick="app.addProjectPrompt()" class="px-3 rounded-lg border border-dashed border-[var(--primary)] text-[var(--primary)] hover:bg-blue-50">+</button>
+        <div class="flex-1">
+          <label class="block text-xs text-glass-muted mb-1">Приоритет</label>
+          <div class="flex bg-white/5 rounded-lg p-1 border border-white/10">
+            <button data-prio="low" class="prio-select flex-1 py-1 rounded text-xs text-center hover:bg-white/10">Wait</button>
+            <button data-prio="high" class="prio-select flex-1 py-1 rounded text-xs text-center text-red-400 bg-white/10 font-bold">ASAP</button>
+          </div>
         </div>
       </div>
-
-      <div>
-        <label class="text-xs font-bold text-[var(--hint)] uppercase mb-1 block">Повтор</label>
-        <select id="task-repeat" class="w-full input-field rounded-lg px-3 py-2 text-sm">
-            <option value="none">Не повторять</option>
-            <option value="daily">Каждый день</option>
-            <option value="weekly">Каждую неделю</option>
-        </select>
+      
+      <div class="flex justify-between items-center">
+        <button id="btn-save-task" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition shadow-lg shadow-blue-900/20">
+          Сохранить задачу
+        </button>
       </div>
-
-      <div>
-        <label class="text-xs font-bold text-[var(--hint)] uppercase mb-1 block">Описание</label>
-        <textarea id="task-desc" rows="3" class="w-full input-field rounded-lg px-3 py-2 text-sm resize-none"></textarea>
-      </div>
-
-      <div>
-        <label class="text-xs font-bold text-[var(--hint)] uppercase mb-1 block">Подзадачи</label>
-        <div id="subtask-list" class="space-y-2 mb-2"></div>
-        <div class="flex gap-2">
-            <input type="text" id="new-subtask" placeholder="Новый пункт..." class="flex-1 input-field rounded-lg px-3 py-2 text-sm" onkeydown="if(event.key==='Enter') app.addSubtask()">
-            <button onclick="app.addSubtask()" class="px-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="p-4 border-t border-[var(--border)] flex justify-end gap-3 bg-[var(--bg)]">
-       <button onclick="app.deleteTask()" id="btn-delete-task" class="text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium mr-auto hidden">Удалить</button>
-       <button onclick="app.closeTaskModal()" class="px-4 py-2 rounded-lg hover:bg-black/5 text-sm font-medium">Отмена</button>
-       <button onclick="app.saveTask()" class="btn-primary px-6 py-2 rounded-lg text-sm font-bold">Сохранить</button>
     </div>
   </div>
-</div>
 
-<!-- SETTINGS MODAL -->
-<div id="settings-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('settings-modal').classList.add('hidden')"></div>
-    <div class="relative bg-[var(--surface)] w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl p-6 modal-enter">
-        <h3 class="text-xl font-bold mb-4">Настройки</h3>
+  <div id="modal-settings" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+    <div class="absolute inset-x-4 top-10 bottom-10 glass-panel rounded-2xl overflow-hidden flex flex-col animate-fade-in max-w-lg mx-auto">
+      <div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <h2 class="font-semibold text-white">Настройки</h2>
+        <button id="close-settings" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center"><i class="fas fa-times"></i></button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-4 space-y-6">
         
-        <div class="space-y-4">
+        <div class="glass-panel p-4 rounded-xl bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border-yellow-500/20">
+          <div class="flex justify-between items-start mb-2">
             <div>
-                <label class="block text-sm font-medium mb-2">Тема оформления</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="app.setTheme('light')" class="h-10 rounded-lg bg-gray-100 border border-gray-300"></button>
-                    <button onclick="app.setTheme('dark')" class="h-10 rounded-lg bg-gray-800 border border-gray-600"></button>
-                    <button onclick="app.setTheme('sunset')" class="h-10 rounded-lg bg-orange-100 border border-orange-300 relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-r from-orange-200 to-red-200 opacity-50"></div></button>
-                </div>
+              <h3 class="text-yellow-500 font-bold text-sm"><i class="fas fa-crown mr-1"></i> Premium Status</h3>
+              <p class="text-xs text-glass-muted mt-1" id="settings-prem-status">Не активен</p>
             </div>
-
-            <div class="pt-4 border-t border-[var(--border)]">
-                <h4 class="font-medium mb-2">Данные</h4>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="app.backup.exportData()" class="py-2 px-3 rounded-lg border border-[var(--border)] text-sm hover:bg-[var(--bg)]"> Скачать JSON</button>
-                    <label class="py-2 px-3 rounded-lg border border-[var(--border)] text-sm hover:bg-[var(--bg)] text-center cursor-pointer">
-                        Восстановить
-                        <input type="file" class="hidden" onchange="app.backup.importData(this)">
-                    </label>
-                </div>
-            </div>
-             <div class="pt-4 border-t border-[var(--border)] text-center">
-                <div class="text-xs text-[var(--hint)] mb-2">Версия 2.5 (Enterprise Optimized)</div>
-                <button onclick="localStorage.clear(); location.reload()" class="text-xs text-red-400 hover:text-red-500">Сброс приложения</button>
-            </div>
+            <button id="btn-buy-premium" class="text-xs bg-yellow-500/20 text-yellow-400 px-3 py-1.5 rounded-lg border border-yellow-500/30 hover:bg-yellow-500/30">Продлить</button>
+          </div>
         </div>
-    </div>
-</div>
 
-<!-- ADMIN MODAL -->
-<div id="admin-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="app.closeAdmin()"></div>
-    <div class="relative bg-gray-900 text-white w-full max-w-lg rounded-2xl shadow-2xl p-6 modal-enter border border-gray-700">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-green-400 font-mono">ADMIN_PANEL_V2</h3>
-            <button onclick="app.closeAdmin()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+        <div class="space-y-2">
+          <h3 class="text-xs font-bold text-glass-muted uppercase tracking-wider">Данные</h3>
+          <button id="btn-backup" class="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 transition">
+            <i class="fas fa-cloud-download-alt text-blue-400"></i>
+            <div class="flex-1">
+              <div class="text-sm font-medium">Сохранить резервную копию</div>
+              <div class="text-[10px] text-glass-muted">Скачать JSON файл с задачами</div>
+            </div>
+          </button>
+          <label class="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 transition cursor-pointer">
+            <i class="fas fa-cloud-upload-alt text-green-400"></i>
+            <div class="flex-1">
+              <div class="text-sm font-medium">Восстановить из файла</div>
+              <div class="text-[10px] text-glass-muted">Заменит текущие данные</div>
+            </div>
+            <input type="file" id="inp-restore" class="hidden" accept=".json">
+          </label>
+        </div>
+
+        <div id="admin-section" class="hidden space-y-2 pt-4 border-t border-white/10">
+          <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider">Администратор</h3>
+          <div class="glass-panel p-4 rounded-xl space-y-3">
+            <div class="text-sm font-medium mb-2">Генератор ссылок доступа</div>
+            <select id="adm-duration" class="w-full glass-input rounded-lg px-3 py-2 text-sm">
+              <option value="1">1 День (Тест)</option>
+              <option value="30">1 Месяц</option>
+              <option value="365">1 Год</option>
+              <option value="9999">Навсегда</option>
+            </select>
+            <button id="adm-gen-link" class="w-full py-2 rounded-lg bg-white text-black font-semibold text-sm hover:bg-gray-200">Создать Magic Link</button>
+            <div id="adm-result" class="hidden mt-2 p-2 bg-black/40 rounded text-xs break-all font-mono select-all cursor-pointer text-glass-muted"></div>
+          </div>
         </div>
         
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-gray-800 p-3 rounded border border-gray-700">
-                <div class="text-xs text-gray-400">Total Users</div>
-                <div class="text-2xl font-mono">1,337</div>
-            </div>
-            <div class="bg-gray-800 p-3 rounded border border-gray-700">
-                <div class="text-xs text-gray-400">Premium Revenue</div>
-                <div class="text-2xl font-mono text-green-400">$4,200</div>
-            </div>
+        <div class="text-center text-[10px] text-glass-muted pt-4">
+          ID: <span id="user-id-display">Guest</span> • v2.0 Glass
         </div>
-
-        <div class="space-y-4">
-            <div class="bg-gray-800 p-4 rounded border border-gray-700">
-                <h4 class="text-sm font-bold mb-2 text-blue-400">Generator</h4>
-                <div class="flex gap-2 mb-2">
-                    <input type="text" id="admin-uid" placeholder="User ID" class="bg-gray-900 border border-gray-600 rounded px-2 py-1 flex-1 text-sm">
-                    <select id="admin-plan" class="bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm">
-                        <option value="1">1 мес</option>
-                        <option value="12">1 год</option>
-                        <option value="99">Lifetime</option>
-                    </select>
-                </div>
-                <button onclick="app.admin.generateKey()" class="w-full bg-green-600 hover:bg-green-500 py-1.5 rounded text-sm font-bold">Generate Key</button>
-                <div id="admin-key-out" class="mt-2 text-xs font-mono break-all text-yellow-300 bg-black/50 p-2 rounded hidden"></div>
-            </div>
-
-            <div class="bg-gray-800 p-4 rounded border border-gray-700">
-                 <h4 class="text-sm font-bold mb-2 text-purple-400">Debug / Testing</h4>
-                 <button onclick="app.admin.godMode()" class="w-full border border-purple-500 text-purple-400 hover:bg-purple-500/20 py-1.5 rounded text-sm mb-2">Toggle God Mode (Self Premium)</button>
-                 <button onclick="app.admin.resetGod()" class="w-full border border-gray-600 text-gray-400 hover:bg-gray-700 py-1.5 rounded text-sm">Reset My Status</button>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
+
 </div>
 
 <script>
-/**
- * TASK MASTER PRO v2.5
- * Optimized vanilla JS application
- */
+(() => {
+  /* ================= CONFIG & CONSTANTS ================= */
+  const ADMIN_IDS = [1288379477]; // Впишите сюда свой ID
+  const SECRET_KEY = "TaskMaster_S3cr3t_K3y"; // В продакшене это должно быть на сервере!
+  const LS_KEY = "tm_data_v2";
+  
+  const tg = window.Telegram?.WebApp;
+  const user = tg?.initDataUnsafe?.user || { id: 0, first_name: 'Guest', username: 'guest' };
 
-const tg = window.Telegram?.WebApp;
-const ADMIN_ID = 1288379477; // Замените на ваш ID
+  /* ================= STATE MANAGEMENT ================= */
+  let state = {
+    tasks: [],
+    habits: [
+      { id: 'h1', icon: '💧', name: 'Вода', doneDates: [] },
+      { id: 'h2', icon: '📖', name: 'Чтение', doneDates: [] },
+    ],
+    premium: { active: false, until: null },
+    usedPromoIds: [], // To prevent reuse of same UUID link by same user
+    settings: { theme: 'glass' }
+  };
 
-const app = {
-    data: {
-        tasks: [],
-        projects: [
-            {id: 'work', name: 'Работа', color: '#3b82f6'},
-            {id: 'personal', name: 'Личное', color: '#10b981'},
-            {id: 'study', name: 'Учеба', color: '#8b5cf6'}
-        ],
-        user: { premium: false, premiumUntil: null, theme: 'light' }
-    },
-    state: {
-        currentView: 'list',
-        searchQuery: '',
-        editingId: null,
-        tempSubtasks: []
-    },
+  /* ================= PERSISTENCE (AUTO-SAVE) ================= */
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(LS_KEY + `_${user.id}`);
+      if (raw) {
+        const data = JSON.parse(raw);
+        state = { ...state, ...data };
+        // Migrate legacy tasks if needed
+        if(!state.habits) state.habits = [];
+      }
+    } catch (e) { console.error("Load failed", e); }
+    checkPremiumValidity();
+  }
 
-    init: async function() {
-        // 1. Инициализация Telegram
-        if(tg) {
-            tg.ready();
-            tg.expand();
-            try { tg.enableClosingConfirmation(); } catch(e){}
-        }
+  // Debounced Save
+  let saveTimeout;
+  function saveData() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      localStorage.setItem(LS_KEY + `_${user.id}`, JSON.stringify(state));
+    }, 500); // Save 0.5s after last change
+  }
 
-        // 2. Загрузка темы
-        const savedTheme = localStorage.getItem('tm_theme') || 'light';
-        this.setTheme(savedTheme);
+  function backupData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "task_master_backup_" + new Date().toISOString().slice(0,10) + ".json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  }
 
-        // 3. Загрузка данных (Hybrid: LocalStorage + CloudStorage)
-        await this.loadData();
+  function restoreData(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.tasks) {
+          state = data;
+          saveData();
+          renderDashboard();
+          alert("Данные успешно восстановлены!");
+        } else { throw new Error("Invalid format"); }
+      } catch (err) { alert("Ошибка файла: " + err.message); }
+    };
+    reader.readAsText(file);
+  }
 
-        // 4. Отрисовка
-        this.renderAll();
-        this.renderSidebarProfile();
+  /* ================= PREMIUM SYSTEM (MAGIC LINKS) ================= */
+  // Encryption logic (Simulated for client-side)
+  function signData(payload) {
+    // Simple mock signature. In real app, use HMAC-SHA256
+    return btoa(JSON.stringify(payload) + "|" + SECRET_KEY);
+  }
 
-        // 5. Листенеры
-        this.setupListeners();
-        
-        // 6. Проверка премиума
-        this.checkPremium();
-    },
+  function verifyLink(token) {
+    try {
+      const parts = atob(token).split('|');
+      if (parts[1] !== SECRET_KEY) return null;
+      return JSON.parse(parts[0]);
+    } catch { return null; }
+  }
 
-    // --- DATA MANAGEMENT ---
-    
-    loadData: async function() {
-        // Сначала грузим из LocalStorage (быстро)
-        const local = localStorage.getItem('tm_data_v2');
-        if(local) {
-            try {
-                const parsed = JSON.parse(local);
-                this.data = { ...this.data, ...parsed };
-            } catch(e) { console.error('Corrupt local data', e); }
-        }
+  function generatePremiumLink(days) {
+    const uuid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const payload = {
+      d: days,    // Duration
+      u: uuid,    // Unique ID of this link
+      t: Date.now() // Created at
+    };
+    const token = signData(payload);
+    // Format: https://t.me/YourBotName/AppName?startapp=promo_TOKEN
+    // For demo we use a query param format if user is not in TG, but TG uses startapp
+    return `https://t.me/D_a_n_Vi?startapp=promo__${token}`;
+  }
 
-        // Если в Telegram - пробуем подтянуть из облака (актуально при смене устройства)
-        if(tg && tg.CloudStorage) {
-            document.getElementById('sync-status').classList.remove('hidden');
-            tg.CloudStorage.getItem('tm_backup', (err, val) => {
-                document.getElementById('sync-status').classList.add('hidden');
-                if(!err && val) {
-                    const cloudData = JSON.parse(val);
-                    // Простая стратегия слияния: если в облаке больше задач, берем их
-                    // В реальном приложении нужно сравнивать timestamp
-                    if(cloudData.tasks && cloudData.tasks.length > (this.data.tasks.length || 0)) {
-                        this.data = cloudData;
-                        this.saveData(false); // Сохранить в LocalStorage, но не отправлять обратно в облако
-                        this.renderAll();
-                    }
-                }
-            });
-        }
-    },
-
-    saveData: function(syncCloud = true) {
-        // Сохраняем локально
-        localStorage.setItem('tm_data_v2', JSON.stringify(this.data));
-        
-        // Отправляем в облако TG (с дебаунсом, чтобы не спамить API)
-        if(syncCloud && tg && tg.CloudStorage) {
-            clearTimeout(this._cloudTimer);
-            this._cloudTimer = setTimeout(() => {
-                document.getElementById('sync-status').classList.remove('hidden');
-                tg.CloudStorage.setItem('tm_backup', JSON.stringify(this.data), (err) => {
-                    setTimeout(() => document.getElementById('sync-status').classList.add('hidden'), 500);
-                });
-            }, 2000);
-        }
-        
-        this.updateStats();
-    },
-
-    // --- RENDERING ---
-
-    renderAll: function() {
-        if(this.state.currentView === 'list') this.renderList();
-        else if(this.state.currentView === 'kanban') this.renderKanban();
-        else if(this.state.currentView === 'calendar') this.renderCalendar();
-        this.updateStats();
-        this.renderProjectSelects();
-    },
-
-    renderList: function() {
-        const container = document.getElementById('view-list');
-        const tasks = this.getFilteredTasks();
-        
-        if(tasks.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-12 opacity-50">
-                    <i class="fas fa-clipboard-list text-4xl mb-3"></i>
-                    <p>Задач не найдено</p>
-                </div>`;
-            return;
-        }
-
-        container.innerHTML = tasks.map(t => this.createTaskHTML(t)).join('');
-    },
-
-    createTaskHTML: function(t) {
-        const project = this.data.projects.find(p => p.id === t.project) || {name: '', color: 'transparent'};
-        const isDone = t.status === 'done';
-        const overdue = t.date && new Date(t.date) < new Date().setHours(0,0,0,0) && !isDone;
-        
-        // Progress bar for subtasks
-        let progressHtml = '';
-        if(t.subtasks && t.subtasks.length > 0) {
-            const doneCount = t.subtasks.filter(s => s.done).length;
-            const pct = Math.round((doneCount / t.subtasks.length) * 100);
-            progressHtml = `
-                <div class="mt-2 flex items-center gap-2">
-                    <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-[var(--primary)]" style="width: ${pct}%"></div>
-                    </div>
-                    <span class="text-[10px] text-[var(--hint)]">${doneCount}/${t.subtasks.length}</span>
-                </div>
-            `;
-        }
-
-        return `
-        <div class="card-3d p-4 relative group ${isDone ? 'opacity-60' : ''}" onclick="app.editTask('${t.id}')">
-            <div class="flex items-start gap-3">
-                <div class="pt-1" onclick="event.stopPropagation()">
-                    <div onclick="app.toggleStatus('${t.id}')" 
-                         class="w-6 h-6 rounded-full border-2 cursor-pointer flex items-center justify-center transition-colors ${isDone ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-[var(--primary)]'}">
-                        ${isDone ? '<i class="fas fa-check text-xs"></i>' : ''}
-                    </div>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-start">
-                        <h4 class="font-bold text-[var(--text)] truncate ${isDone ? 'line-through decoration-gray-400' : ''}">${this.escapeHtml(t.title)}</h4>
-                        ${overdue ? '<span class="text-xs text-red-500 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-2">Просрочено</span>' : ''}
-                    </div>
-                    <div class="flex flex-wrap gap-2 mt-1 text-xs text-[var(--hint)]">
-                        ${t.date ? `<span class="flex items-center gap-1"><i class="far fa-calendar"></i> ${this.formatDate(t.date)}</span>` : ''}
-                        ${t.repeat !== 'none' ? '<span class="text-blue-500"><i class="fas fa-sync-alt"></i></span>' : ''}
-                        ${project.name ? `<span class="px-2 py-0.5 rounded-full" style="background:${project.color}20; color:${project.color}">${project.name}</span>` : ''}
-                        ${t.priority === 'high' ? '<span class="text-orange-500 font-bold">! High</span>' : ''}
-                    </div>
-                    ${progressHtml}
-                </div>
-            </div>
-        </div>
-        `;
-    },
-
-    renderKanban: function() {
-        if(!this.data.user.premium) {
-            document.getElementById('view-kanban').innerHTML = this.getPremiumWall('Канбан доска доступна в Premium');
-            return;
-        }
-        // Очистка и заполнение колонок
-        ['backlog', 'in-progress', 'done'].forEach(status => {
-            const col = document.querySelector(`.kanban-col[data-status="${status}"] .k-body`);
-            const countEl = document.querySelector(`.kanban-col[data-status="${status}"] .count`);
-            const tasks = this.getFilteredTasks().filter(t => t.status === status);
-            countEl.textContent = tasks.length;
-            col.innerHTML = tasks.map(t => `
-                <div class="bg-[var(--surface)] p-3 rounded-lg shadow-sm border border-[var(--border)] cursor-pointer text-sm" onclick="app.editTask('${t.id}')">
-                    <div class="font-medium mb-1">${this.escapeHtml(t.title)}</div>
-                    <div class="flex justify-between items-center text-xs text-[var(--hint)]">
-                        <span>${t.date ? this.formatDate(t.date) : ''}</span>
-                        ${t.priority === 'high' ? '<i class="fas fa-exclamation-circle text-orange-500"></i>' : ''}
-                    </div>
-                </div>
-            `).join('');
-        });
-    },
-
-    renderCalendar: function() {
-        // Простой плейсхолдер, так как полноценный календарь требует много JS
-        const el = document.getElementById('view-calendar');
-        if(!this.data.user.premium) {
-            el.innerHTML = this.getPremiumWall('Календарь доступен в Premium');
-        } else {
-            // Упрощенная логика календаря (только список задач по датам)
-            const tasksByDate = {};
-            this.getFilteredTasks().forEach(t => {
-                if(!t.date) return;
-                if(!tasksByDate[t.date]) tasksByDate[t.date] = [];
-                tasksByDate[t.date].push(t);
-            });
-            
-            const dates = Object.keys(tasksByDate).sort();
-            let html = '<div class="space-y-4">';
-            dates.forEach(date => {
-                html += `<div>
-                    <h4 class="font-bold text-[var(--hint)] mb-2 sticky top-0 bg-[var(--bg)] py-1">${this.formatDate(date)}</h4>
-                    <div class="space-y-2">
-                        ${tasksByDate[date].map(t => this.createTaskHTML(t)).join('')}
-                    </div>
-                </div>`;
-            });
-            html += '</div>';
-            el.innerHTML = dates.length ? html : '<div class="text-center py-10 opacity-50">Нет задач с датами</div>';
-        }
-    },
-
-    getPremiumWall: function(msg) {
-        return `
-        <div class="flex flex-col items-center justify-center p-8 text-center h-64 border-2 border-dashed border-[var(--border)] rounded-2xl">
-            <div class="w-16 h-16 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center mb-4 shadow-lg text-white text-2xl">
-                <i class="fas fa-crown"></i>
-            </div>
-            <h3 class="font-bold text-lg mb-2">${msg}</h3>
-            <p class="text-sm text-[var(--hint)] mb-4">Организуйте свои задачи эффективнее с подпиской Pro.</p>
-            <button onclick="app.openSettings()" class="btn-primary px-6 py-2 rounded-lg font-bold">Подробнее</button>
-        </div>`;
-    },
-
-    renderSidebarProfile: function() {
-        const user = tg?.initDataUnsafe?.user;
-        const nameEl = document.getElementById('user-name');
-        const avatarEl = document.getElementById('user-avatar');
-        const statusEl = document.getElementById('user-status');
-        const projectsEl = document.getElementById('sidebar-projects');
-
-        if(user) {
-            nameEl.textContent = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-            if(user.photo_url) {
-                avatarEl.innerHTML = '';
-                avatarEl.style.backgroundImage = `url(${user.photo_url})`;
-                avatarEl.style.backgroundSize = 'cover';
-            }
-        }
-        
-        if(this.data.user.premium) {
-            statusEl.innerHTML = '<span class="premium-text">Premium User</span>';
-            document.getElementById('premium-badge-header').classList.remove('hidden');
-            document.getElementById('btn-premium-sidebar').classList.add('hidden');
-        } else {
-            statusEl.textContent = 'Базовый план';
-            document.getElementById('premium-badge-header').classList.add('hidden');
-            document.getElementById('btn-premium-sidebar').classList.remove('hidden');
-        }
-
-        // Проекты в меню
-        projectsEl.innerHTML = this.data.projects.map(p => `
-            <div class="flex items-center gap-3 px-4 py-2 hover:bg-[var(--bg)] rounded-lg cursor-pointer text-sm" onclick="app.filterByProject('${p.id}')">
-                <span class="w-2.5 h-2.5 rounded-full" style="background:${p.color}"></span>
-                ${p.name}
-            </div>
-        `).join('');
-
-        // Кнопка админки
-        if(String(user?.id) === String(ADMIN_ID) || this.data.user.premium) { 
-             document.getElementById('admin-link-container').classList.remove('hidden'); 
-        }
-    },
-
-    // --- ACTIONS ---
-
-    toggleStatus: function(id) {
-        const t = this.data.tasks.find(x => x.id === id);
-        if(t) {
-            t.status = t.status === 'done' ? 'backlog' : 'done';
-            // Если повторяющаяся задача выполнена - создаем новую на след. период
-            if(t.status === 'done' && t.repeat !== 'none' && t.date) {
-                this.createNextRepeatingTask(t);
-            }
-            this.saveData();
-            this.renderAll();
-        }
-    },
-
-    createNextRepeatingTask: function(t) {
-        const nextDate = new Date(t.date);
-        if(t.repeat === 'daily') nextDate.setDate(nextDate.getDate() + 1);
-        if(t.repeat === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
-        
-        const newTask = {
-            ...t,
-            id: Date.now().toString(36),
-            date: nextDate.toISOString().split('T')[0],
-            status: 'backlog',
-            subtasks: t.subtasks.map(s => ({...s, done: false}))
-        };
-        // Добавляем без сохранения (сохранение будет в общем потоке)
-        this.data.tasks.push(newTask);
-    },
-
-    openTaskModal: function(task = null) {
-        this.state.editingId = task ? task.id : null;
-        this.state.tempSubtasks = task ? JSON.parse(JSON.stringify(task.subtasks || [])) : [];
-        
-        const titleEl = document.getElementById('task-title');
-        const descEl = document.getElementById('task-desc');
-        const dateEl = document.getElementById('task-date');
-        const prioEl = document.getElementById('task-priority');
-        const projEl = document.getElementById('task-project');
-        const repEl = document.getElementById('task-repeat');
-        const modalTitle = document.getElementById('modal-title');
-        const delBtn = document.getElementById('btn-delete-task');
-
-        if(task) {
-            modalTitle.textContent = 'Редактировать';
-            titleEl.value = task.title;
-            descEl.value = task.desc || '';
-            dateEl.value = task.date || '';
-            prioEl.value = task.priority || 'medium';
-            projEl.value = task.project || '';
-            repEl.value = task.repeat || 'none';
-            delBtn.classList.remove('hidden');
-        } else {
-            modalTitle.textContent = 'Новая задача';
-            titleEl.value = '';
-            descEl.value = '';
-            dateEl.value = new Date().toISOString().split('T')[0];
-            prioEl.value = 'medium';
-            projEl.value = '';
-            repEl.value = 'none';
-            delBtn.classList.add('hidden');
-        }
-
-        this.renderSubtasksInModal();
-        document.getElementById('task-modal').classList.remove('hidden');
-    },
-
-    closeTaskModal: function() {
-        document.getElementById('task-modal').classList.add('hidden');
-    },
-
-    saveTask: function() {
-        const title = document.getElementById('task-title').value.trim();
-        if(!title) return alert('Введите название!');
-
-        const taskData = {
-            title,
-            desc: document.getElementById('task-desc').value,
-            date: document.getElementById('task-date').value,
-            priority: document.getElementById('task-priority').value,
-            project: document.getElementById('task-project').value,
-            repeat: document.getElementById('task-repeat').value,
-            subtasks: this.state.tempSubtasks
-        };
-
-        if(this.state.editingId) {
-            const idx = this.data.tasks.findIndex(t => t.id === this.state.editingId);
-            if(idx !== -1) {
-                this.data.tasks[idx] = { ...this.data.tasks[idx], ...taskData };
-            }
-        } else {
-            this.data.tasks.push({
-                id: Date.now().toString(36) + Math.random().toString(36).substr(2),
-                status: 'backlog',
-                createdAt: new Date().toISOString(),
-                ...taskData
-            });
-        }
-
-        this.saveData();
-        this.closeTaskModal();
-        this.renderAll();
-    },
-
-    editTask: function(id) {
-        const t = this.data.tasks.find(x => x.id === id);
-        if(t) this.openTaskModal(t);
-    },
-
-    deleteTask: function() {
-        if(confirm('Удалить эту задачу?')) {
-            this.data.tasks = this.data.tasks.filter(t => t.id !== this.state.editingId);
-            this.saveData();
-            this.closeTaskModal();
-            this.renderAll();
-        }
-    },
-
-    // --- SUBTASKS ---
-    addSubtask: function() {
-        const inp = document.getElementById('new-subtask');
-        const val = inp.value.trim();
-        if(val) {
-            this.state.tempSubtasks.push({ title: val, done: false });
-            inp.value = '';
-            this.renderSubtasksInModal();
-        }
-    },
-
-    toggleTempSubtask: function(idx) {
-        this.state.tempSubtasks[idx].done = !this.state.tempSubtasks[idx].done;
-        this.renderSubtasksInModal();
-    },
-
-    removeTempSubtask: function(idx) {
-        this.state.tempSubtasks.splice(idx, 1);
-        this.renderSubtasksInModal();
-    },
-
-    renderSubtasksInModal: function() {
-        const list = document.getElementById('subtask-list');
-        list.innerHTML = this.state.tempSubtasks.map((s, i) => `
-            <div class="flex items-center gap-2 text-sm group">
-                <input type="checkbox" ${s.done ? 'checked' : ''} onchange="app.toggleTempSubtask(${i})" class="rounded text-[var(--primary)] focus:ring-[var(--primary)]">
-                <span class="flex-1 ${s.done ? 'line-through text-[var(--hint)]' : ''}">${this.escapeHtml(s.title)}</span>
-                <button onclick="app.removeTempSubtask(${i})" class="text-[var(--hint)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-times"></i></button>
-            </div>
-        `).join('');
-    },
-
-    // --- UI HELPERS ---
-
-    switchView: function(view) {
-        if(view !== 'list' && !this.data.user.premium) {
-             // Allow viewing placeholder, but actual logic inside render handles content
-        }
-        this.state.currentView = view;
-        
-        document.querySelectorAll('#view-container > div').forEach(el => el.classList.add('hidden'));
-        document.getElementById(`view-${view}`).classList.remove('hidden');
-        
-        document.querySelectorAll('.active-view').forEach(b => {
-            b.classList.remove('bg-white', 'shadow-sm', 'text-[var(--primary)]', 'active-view');
-            b.classList.add('text-[var(--hint)]', 'hover:bg-[var(--bg)]');
-        });
-        const btn = document.querySelector(`button[data-view="${view}"]`);
-        if(btn) {
-            btn.classList.add('bg-white', 'shadow-sm', 'text-[var(--primary)]', 'active-view');
-            btn.classList.remove('text-[var(--hint)]', 'hover:bg-[var(--bg)]');
-        }
-
-        document.getElementById('view-title').textContent = 
-            view === 'list' ? 'Мои задачи' : view === 'kanban' ? 'Доска' : 'Календарь';
-
-        this.renderAll();
-    },
-
-    setTheme: function(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        this.data.user.theme = theme;
-        localStorage.setItem('tm_theme', theme);
-    },
-    
-    openSettings: function() {
-        document.getElementById('settings-modal').classList.remove('hidden');
-    },
-
-    toggleSearch: function() {
-        const bar = document.getElementById('search-bar');
-        bar.classList.toggle('hidden');
-        if(!bar.classList.contains('hidden')) document.getElementById('search-input').focus();
-        else {
-            this.state.searchQuery = '';
-            document.getElementById('search-input').value = '';
-            this.renderAll();
-        }
-    },
-
-    getFilteredTasks: function() {
-        let tasks = this.data.tasks;
-        if(this.state.searchQuery) {
-            const q = this.state.searchQuery.toLowerCase();
-            tasks = tasks.filter(t => t.title.toLowerCase().includes(q));
-        }
-        // Сортировка: Сначала невыполненные, затем по дате
-        return tasks.sort((a,b) => {
-            if(a.status === b.status) return (a.date || '9999') > (b.date || '9999') ? 1 : -1;
-            return a.status === 'done' ? 1 : -1;
-        });
-    },
-
-    updateStats: function() {
-        const total = this.data.tasks.length;
-        const done = this.data.tasks.filter(t => t.status === 'done').length;
-        const inProgress = total - done;
-        
-        const todayStr = new Date().toISOString().split('T')[0];
-        const doneToday = this.data.tasks.filter(t => t.status === 'done' && (t.createdAt || '').startsWith(todayStr)).length; // Simplified for demo
-
-        document.getElementById('stat-total').textContent = total;
-        document.getElementById('stat-done').textContent = done;
-        document.getElementById('stat-progress').textContent = inProgress;
-        document.getElementById('stat-today').textContent = doneToday; // Logic simplified
-    },
-    
-    renderProjectSelects: function() {
-        const opts = `<option value="">Без проекта</option>` + 
-                     this.data.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-        const taskSelect = document.getElementById('task-project');
-        // Сохраняем выбранное значение если возможно
-        const current = taskSelect.value;
-        taskSelect.innerHTML = opts;
-        if(current) taskSelect.value = current;
-    },
-
-    addProjectPrompt: function() {
-        const name = prompt('Название нового проекта:');
-        if(name) {
-            const id = 'proj_' + Date.now();
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-            const color = colors[this.data.projects.length % colors.length];
-            this.data.projects.push({ id, name, color });
-            this.saveData();
-            this.renderAll();
-            this.renderSidebarProfile();
-        }
-    },
-
-    escapeHtml: function(text) {
-        if(!text) return '';
-        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    },
-    
-    formatDate: function(iso) {
-        if(!iso) return '';
-        const d = new Date(iso);
-        return d.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'});
-    },
-
-    setupListeners: function() {
-        document.getElementById('menu-btn').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('-translate-x-full');
-            document.getElementById('sidebar-backdrop').classList.remove('hidden');
-        });
-        document.getElementById('sidebar-backdrop').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.add('-translate-x-full');
-            document.getElementById('sidebar-backdrop').classList.add('hidden');
-        });
-        document.getElementById('search-toggle').addEventListener('click', () => this.toggleSearch());
-        
-        // Debounce search
-        let timeout;
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                this.state.searchQuery = e.target.value.trim();
-                this.renderAll();
-            }, 300);
-        });
-    },
-
-    // --- ADMIN & PREMIUM ---
-    openAdmin: function() {
-        document.getElementById('admin-modal').classList.remove('hidden');
-    },
-    closeAdmin: function() {
-        document.getElementById('admin-modal').classList.add('hidden');
-    },
-    
-    checkPremium: function() {
-        // Простая проверка (в реальном приложении - запрос на сервер)
-        if(String(tg?.initDataUnsafe?.user?.id) === String(ADMIN_ID)) {
-             // Админ не получает премиум автоматически, чтобы тестировать GodMode, 
-             // но имеет доступ к кнопке
-        }
-    },
-
-    admin: {
-        godMode: function() {
-            app.data.user.premium = true;
-            app.saveData();
-            location.reload();
-        },
-        resetGod: function() {
-            app.data.user.premium = false;
-            app.saveData();
-            location.reload();
-        },
-        generateKey: function() {
-            const uid = document.getElementById('admin-uid').value;
-            const plan = document.getElementById('admin-plan').value;
-            if(!uid) return alert('Enter UID');
-            
-            // Простая генерация сигнатуры
-            const raw = `${uid}_${plan}_${Date.now()}_SECRET`;
-            const key = btoa(raw).replace(/=/g,'');
-            const out = document.getElementById('admin-key-out');
-            out.textContent = key;
-            out.classList.remove('hidden');
-        }
-    },
-    
-    // --- BACKUP ---
-    backup: {
-        exportData: function() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(app.data));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", "taskmaster_backup_" + new Date().toISOString().slice(0,10) + ".json");
-            document.body.appendChild(dlAnchorElem);
-            dlAnchorElem.click();
-            dlAnchorElem.remove();
-        },
-        importData: function(input) {
-            const file = input.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const json = JSON.parse(e.target.result);
-                    if(confirm('Это перезапишет текущие задачи. Продолжить?')) {
-                        app.data = json;
-                        app.saveData();
-                        location.reload();
-                    }
-                } catch(err) {
-                    alert('Ошибка чтения файла');
-                }
-            };
-            reader.readAsText(file);
-        }
+  function checkStartParam() {
+    // Check Telegram start_param or URL Query
+    let param = tg?.initDataUnsafe?.start_param;
+    if (!param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      param = urlParams.get('startapp');
     }
-};
 
-// Start
-document.addEventListener('DOMContentLoaded', () => app.init());
+    if (param && param.startsWith('promo__')) {
+      const token = param.split('promo__')[1];
+      const data = verifyLink(token);
+      
+      if (data) {
+        if (state.usedPromoIds.includes(data.u)) {
+          alert("Эта ссылка уже была использована вами.");
+          return;
+        }
+        
+        // Apply Premium
+        const now = new Date();
+        const currentEnd = state.premium.until ? new Date(state.premium.until) : now;
+        const base = currentEnd > now ? currentEnd : now;
+        base.setDate(base.getDate() + parseInt(data.d));
+        
+        state.premium.active = true;
+        state.premium.until = base.toISOString();
+        state.usedPromoIds.push(data.u);
+        saveData();
+        
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        alert(`Premium активирован на ${data.d} дней!`);
+        
+        // Clear param to avoid re-trigger on reload (UI only)
+        if(history.pushState) {
+            var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.pushState({path:newurl},'',newurl);
+        }
+      } else {
+        alert("Неверная или поврежденная ссылка.");
+      }
+    }
+  }
 
+  function checkPremiumValidity() {
+    if (state.premium.active && state.premium.until) {
+      if (new Date(state.premium.until) < new Date()) {
+        state.premium.active = false;
+        saveData();
+      }
+    }
+    updatePremiumUI();
+  }
+
+  /* ================= UI RENDERERS ================= */
+  function renderDashboard() {
+    const list = document.getElementById('task-list');
+    const doneCountEl = document.getElementById('stat-done');
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    
+    list.innerHTML = '';
+    
+    const tasks = state.tasks.filter(t => !t.deleted);
+    let filtered = tasks;
+
+    // Filter Logic
+    const todayStr = new Date().toISOString().slice(0,10);
+    if (filter === 'today') filtered = tasks.filter(t => (t.due || '').startsWith(todayStr));
+    if (filter === 'high') filtered = tasks.filter(t => t.prio === 'high');
+
+    // Sort: Pending first, then by priority
+    filtered.sort((a,b) => {
+      if (a.done === b.done) return (b.prio === 'high' ? 1 : 0) - (a.prio === 'high' ? 1 : 0);
+      return a.done ? 1 : -1;
+    });
+
+    if (filtered.length === 0) {
+      document.getElementById('empty-state').classList.remove('hidden');
+    } else {
+      document.getElementById('empty-state').classList.add('hidden');
+      filtered.forEach(task => {
+        const el = document.createElement('div');
+        // Task Card Styling
+        el.className = `glass-panel rounded-xl p-3 flex items-center gap-3 transition-all duration-300 ${task.done ? 'opacity-50' : 'hover:bg-white/5'}`;
+        el.innerHTML = `
+          <div class="custom-check ${task.done ? 'checked' : ''}" data-id="${task.id}"></div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate ${task.done ? 'line-through text-glass-muted' : 'text-white'}">${escapeHtml(task.title)}</div>
+            <div class="flex gap-2 mt-1">
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-glass-muted border border-white/5 uppercase tracking-wide">${task.project}</span>
+              ${task.prio === 'high' ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">Важно</span>' : ''}
+            </div>
+          </div>
+          <button class="text-glass-muted hover:text-red-400 w-8 h-8 flex items-center justify-center transition" onclick="deleteTask('${task.id}')">
+            <i class="fas fa-trash-alt text-xs"></i>
+          </button>
+        `;
+        
+        // Click Logic
+        const check = el.querySelector('.custom-check');
+        check.addEventListener('click', () => toggleTask(task.id));
+        if (task.done) check.classList.add('checked');
+        
+        list.appendChild(el);
+      });
+    }
+
+    // Stats
+    const done = tasks.filter(t => t.done).length;
+    doneCountEl.textContent = `${done}/${tasks.length}`;
+    
+    // Habits Render
+    renderHabits();
+  }
+
+  function renderHabits() {
+    const grid = document.getElementById('habits-grid');
+    grid.innerHTML = '';
+    const today = new Date().toISOString().slice(0,10);
+    
+    state.habits.forEach(h => {
+      const isDone = h.doneDates.includes(today);
+      const btn = document.createElement('button');
+      btn.className = `flex flex-col items-center justify-center p-2 rounded-xl border transition active:scale-95 ${isDone ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`;
+      btn.innerHTML = `
+        <div class="text-xl mb-1 filter ${isDone ? 'grayscale-0' : 'grayscale opacity-70'}">${h.icon}</div>
+        <div class="text-[9px] font-medium ${isDone ? 'text-emerald-400' : 'text-glass-muted'}">${h.name}</div>
+      `;
+      btn.onclick = () => toggleHabit(h.id);
+      grid.appendChild(btn);
+    });
+  }
+
+  /* ================= LOGIC ACTIONS ================= */
+  window.toggleTask = (id) => {
+    const t = state.tasks.find(x => x.id === id);
+    if (t) {
+      t.done = !t.done;
+      if (t.done) confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#3b82f6', '#ffffff'] });
+      saveData();
+      renderDashboard();
+    }
+  };
+
+  window.deleteTask = (id) => {
+    if(confirm('Удалить задачу?')) {
+      state.tasks = state.tasks.filter(x => x.id !== id);
+      saveData();
+      renderDashboard();
+    }
+  };
+
+  function toggleHabit(id) {
+    const today = new Date().toISOString().slice(0,10);
+    const h = state.habits.find(x => x.id === id);
+    if (h) {
+      if (h.doneDates.includes(today)) {
+        h.doneDates = h.doneDates.filter(d => d !== today);
+      } else {
+        h.doneDates.push(today);
+        confetti({ shapes: ['star'], colors: ['#10b981'] });
+      }
+      saveData();
+      renderHabits();
+    }
+  }
+
+  function addTask(title, project, prio) {
+    state.tasks.unshift({
+      id: Math.random().toString(36).substr(2, 9),
+      title,
+      project,
+      prio,
+      done: false,
+      created: new Date().toISOString()
+    });
+    saveData();
+    renderDashboard();
+  }
+
+  /* ================= FOCUS TIMER (POMODORO) ================= */
+  let timerInterval;
+  let timeLeft = 25 * 60;
+  let isTimerRunning = false;
+
+  function updateTimerDisplay() {
+    const m = Math.floor(timeLeft / 60).toString().padStart(2,'0');
+    const s = (timeLeft % 60).toString().padStart(2,'0');
+    document.getElementById('timer-display').textContent = `${m}:${s}`;
+    
+    // Circle progress
+    const circle = document.getElementById('timer-progress');
+    const radius = 46;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (timeLeft / (25 * 60)) * circumference;
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = offset;
+  }
+
+  function toggleTimer() {
+    const btn = document.getElementById('timer-toggle');
+    if (isTimerRunning) {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      btn.innerHTML = '<i class="fas fa-play ml-1"></i>';
+    } else {
+      isTimerRunning = true;
+      btn.innerHTML = '<i class="fas fa-pause"></i>';
+      timerInterval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateTimerDisplay();
+        } else {
+          clearInterval(timerInterval);
+          isTimerRunning = false;
+          btn.innerHTML = '<i class="fas fa-play ml-1"></i>';
+          alert("Время вышло! Отдохни.");
+          confetti();
+          timeLeft = 25 * 60;
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+  }
+
+  /* ================= EVENT LISTENERS ================= */
+  
+  // Navigation (Simple View Switcher)
+  document.getElementById('btn-focus').addEventListener('click', () => {
+    document.getElementById('view-dashboard').classList.add('hidden');
+    document.getElementById('view-focus').classList.remove('hidden');
+    document.getElementById('fab-add').classList.add('hidden');
+  });
+
+  // Back to Dashboard logic could be added, but for now clicking Header title resets
+  document.querySelector('h1').addEventListener('click', () => {
+    document.getElementById('view-dashboard').classList.remove('hidden');
+    document.getElementById('view-focus').classList.add('hidden');
+    document.getElementById('fab-add').classList.remove('hidden');
+  });
+
+  // Add Task UI
+  const modalTask = document.getElementById('modal-task');
+  const inpTitle = document.getElementById('inp-task-title');
+  
+  document.getElementById('fab-add').addEventListener('click', () => {
+    modalTask.classList.remove('hidden');
+    inpTitle.focus();
+  });
+  
+  document.getElementById('modal-backdrop').addEventListener('click', () => {
+    modalTask.classList.add('hidden');
+  });
+
+  let selectedPrio = 'low';
+  document.querySelectorAll('.prio-select').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      selectedPrio = e.target.dataset.prio;
+      document.querySelectorAll('.prio-select').forEach(b => b.classList.remove('ring-2', 'ring-white'));
+      e.target.classList.add('ring-2', 'ring-white');
+    });
+  });
+
+  document.getElementById('btn-save-task').addEventListener('click', () => {
+    const title = inpTitle.value.trim();
+    if (title) {
+      addTask(title, document.getElementById('inp-task-project').value, selectedPrio);
+      inpTitle.value = '';
+      modalTask.classList.add('hidden');
+    }
+  });
+
+  // Settings & Admin
+  const modalSettings = document.getElementById('modal-settings');
+  document.getElementById('btn-settings').addEventListener('click', () => {
+    modalSettings.classList.remove('hidden');
+    document.getElementById('user-id-display').textContent = `ID: ${user.id}`;
+    
+    // Check Admin
+    if (ADMIN_IDS.includes(user.id)) {
+      document.getElementById('admin-section').classList.remove('hidden');
+    }
+    updatePremiumUI();
+  });
+
+  document.getElementById('close-settings').addEventListener('click', () => modalSettings.classList.add('hidden'));
+
+  function updatePremiumUI() {
+    const ind = document.getElementById('premium-indicator');
+    const st = document.getElementById('settings-prem-status');
+    const habits = document.getElementById('habits-section');
+    
+    if (state.premium.active) {
+      ind.textContent = "Premium";
+      ind.classList.add('premium-shimmer', 'text-yellow-400');
+      st.innerHTML = `Активен до <span class="text-white">${new Date(state.premium.until).toLocaleDateString()}</span>`;
+      st.className = "text-xs text-green-400 mt-1";
+      habits.classList.remove('hidden'); // Habits is a Premium feature example
+    } else {
+      ind.textContent = "Basic";
+      ind.classList.remove('premium-shimmer', 'text-yellow-400');
+      st.textContent = "Не активен. Приобретите подписку.";
+      st.className = "text-xs text-glass-muted mt-1";
+      habits.classList.add('hidden');
+    }
+  }
+
+  // Backup / Restore
+  document.getElementById('btn-backup').addEventListener('click', backupData);
+  document.getElementById('inp-restore').addEventListener('change', function(e) {
+    if(this.files[0]) restoreData(this.files[0]);
+  });
+
+  // Admin Generator
+  document.getElementById('adm-gen-link').addEventListener('click', () => {
+    const days = document.getElementById('adm-duration').value;
+    const link = generatePremiumLink(days);
+    const res = document.getElementById('adm-result');
+    res.textContent = link;
+    res.classList.remove('hidden');
+    navigator.clipboard.writeText(link);
+    alert('Ссылка скопирована в буфер обмена');
+  });
+
+  // Filters
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('active', 'bg-white/10', 'text-white', 'border-white/20');
+        b.classList.add('text-glass-muted');
+      });
+      btn.classList.add('active', 'bg-white/10', 'text-white', 'border-white/20');
+      btn.classList.remove('text-glass-muted');
+      renderDashboard();
+    });
+  });
+
+  // Focus Timer
+  document.getElementById('timer-toggle').addEventListener('click', toggleTimer);
+  document.getElementById('timer-reset').addEventListener('click', () => {
+    isTimerRunning = false;
+    clearInterval(timerInterval);
+    timeLeft = 25 * 60;
+    updateTimerDisplay();
+    document.getElementById('timer-toggle').innerHTML = '<i class="fas fa-play ml-1"></i>';
+  });
+
+  document.getElementById('btn-add-habit').addEventListener('click', () => {
+    if(!state.premium.active) { alert("Трекер привычек доступен только в Premium"); return; }
+    const name = prompt("Название привычки:");
+    if(name) {
+      state.habits.push({ id: 'h'+Date.now(), name, icon: '🌟', doneDates:[] });
+      saveData();
+      renderHabits();
+    }
+  });
+
+  /* ================= INIT ================= */
+  tg?.ready();
+  tg?.expand();
+  
+  // Set theme colors for Telegram header
+  tg?.setHeaderColor('#09090b');
+  tg?.setBackgroundColor('#09090b');
+
+  // Init
+  document.getElementById('date-display').textContent = new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+  loadData();
+  checkStartParam();
+  renderDashboard();
+  updateTimerDisplay();
+
+  // Avatar Init
+  if (user.first_name) {
+    document.getElementById('avatar-container').textContent = user.first_name[0].toUpperCase();
+  }
+
+})();
+
+// Escape HTML utility
+function escapeHtml(text) {
+  if (!text) return text;
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 </script>
 </body>
 </html>
