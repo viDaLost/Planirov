@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Планировщик задач</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Подключаем Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +13,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
   <style>
-    /* === ТЕМЫ === */
+    /* === ТЕМЫ (light/dark + 5 тёплых градиентных + OLIVE) === */
     :root{
       --bg:#ffffff;
       --text:#111827;
@@ -22,7 +23,10 @@
       --button-text:#ffffff;
       --ring:rgba(37,99,235,.35);
       --header-gradient:linear-gradient(90deg,#ffffff,#ffffff);
-      
+      --badge-ok:#10b981;
+      --badge-warn:#f59e0b;
+      --badge-err:#ef4444;
+
       /* Premium shimmer */
       --premium-grad: linear-gradient(90deg, #ffd700, #ff9f1c, #ffd700, #fff3b0);
       --premium-grad-dark: linear-gradient(90deg, #ffe08a, #ffc857, #ffe08a, #fff3b0);
@@ -37,11 +41,10 @@
       --ring:rgba(91,116,249,.35);
       --header-gradient:linear-gradient(90deg,#10131a,#171a21);
     }
-    /* Дополнительные темы */
     html[data-theme="sunset"]{ --bg:#fff7ed; --text:#1f2937; --hint:#6b7280; --secondary:#ffe9d6; --button:#f97316; --button-text:#1f2937; --ring:rgba(249,115,22,.35); --header-gradient:linear-gradient(90deg,#ffedd5,#fecaca,#fde68a); }
-    html[data-theme="peach"]{ --bg:#fff1f2; --text:#1f2937; --hint:#6b7280; --secondary:#ffe4e6; --button:#fb7185; --button-text:#1f2937; --ring:rgba(251,113,133,.35); --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68a); }
+    html[data-theme="peach"]{ --bg:#fff1f2; --text:#1f2937; --hint:#6b7280; --secondary:#ffe4e6; --button:#fb7185; --button-text:#1f2937; --ring:rgba(251,113,133,.35); --header-gradient:linear-gradient(90deg,#ffe4e6,#fecdd3,#fde68а); }
     html[data-theme="sand"]{ --bg:#faf6f0; --text:#1f2937; --hint:#6b7280; --secondary:#f1ebe2; --button:#d97706; --button-text:#111827; --ring:rgba(217,119,6,.35); --header-gradient:linear-gradient(90deg,#f5eede,#f1ebe2,#fde68a); }
-    html[data-theme="coral"]{ --bg:#fff5f0; --text:#1f2937; --hint:#6b7280; --secondary:#ffe8e0; --button:#f43f5e; --button-text:#fff; --ring:rgba(244,63,94,.35); --header-gradient:linear-gradient(90deg,#ffd1c7,#ffe0d5,#fff0e5); }
+    html[data-theme="coral"]{ --bg:#fff5f0; --text:#1f2937; --hint:#6b7280; --secondary:#ffe8e0; --button:#f43f5e; --button-text:#fff; --ring:rgba(244,63,94,.35); --header-gradient:linear-gradient(90deg,#ffd1c7,#ffe0д5,#fff0e5); }
     html[data-theme="plum"]{ --bg:#f9f5ff; --text:#1f2937; --hint:#6b7280; --secondary:#f3e8ff; --button:#a855f7; --button-text:#fff; --ring:rgba(168,85,247,.35); --header-gradient:linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6); }
     html[data-theme="olive"]{ --bg:#f5f7f2; --text:#1f2937; --hint:#6b7280; --secondary:#e8efe1; --button:#7da453; --button-text:#111827; --ring:rgba(125,164,83,.35); --header-gradient:linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6); }
 
@@ -53,23 +56,20 @@
       color:var(--text);
       transition:background-color .25s,color .25s;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Inter',system-ui,sans-serif;
-      overflow-x: hidden;
+      overflow-x: hidden; /* Блокируем горизонтальный скролл */
     }
     .ring-focus:focus{outline:none;box-shadow:0 0 0 3px var(--ring)}
     .task-card{transition:box-shadow .15s, background-color .15s}
     .task-card:hover{box-shadow:0 4px 10px rgb(0 0 0 /.08)}
     .task-card.selected{outline:2px solid var(--ring); outline-offset:2px}
-    
     .priority-low{background:rgba(52,211,153,.12);color:rgb(16,185,129)}
     .priority-medium{background:rgba(96,165,250,.12);color:rgb(59,130,246)}
     .priority-high{background:rgba(251,191,36,.12);color:rgb(234,179,8)}
     .priority-critical{background:rgba(239,68,68,.12);color:rgb(239,68,68)}
-    
     .status-backlog{background:rgba(156,163,175,.12);color:rgb(156,163,175)}
     .status-in-progress{background:rgba(59,130,246,.12);color:rgb(59,130,246)}
     .status-review{background:rgba(168,85,247,.12);color:rgb(168,85,247)}
     .status-done{background:rgba(16,185,129,.12);color:rgb(16,185,129)}
-
     .kanban-column{min-height:60vh}
     .calendar-day{min-height:100px}
     .calendar-day.today{outline:2px solid var(--ring);outline-offset:-2px;background:rgba(0,0,0,.04)}
@@ -89,10 +89,11 @@
     .border-secondary{border-color:var(--secondary)}
     .text-hint{color:var(--hint)}
 
+    /* Пин-панель проектов */
     .pin-chip{background:var(--secondary); border:1px solid var(--secondary)}
     .pin-chip.dragging{opacity:.5}
 
-    /* PREMIUM GLOW */
+    /* === BADGE подписки === */
     .badge-subscription{
       display:inline-flex;align-items:center;gap:.4rem;
       font-size:.75rem;line-height:1rem;
@@ -109,7 +110,10 @@
       white-space:nowrap;
     }
     html[data-theme="dark"] .premium-glow{ background: var(--premium-grad-dark); }
-    @keyframes premiumShimmer{ 0%{ background-position:0% 50%; } 100%{ background-position:200% 50%; } }
+    @keyframes premiumShimmer{
+      0%{ background-position:0% 50%; }
+      100%{ background-position:200% 50%; }
+    }
 
     .toast{
       position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
@@ -122,17 +126,36 @@
 
     .plan-card{border:1px solid var(--secondary);border-radius:.75rem;padding:.75rem;display:flex;align-items:center;gap:.65rem;background:var(--secondary)}
     .plan-card input{accent-color:var(--button)}
+
+    /* === УПРОЩЁННЫЙ UPSALE-оверлей === */
     .locked::after{
-      content:'Premium';position:absolute;inset:auto 8px 8px auto;
+      content:'Premium';
+      position:absolute;inset:auto 8px 8px auto;
       font-size:.7rem;padding:.25rem .5rem;border-radius:.5rem;
       background:rgba(0,0,0,.08);color:var(--text);border:1px dashed var(--secondary)
     }
+  
+    /* === PREMIUM LOOK (дороже/глубже) === */
     body::before{
-      content:''; position:fixed; inset:-40vh -40vw;
-      background: radial-gradient(closest-side at 20% 10%, rgba(255,215,0,.10), transparent 60%), radial-gradient(closest-side at 80% 0%, rgba(91,116,249,.10), transparent 55%);
-      filter: blur(20px); pointer-events:none; z-index:-1;
+      content:'';
+      position:fixed; inset:-40vh -40vw;
+      background:
+        radial-gradient(closest-side at 20% 10%, rgba(255,215,0,.10), transparent 60%),
+        radial-gradient(closest-side at 80% 0%, rgba(91,116,249,.10), transparent 55%),
+        radial-gradient(closest-side at 50% 90%, rgba(16,185,129,.10), transparent 60%);
+      filter: blur(20px);
+      pointer-events:none;
+      z-index:-1;
     }
-    .glass{ background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(12px); }
+    .elevated{ box-shadow: 0 10px 28px rgb(0 0 0 / .10); }
+    .glass{
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    .btn-main{ box-shadow: 0 10px 22px rgb(0 0 0 / .12); }
+    .btn-main:active{ transform: translateY(1px); box-shadow: 0 6px 16px rgb(0 0 0 / .14); }
+    .badge-subscription{ box-shadow: 0 8px 18px rgb(0 0 0 / .10); }
+
   </style>
 </head>
 <body class="min-h-screen">
@@ -146,6 +169,7 @@
           <button id="menu-button" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Открыть меню">
             <i class="fas fa-bars"></i>
           </button>
+          <!-- Side menu -->
           <aside id="side-menu" class="hidden fixed top-0 left-0 h-full w-80 bg-[var(--bg)] shadow-xl z-20 border-r border-secondary">
             <div class="p-4 border-b border-secondary flex justify-between items-center">
               <h2 class="text-lg font-semibold">Меню</h2>
@@ -153,6 +177,8 @@
                 <i class="fas fa-times"></i>
               </button>
             </div>
+
+            <!-- Профиль -->
             <div id="profile-box" class="p-4 border-b border-secondary flex items-center gap-3">
               <div id="profile-avatar" class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-semibold">?</div>
               <div class="min-w-0">
@@ -160,52 +186,78 @@
                 <div id="profile-username" class="text-xs text-hint truncate">autologin: off</div>
               </div>
             </div>
+
             <div class="p-3 space-y-1">
               <button id="btn-settings" class="w-full text-left px-4 py-2 rounded-lg hover:bg-secondary">
                 <i class="fas fa-gear mr-2"></i>Настройки
               </button>
+              <!-- Кнопка «Премиум» и «Админ панель» добавляются скриптом -->
             </div>
           </aside>
           <div id="side-menu-backdrop" class="hidden fixed inset-0 bg-black/40 z-10"></div>
         </div>
         <h1 class="text-xl font-semibold">Планировщик</h1>
+        <!-- Бейдж подписки вставляется скриптом -->
       </div>
       <div class="flex items-center gap-2">
-        <button id="search-button" class="p-2 rounded-full hover:bg-secondary ring-focus"><i class="fas fa-search"></i></button>
-        <button id="add-task-button" class="p-2 rounded-full btn-main ring-focus"><i class="fas fa-plus"></i></button>
+        <button id="search-button" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Поиск">
+          <i class="fas fa-search"></i>
+        </button>
+        <button id="add-task-button" class="p-2 rounded-full btn-main ring-focus" aria-label="Новая задача">
+          <i class="fas fa-plus"></i>
+        </button>
       </div>
     </div>
   </header>
 
   <main class="flex-1 container mx-auto px-4 py-4">
-    <!-- View Selector -->
+
+    <!-- View Selector (Календарь/Доска только Premium) -->
     <div class="flex justify-center mb-4">
       <div class="inline-flex rounded-md shadow-sm" role="group">
-        <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-secondary hover:bg-secondary"><i class="fas fa-list mr-2"></i> Список</button>
-        <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-y border-secondary hover:bg-secondary" id="btn-view-kanban"><i class="fas fa-columns mr-2"></i> Доска</button>
-        <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-secondary hover:bg-secondary" id="btn-view-calendar"><i class="fas fa-calendar-alt mr-2"></i> Календарь</button>
+        <button data-view="list" class="view-selector px-4 py-2 text-sm font-medium rounded-l-lg border border-secondary hover:bg-secondary">
+          <i class="fas fa-list mr-2"></i> Список
+        </button>
+        <button data-view="kanban" class="view-selector px-4 py-2 text-sm font-medium border-y border-secondary hover:bg-secondary" id="btn-view-kanban">
+          <i class="fas fa-columns mr-2"></i> Доска
+        </button>
+        <button data-view="calendar" class="view-selector px-4 py-2 text-sm font-medium rounded-r-lg border border-secondary hover:bg-secondary" id="btn-view-calendar">
+          <i class="fas fa-calendar-alt mr-2"></i> Календарь
+        </button>
       </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Mini dashboard -->
     <div id="stats-bar" class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4"></div>
 
-    <!-- Projects -->
+    <!-- Project Selector -->
     <div class="mb-2 flex items-center gap-2">
-      <select id="project-selector" class="bg-secondary rounded-lg px-4 py-2 ring-focus"><option value="all">Все проекты</option></select>
-      <button id="add-project-button" class="p-2 rounded-full hover:bg-secondary ring-focus"><i class="fas fa-folder-plus"></i></button>
-      <button id="delete-project-button" class="p-2 rounded-full hover:bg-secondary ring-focus"><i class="fas fa-trash"></i></button>
+      <select id="project-selector" class="bg-secondary rounded-lg px-4 py-2 ring-focus">
+        <option value="all">Все проекты</option>
+      </select>
+      <button id="add-project-button" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Новый проект">
+        <i class="fas fa-folder-plus"></i>
+      </button>
+      <button id="delete-project-button" class="p-2 rounded-full hover:bg-secondary ring-focus" title="Удалить выбранный проект">
+        <i class="fas fa-trash"></i>
+      </button>
     </div>
 
-    <!-- Pinned -->
+    <!-- PINNED PROJECTS STRIP -->
     <div class="mb-4">
-      <div class="flex items-center justify-between mb-2"><div class="text-sm text-hint">Закреплённые</div></div>
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm text-hint">Закреплённые проекты</div>
+        <div class="text-xs text-hint">Перетаскивайте для изменения порядка</div>
+      </div>
       <div id="pinned-strip" class="flex gap-2 overflow-x-auto pb-1"></div>
     </div>
 
-    <!-- Active Projects Panel (Prem) -->
+    <!-- Быстрый список активных проектов (Premium) -->
     <section id="active-projects-panel" class="mb-4 hidden">
-      <div class="flex items-center justify-between mb-2"><div class="text-sm font-medium"><i class="fas fa-bolt mr-1"></i> Активные проекты</div></div>
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-sm font-medium"><i class="fas fa-bolt mr-1"></i> Активные проекты</div>
+        <div class="text-xs text-hint">Клик по карточке — редактировать</div>
+      </div>
       <div id="active-projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
     </section>
 
@@ -215,82 +267,201 @@
         <h2 class="text-lg font-semibold">Задачи</h2>
         <div class="relative flex items-center gap-2">
           <input id="search-input" placeholder="Поиск..." class="hidden md:block px-3 py-2 rounded-lg bg-secondary ring-focus"/>
-          <button id="filter-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary"><i class="fas fa-filter mr-1"></i></button>
+          <!-- Фильтр и сортировка — Premium -->
+          <button id="filter-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary">
+            <i class="fas fa-filter mr-1"></i> Фильтр
+          </button>
           <div id="filter-panel" class="popover hidden p-3 right-0 top-10">
             <div class="text-sm font-semibold mb-2">Фильтры</div>
-            <select id="filter-due" class="w-full mb-2 px-3 py-2 rounded bg-secondary ring-focus"><option value="all">Все сроки</option><option value="today">Сегодня</option><option value="week">Эта неделя</option><option value="overdue">Просроченные</option></select>
-            <select id="filter-priority" class="w-full mb-2 px-3 py-2 rounded bg-secondary ring-focus"><option value="all">Все приоритеты</option><option value="critical">Критичный</option><option value="high">Высокий</option></select>
-            <select id="filter-status" class="w-full px-3 py-2 rounded bg-secondary ring-focus"><option value="all">Все статусы</option><option value="backlog">Бэклог</option><option value="in-progress">В работе</option></select>
+            <label class="block text-sm mb-1">По сроку</label>
+            <select id="filter-due" class="w-full mb-2 px-3 py-2 rounded bg-secondary ring-focus">
+              <option value="all">Все</option>
+              <option value="today">Сегодня</option>
+              <option value="week">Эта неделя</option>
+              <option value="overdue">Просроченные</option>
+            </select>
+            <label class="block text-sm mb-1">Приоритет</label>
+            <select id="filter-priority" class="w-full mb-2 px-3 py-2 rounded bg-secondary ring-focus">
+              <option value="all">Все</option>
+              <option value="critical">Критичный</option>
+              <option value="high">Высокий</option>
+              <option value="medium">Средний</option>
+              <option value="low">Низкий</option>
+            </select>
+            <label class="block text sm mb-1">Статус</label>
+            <select id="filter-status" class="w-full px-3 py-2 rounded bg-secondary ring-focus">
+              <option value="all">Все</option>
+              <option value="backlog">Бэклог</option>
+              <option value="in-progress">В работе</option>
+              <option value="review">Проверка</option>
+              <option value="done">Готово</option>
+            </select>
           </div>
-          <button id="sort-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary"><i class="fas fa-sort mr-1"></i></button>
+
+          <button id="sort-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary">
+            <i class="fas fa-sort mr-1"></i> Сортировка
+          </button>
           <div id="sort-panel" class="popover hidden p-3 right-0 top-10">
-            <select id="sort-select" class="w-full mb-2 px-3 py-2 rounded bg-secondary ring-focus"><option value="due-asc">Сроку (раньше)</option><option value="priority-desc">Приоритету (высокий)</option></select>
+            <div class="text-sm font-semibold mb-2">Сортировать по</div>
+            <select id="sort-select" class="w-full mb-2 px-3 py-2 rounded bg-secondary ring-focus">
+              <option value="due-asc">Сроку (раньше → позже)</option>
+              <option value="due-desc">Сроку (позже → раньше)</option>
+              <option value="priority-desc">Приоритету (высокий → низкий)</option>
+              <option value="priority-asc">Приоритету (низкий → высокий)</option>
+              <option value="project-asc">Проекту (А→Я)</option>
+              <option value="status-asc">Статусу</option>
+              <option value="title-asc">Названию (А→Я)</option>
+            </select>
           </div>
         </div>
       </div>
+
+      <!-- Быстрое добавление -->
       <div class="mb-3">
-        <input id="quick-add-input" class="w-full px-4 py-3 rounded-lg bg-secondary ring-focus" placeholder="Быстро добавить задачу…"/>
+        <input id="quick-add-input"
+               class="w-full px-4 py-3 rounded-lg bg-secondary ring-focus"
+               placeholder="Быстро добавить задачу… Поддерживает: /сегодня /завтра /пн…/вс /высокий /критично, #теги, @Проект"/>
+        <div class="text-xs text-hint mt-1">
+          Примеры: «Созвон с клиентом /завтра @Работа #важно», «Купить молоко /сегодня #дом»
+        </div>
       </div>
+
       <div id="list-container" class="space-y-3"></div>
     </section>
 
-    <!-- Kanban View -->
+    <!-- Kanban View (Premium) -->
     <section id="kanban-view" class="view-content hidden">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div data-col="backlog" class="kanban-column bg-secondary rounded-lg p-3"><div class="flex justify-between mb-3"><h3 class="font-medium">Бэклог</h3><span class="text-xs bg-gray-200 text-gray-800 rounded-full px-2 py-1" id="cnt-backlog">0</span></div><div class="space-y-3 column-body"></div></div>
-        <div data-col="in-progress" class="kanban-column bg-secondary rounded-lg p-3"><div class="flex justify-between mb-3"><h3 class="font-medium">В работе</h3><span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-1" id="cnt-in-progress">0</span></div><div class="space-y-3 column-body"></div></div>
-        <div data-col="review" class="kanban-column bg-secondary rounded-lg p-3"><div class="flex justify-between mb-3"><h3 class="font-medium">Проверка</h3><span class="text-xs bg-purple-200 text-purple-800 rounded-full px-2 py-1" id="cnt-review">0</span></div><div class="space-y-3 column-body"></div></div>
-        <div data-col="done" class="kanban-column bg-secondary rounded-lg p-3"><div class="flex justify-between mb-3"><h3 class="font-medium">Готово</h3><span class="text-xs bg-green-200 text-green-800 rounded-full px-2 py-1" id="cnt-done">0</span></div><div class="space-y-3 column-body"></div></div>
+        <div data-col="backlog" class="kanban-column bg-secondary rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">Бэклог</h3>
+            <span class="text-xs bg-gray-200 text-gray-800 rounded-full px-2 py-1" id="cnt-backlog">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
+        </div>
+        <div data-col="in-progress" class="kanban-column bg-secondary rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">В работе</h3>
+            <span class="text-xs bg-blue-200 text-blue-800 rounded-full px-2 py-1" id="cnt-in-progress">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
+        </div>
+        <div data-col="review" class="kanban-column bg-secondary rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">Проверка</h3>
+            <span class="text-xs bg-purple-200 text-purple-800 rounded-full px-2 py-1" id="cnt-review">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
+        </div>
+        <div data-col="done" class="kanban-column bg-secondary rounded-lg p-3">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-medium">Готово</h3>
+            <span class="text-xs bg-green-200 text-green-800 rounded-full px-2 py-1" id="cnt-done">0</span>
+          </div>
+          <div class="space-y-3 column-body"></div>
+        </div>
       </div>
     </section>
 
-    <!-- Calendar View -->
+    <!-- Calendar View (Premium) -->
     <section id="calendar-view" class="view-content hidden">
       <div class="mb-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
-          <button id="prev-month" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-chevron-left"></i></button>
-          <h2 id="month-title" class="text-lg font-semibold">Месяц</h2>
-          <button id="next-month" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-chevron-right"></i></button>
+          <button id="prev-month" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Предыдущий месяц">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <h2 id="month-title" class="text-lg font-semibold">Месяц ГГГГ</h2>
+          <button id="next-month" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Следующий месяц">
+            <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
-        <button id="today-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary">Сегодня</button>
+        <div>
+          <button id="today-button" class="px-3 py-1 text-sm rounded-lg border border-secondary hover:bg-secondary">
+            Сегодня
+          </button>
+        </div>
       </div>
       <div id="weekday-row" class="grid grid-cols-7 gap-1 mb-1"></div>
       <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
     </section>
+
   </main>
 
-  <!-- Mobile Nav -->
+  <!-- Bottom Navigation (Mobile) -->
   <nav class="md:hidden sticky bottom-0 border-t border-secondary header-gradient">
     <div class="flex justify-around py-2">
-      <button data-view="list" class="view-selector p-2 rounded-full hover:bg-secondary"><i class="fas fa-list text-lg"></i></button>
-      <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-secondary" id="btn-mobile-kanban"><i class="fas fa-columns text-lg"></i></button>
-      <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-secondary" id="btn-mobile-calendar"><i class="fas fa-calendar-alt text-lg"></i></button>
-      <button id="mobile-add-task-button" class="p-2 rounded-full btn-main"><i class="fas fa-plus text-lg"></i></button>
+      <button data-view="list" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Список">
+        <i class="fas fa-list text-lg"></i>
+      </button>
+      <button data-view="kanban" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Доска" id="btn-mobile-kanban">
+        <i class="fas fa-columns text-lg"></i>
+      </button>
+      <button data-view="calendar" class="view-selector p-2 rounded-full hover:bg-secondary" aria-label="Календарь" id="btn-mobile-calendar">
+        <i class="fas fa-calendar-alt text-lg"></i>
+      </button>
+      <button id="mobile-add-task-button" class="p-2 rounded-full btn-main" aria-label="Новая задача">
+        <i class="fas fa-plus text-lg"></i>
+      </button>
     </div>
   </nav>
 
   <!-- Task Modal -->
   <div id="task-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
     <div class="modal-backdrop" id="task-backdrop"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-h-[90vh] overflow-y-auto">
+    <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-height-[90vh] max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--bg)] p-4 flex justify-between items-center border-b border-secondary">
         <h2 id="task-modal-title" class="text-xl font-semibold">Новая задача</h2>
-        <button id="close-task-modal" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        <button id="close-task-modal" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
       <div class="p-4">
         <input type="hidden" id="task-id"/>
-        <div class="mb-4"><input type="text" id="task-title" placeholder="Название задачи" class="w-full px-4 py-3 bg-secondary rounded-lg ring-focus"/></div>
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <div><label class="block text-sm text-hint mb-1">Приоритет</label><select id="task-priority" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option><option value="critical">Критичный</option></select></div>
-          <div><label class="block text-sm text-hint mb-1">Статус</label><select id="task-status" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"><option value="backlog">Бэклог</option><option value="in-progress">В работе</option><option value="review">Проверка</option><option value="done">Готово</option></select></div>
+        <div class="mb-4">
+          <input type="text" id="task-title" placeholder="Название задачи" class="w-full px-4 py-3 bg-secondary rounded-lg ring-focus"/>
         </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
-          <div><label class="block text-sm text-hint mb-1">Проект</label><select id="task-project" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></select></div>
-          <div><label class="block text-sm text-hint mb-1">Срок</label><input type="date" id="task-due-date" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"/></div>
+          <div>
+            <label class="block text-sm text-hint mb-1">Приоритет</label>
+            <select id="task-priority" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus">
+              <option value="low">Низкий</option>
+              <option value="medium" selected>Средний</option>
+              <option value="high">Высокий</option>
+              <option value="critical">Критичный</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-hint mb-1">Статус</label>
+            <select id="task-status" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus">
+              <option value="backlog">Бэклог</option>
+              <option value="in-progress">В работе</option>
+              <option value="review">Проверка</option>
+              <option value="done">Готово</option>
+            </select>
+          </div>
         </div>
-        <div class="mb-4"><label class="block text-sm text-hint mb-1">Описание</label><textarea id="task-description" rows="3" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></textarea></div>
-        <div class="mb-4"><label class="block text-sm text-hint mb-1">Подзадачи (Enter)</label><textarea id="task-subtasks" rows="2" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></textarea></div>
-        <div class="mb-4"><label class="block text-sm text-hint mb-1">Метки</label><input id="task-tags" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"/></div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm text-hint mb-1">Проект</label>
+            <select id="task-project" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></select>
+          </div>
+          <div>
+            <label class="block text-sm text-hint mb-1">Срок</label>
+            <input type="date" id="task-due-date" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"/>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-hint mb-1">Описание</label>
+          <textarea id="task-description" rows="3" placeholder="Подробности..." class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-hint mb-1">Подзадачи (через Enter)</label>
+          <textarea id="task-subtasks" rows="2" placeholder="Напр.: Исследовать конкурентов&#10;Сделать план" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-hint mb-1">Метки (через запятую)</label>
+          <input id="task-tags" placeholder="Работа, Важно" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"/>
+        </div>
         <div class="flex justify-end gap-2 mt-6">
           <button id="cancel-task" class="px-4 py-2 rounded-lg border border-secondary hover:bg-secondary">Отмена</button>
           <button id="save-task" class="px-4 py-2 rounded-lg btn-main">Сохранить</button>
@@ -305,15 +476,27 @@
     <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-h-[80vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--bg)] p-4 flex justify-between items-center border-b border-secondary">
         <h2 class="text-xl font-semibold">Новый проект</h2>
-        <button id="close-project-modal" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        <button id="close-project-modal" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
       <div class="p-4">
         <input type="hidden" id="project-id"/>
-        <div class="mb-4"><input type="text" id="project-name" placeholder="Название проекта" class="w-full px-4 py-3 bg-secondary rounded-lg ring-focus"/></div>
-        <div class="mb-4"><label class="block text-sm text-hint mb-1">Цвет</label><input type="color" id="project-color" value="#3b82f6" class="w-16 h-10 p-1 bg-secondary rounded ring-focus"/></div>
-        <div class="mb-4"><label class="block text-sm text-hint mb-1">Описание</label><textarea id="project-description" rows="3" class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></textarea></div>
+        <div class="mb-4">
+          <input type="text" id="project-name" placeholder="Название проекта" class="w-full px-4 py-3 bg-secondary rounded-lg ring-focus"/>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-hint mb-1">Цвет</label>
+          <input type="color" id="project-color" value="#3b82f6" class="w-16 h-10 p-1 bg-secondary rounded ring-focus"/>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-hint mb-1">Описание</label>
+          <textarea id="project-description" rows="3" placeholder="Короткое описание..." class="w-full px-4 py-2 bg-secondary rounded-lg ring-focus"></textarea>
+        </div>
         <div class="flex justify-between mt-6">
-          <button id="delete-project" class="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50/10"><i class="fas fa-trash mr-1"></i>Удалить</button>
+          <button id="delete-project" class="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50/10">
+            <i class="fas fa-trash mr-1"></i>Удалить
+          </button>
           <div class="flex gap-2">
             <button id="cancel-project" class="px-4 py-2 rounded-lg border border-secondary hover:bg-secondary">Отмена</button>
             <button id="save-project" class="px-4 py-2 rounded-lg btn-main">Сохранить</button>
@@ -329,24 +512,40 @@
     <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl max-h-[85vh] overflow-y-auto">
       <div class="sticky top-0 bg-[var(--bg)] p-4 flex justify-between items-center border-b border-secondary">
         <h2 class="text-xl font-semibold">Настройки</h2>
-        <button id="close-settings" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        <button id="close-settings" class="p-2 rounded-full hover:bg-secondary ring-focus" aria-label="Закрыть">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
       <div class="p-4 space-y-6">
-        <div><div class="text-sm font-medium mb-2">Тема</div><div id="theme-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div><div id="theme-upsell" class="text-xs text-hint mt-1 hidden">Premium только.</div></div>
+        <div>
+          <div class="text-sm font-medium mb-2">Тема оформления</div>
+          <div id="theme-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+          <div id="theme-upsell" class="text-xs text-hint mt-1 hidden">Расширенные темы доступны в Premium.</div>
+        </div>
+        <div id="admin-slot" class="hidden"></div>
         <div id="premium-settings-block" class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
           <div class="flex items-center justify-between gap-2">
-            <div><div class="text-sm font-medium">Подписка</div><div class="text-xs text-hint" id="premium-status-line">—</div></div>
-            <button id="prem-manage" class="px-3 py-1 rounded-lg btn-main">Управление</button>
+            <div>
+              <div class="text-sm font-medium">Статус подписки</div>
+              <div class="text-xs text-hint" id="premium-status-line">—</div>
+            </div>
+            <div class="flex gap-2">
+              <button id="prem-manage" class="px-3 py-1 rounded-lg btn-main">Управление</button>
+            </div>
           </div>
         </div>
+        
         <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)] space-y-2">
           <div class="text-sm font-medium">Данные</div>
           <div class="grid grid-cols-2 gap-2">
-            <button id="btn-export" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Экспорт</button>
+            <button id="btn-export" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Экспорт (копия)</button>
             <button id="btn-import" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Импорт</button>
           </div>
-          <button id="btn-clear-data" class="w-full px-3 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50/10">Сброс</button>
+          <button id="btn-clear-data" class="w-full px-3 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-50/10">Очистить данные</button>
+          <div class="text-xs text-hint">Экспорт помогает сохранить задачи даже при переустановке/очистке кэша. Если доступен Telegram CloudStorage — данные синхронизируются автоматически.</div>
         </div>
+
+        <div class="text-xs text-hint">Тема сохраняется локально для вашего профиля и применяется ко всему приложению.</div>
       </div>
     </div>
   </div>
@@ -357,11 +556,61 @@
     <div class="relative w-full max-w-md mx-4">
       <div class="command-palette bg-[var(--bg)] rounded-lg shadow-xl overflow-hidden">
         <div class="p-4 border-b border-secondary">
-          <div class="relative"><i class="fas fa-search absolute left-3 top-3 text-hint"></i><input type="text" id="command-input" placeholder="Команда..." class="w-full pl-10 pr-4 py-2 bg-secondary rounded-lg ring-focus"/></div>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-search text-hint"></i>
+            </div>
+            <input type="text" id="command-input" placeholder="Команда или поиск..." class="w-full pl-10 pr-4 py-2 bg-secondary rounded-lg ring-focus"/>
+          </div>
         </div>
         <div class="max-h-96 overflow-y-auto">
-          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer flex items-center"><i class="fas fa-plus mr-3 text-blue-500"></i><span>Создать задачу</span></div>
-          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer flex items-center"><i class="fas fa-search mr-3 text-purple-500"></i><span>Поиск</span></div>
+          <div class="px-4 py-2 text-sm text-hint">Задачи</div>
+          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-blue-100 text-blue-800 mr-3"><i class="fas fa-plus"></i></div>
+              <div>
+                <div class="font-medium">Создать задачу</div>
+                <div class="text-xs text-hint">Добавить новую задачу</div>
+              </div>
+            </div>
+          </div>
+          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-purple-100 text-purple-800 mr-3"><i class="fas fa-search"></i></div>
+              <div>
+                <div class="font-medium">Поиск задач</div>
+                <div class="text-xs text-hint">Искать по названию/описанию</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-2 text-sm text-hint">Проекты</div>
+          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
+            <div class="flex items-center">
+              <div class="p-2 rounded-full bg-green-100 text-green-800 mr-3"><i class="fas fa-folder-plus"></i></div>
+              <div>
+                <div class="font-medium">Создать проект</div>
+                <div class="text-xs text-hint">Организовать задачи по проектам</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-2 text-sm text-hint">Виды</div>
+          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
+            <div class="p-2 rounded-full bg-yellow-100 text-yellow-800 mr-3"><i class="fas fa-list"></i></div>
+            <div><div class="font-medium">Переключить на Список</div><div class="text-xs text-hint">Простой список задач</div></div>
+          </div>
+          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
+            <div class="p-2 rounded-full bg-indigo-100 text-indigo-800 mr-3"><i class="fas fa-columns"></i></div>
+            <div><div class="font-medium">Переключить на Доску</div><div class="text-xs text-hint">Канбан</div></div>
+          </div>
+          <div class="command-option px-4 py-3 hover:bg-secondary cursor-pointer">
+            <div class="p-2 rounded-full bg-red-100 text-red-800 mr-3"><i class="fas fa-calendar-alt"></i></div>
+            <div><div class="font-medium">Переключить на Календарь</div><div class="text-xs text-hint">Показ задач по датам</div></div>
+          </div>
+        </div>
+        <div class="p-2 text-xs text-center text-hint border-t border-secondary">
+          Esc — закрыть • N — новая задача • Ctrl/Cmd+K — палитра • F — поиск • 1/2/3 — виды • Del — удалить
         </div>
       </div>
     </div>
@@ -369,50 +618,52 @@
 
   <!-- Empty State -->
   <div id="empty-state" class="hidden flex flex-col items-center justify-center py-12">
-    <div class="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mb-4"><i class="fas fa-tasks text-3xl text-hint"></i></div>
+    <div class="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mb-4">
+      <i class="fas fa-tasks text-3xl text-hint"></i>
+    </div>
     <h3 class="text-lg font-medium mb-2">Пока нет задач</h3>
+    <p class="text-sm text-hint mb-4 text-center max-w-md px-4">Создайте первую задачу — нажмите «+» или клавишу N.</p>
     <button id="empty-state-add-task" class="px-4 py-2 rounded-lg btn-main">Добавить задачу</button>
   </div>
 </div>
-
 <script>
 (async () => {
-  // === КОНФИГУРАЦИЯ ССЫЛКИ ===
-  // Вставьте сюда прямую ссылку на ваше Telegram WebApp (t.me/BotName/AppName)
-  // Это нужно для кнопки "Перейти в приложение"
-  const TELEGRAM_APP_LINK = 'https://t.me/D_a_n_Vi'; // <-- ЗАМЕНИТЕ НА СВОЮ
+  // ССЫЛКА НА ВАШЕ ПРИЛОЖЕНИЕ (для кнопки в заглушке)
+  // Измените её на реальную ссылку на бота, например https://t.me/MyBot
+  const TELEGRAM_APP_LINK = 'https://t.me/D_a_n_Vi'; 
 
   /* ========= ЗАПРЕТ ОТКРЫТИЯ В БРАУЗЕРЕ (Telegram Only) ========= */
   (function enforceTelegramOnly(){
-    // Проверка: есть ли объект Telegram и запущен ли он внутри клиента (initData не пустой или platform не unknown)
+    // Проверка: есть ли объект Telegram и запущен ли он внутри клиента
     const isTg = !!(window.Telegram && Telegram.WebApp);
     // В браузере platform часто 'unknown' или initData пустая
-    const isValidEnv = isTg && (Telegram.WebApp.platform !== 'unknown' && Telegram.WebApp.platform !== undefined);
+    const platform = Telegram?.WebApp?.platform;
+    const isValidEnv = isTg && (platform !== 'unknown' && platform !== undefined);
     
     // Если НЕ Telegram - блокируем
     if (!isValidEnv) {
       document.body.innerHTML = ''; // Очищаем тело
-      document.body.style.background = 'var(--bg)';
+      document.body.style.background = '#ffffff';
       const gate = document.createElement('div');
       gate.style.position = 'fixed'; gate.style.inset = '0'; gate.style.zIndex = '9999';
-      gate.style.background = '#ffffff'; // Всегда белый или можно считать тему
+      gate.style.background = '#ffffff'; 
       gate.style.color = '#000000';
       gate.innerHTML = `
-        <div style="height:100%; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; font-family:sans-serif;">
+        <div style="height:100%; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; font-family:-apple-system, sans-serif;">
           <div style="width:64px; height:64px; border-radius:50%; background:#f3f4f6; display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
-            <i class="fas fa-mobile-alt" style="font-size:24px; color:#6b7280;"></i>
+            <i class="fas fa-lock" style="font-size:24px; color:#6b7280;"></i>
           </div>
-          <h2 style="font-size:20px; font-weight:600; margin-bottom:8px;">Только в Telegram</h2>
+          <h2 style="font-size:20px; font-weight:600; margin-bottom:8px;">Доступ ограничен</h2>
           <p style="font-size:14px; color:#6b7280; margin-bottom:24px; max-width:300px;">
-            Это приложение работает только внутри Telegram. Пожалуйста, откройте его через бота.
+            Это приложение работает только внутри Telegram.
           </p>
-          <a href="${TELEGRAM_APP_LINK}" style="background:#2563eb; color:white; text-decoration:none; padding:10px 20px; border-radius:8px; font-weight:500;">
+          <a href="${TELEGRAM_APP_LINK}" style="background:#2563eb; color:white; text-decoration:none; padding:12px 24px; border-radius:12px; font-weight:500;">
             Открыть в Telegram
           </a>
         </div>
       `;
       document.body.appendChild(gate);
-      // Бросаем ошибку, чтобы остановить выполнение скрипта дальше (данные не загрузятся)
+      // Бросаем ошибку, чтобы остановить выполнение скрипта дальше
       throw new Error("Telegram-only restriction");
     }
   })();
@@ -433,25 +684,46 @@
   const PREMIUM_SECRET = 'tp$S3cr3t@v1';
   const PREMIUM_LS_KEY = tgUser?.id ? `tp_premium_${tgUser.id}` : `tp_premium_guest`;
 
-  const BOT_USERNAME = 'YOUR_BOT_USERNAME';
-  const MINIAPP_SHORTNAME = 'app';
+  // === Premium Links (одноразовые ссылки) ===
+  const BOT_USERNAME = 'YOUR_BOT_USERNAME';           
+  const MINIAPP_SHORTNAME = 'app';                  
   const PREMIUM_API_BASE = '';
   const USED_LINKS_KEY = `tp_used_links_${userSuffix}`;
+  const USED_TOKENS_KEY = `tp_used_tokens_${userSuffix}`;
 
-  // Профиль
+  // Миграция общих ключей в персональные
+  if (tgUser?.id) {
+    try {
+      if (!localStorage.getItem(LS_DATA) && localStorage.getItem(LS_DATA_BASE)) {
+        localStorage.setItem(LS_DATA, localStorage.getItem(LS_DATA_BASE));
+      }
+      if (!localStorage.getItem(LS_THEME) && localStorage.getItem(LS_THEME_BASE)) {
+        localStorage.setItem(LS_THEME, localStorage.getItem(LS_THEME_BASE));
+      }
+    } catch(e) { console.warn('migrate error', e); }
+  }
+
+  // Профиль в боковом меню
   const nameEl = document.getElementById('profile-name');
   const usernameEl = document.getElementById('profile-username');
   const avatarEl = document.getElementById('profile-avatar');
   if (tgUser) {
-    nameEl.textContent = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-    usernameEl.textContent = 'ID: ' + tgUser.id;
+    const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || 'Пользователь';
+    const uname    = tgUser.username ? '@' + tgUser.username : `id:${tgUser.id}`;
+    nameEl.textContent = fullName;
+    usernameEl.textContent = 'autologin: on • ' + uname;
     if (tgUser.photo_url) {
       avatarEl.style.backgroundImage = `url('${tgUser.photo_url}')`;
       avatarEl.style.backgroundSize = 'cover';
+      avatarEl.style.backgroundPosition = 'center';
       avatarEl.textContent = '';
     } else {
-      avatarEl.textContent = (tgUser.first_name?.[0] || '?').toUpperCase();
+      const initials = (tgUser.first_name?.[0] || '?') + (tgUser.last_name?.[0] || '');
+      avatarEl.textContent = initials.toUpperCase();
     }
+  } else {
+    nameEl.textContent = 'Гость';
+    usernameEl.textContent = 'autologin: off';
   }
 
   /* ========= ТЕМЫ ========= */
@@ -465,23 +737,31 @@
     { id:'plum',   name:'Plum',     grad:'linear-gradient(90deg,#ede9fe,#f5d0fe,#ffe4e6)' },
     { id:'olive',  name:'Olive',    grad:'linear-gradient(90deg,#eef4e6,#d9e7cc,#f0ead6)' },
   ];
+
   const savedTheme = localStorage.getItem(LS_THEME) || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
   function setTheme(id){ document.documentElement.setAttribute('data-theme', id); localStorage.setItem(LS_THEME, id); }
 
-  /* ========= PREMIUM ЛОГИКА ========= */
+  /* ========= PREMIUM / TRIAL (3 дня новым пользователям) ========= */
+  const ADMIN_TG_ID_STR = String(ADMIN_TG_ID);
   const premium = { tier:'free', expiresAt:null, trial:false };
-  
+
   function showToast(html){
-    const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = html;
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = html;
     document.body.appendChild(t);
-    setTimeout(()=>{ t.style.opacity='0'; t.remove(); }, 2500);
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; t.style.transition='opacity .3s, transform .3s'; }, 2200);
+    setTimeout(()=> t.remove(), 2700);
   }
   function b64u(str){ return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
   function b64uDec(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; return atob(s); }
   function hashFn(str){
     let h = 0x811c9dc5;
-    for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24); }
+    for (let i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24);
+    }
     return ('0000000' + (h>>>0).toString(16)).slice(-8);
   }
   function signPayload(obj){
@@ -497,27 +777,41 @@
       const payloadStr = b64uDec(parts[1]);
       const sig = parts[2];
       const ok = hashFn(PREMIUM_SECRET + '|' + payloadStr + '|v1') === sig;
-      return ok ? JSON.parse(payloadStr) : null;
+      if (!ok) return null;
+      return JSON.parse(payloadStr);
     }catch{ return null; }
   }
+  function fmtISOdate(iso){ if(!iso) return ''; try{ const d=new Date(iso); return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(_){return iso?.slice(0,10)||'';} }
   function isPremiumActive(){ return premium.tier==='premium'; }
-  function fmtISOdate(iso){ try{ return new Date(iso).toLocaleDateString(); }catch{return iso;} }
+
+  // Инициализация / триал
+  function ensureTrialIfFirstRun(){
+    const rec = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY)||'{}');
+    if (rec.end_ts) return; // уже что-то было
+    // Новый пользователь: даём 3 дня
+    const now = new Date();
+    const end = new Date(now);
+    end.setDate(end.getDate()+3);
+    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify({ end_ts:end.toISOString(), source:'trial' }));
+  }
 
   function fetchPremiumStatus(){
-    if (String(tgUser?.id) === String(ADMIN_TG_ID)){
+    if (String(tgUser?.id) === ADMIN_TG_ID_STR){
       premium.tier='premium'; premium.expiresAt='2099-12-31T00:00:00.000Z'; premium.trial=false;
       reflectPremiumUI(); return;
     }
-    // Trial check
-    const raw = localStorage.getItem(PREMIUM_LS_KEY);
-    if (!raw) {
-      const end = new Date(); end.setDate(end.getDate()+3);
-      localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify({ end_ts:end.toISOString(), source:'trial' }));
-    }
-    premium.tier='free'; premium.expiresAt=null;
+    // если ключа нет — создаём триал
+    if (!localStorage.getItem(PREMIUM_LS_KEY)) ensureTrialIfFirstRun();
+
+    premium.tier='free'; premium.expiresAt=null; premium.trial=false;
     const rec = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY)||'{}');
-    if (rec.end_ts && new Date(rec.end_ts) > new Date()){
-      premium.tier = 'premium'; premium.expiresAt = rec.end_ts; premium.trial = rec.source==='trial';
+    if (rec.end_ts){
+      const end = new Date(rec.end_ts);
+      if (end > new Date()){
+        premium.tier = 'premium';
+        premium.expiresAt = end.toISOString();
+        premium.trial = rec.source==='trial';
+      }
     }
     reflectPremiumUI();
   }
@@ -525,170 +819,834 @@
   function reflectPremiumUI(){
     let badge = document.getElementById('premium-badge');
     if (!badge) {
-      badge = document.createElement('button'); badge.id = 'premium-badge'; badge.className = 'badge-subscription ring-focus';
+      badge = document.createElement('button');
+      badge.id = 'premium-badge';
+      badge.type = 'button';
+      badge.className = 'badge-subscription ring-focus';
       document.querySelector('h1').after(badge);
       badge.addEventListener('click', ()=> openPremiumModal());
     }
     if (isPremiumActive()){
       badge.innerHTML = `<span class="sep">Подписка</span> <i class="fas fa-crown"></i> <span class="premium-glow">Premium${premium.trial?' · Trial':''}</span>`;
+      badge.title = 'Премиум активен';
     } else {
       badge.innerHTML = `<span class="sep">Подписка</span> <span>Базовая</span>`;
+      badge.title = 'Базовая версия';
     }
+    // Гейтинг функций
     gateFeaturesByPlan();
   }
 
+  function showPremiumToast(){
+    if (isPremiumActive()){
+      const until = premium.expiresAt ? `<div class="toast-sub">Активна до: ${fmtISOdate(premium.expiresAt)}${premium.trial?' (пробный период)':''}</div>` : '';
+      showToast(`<div class="toast-title">Premium активна</div>${until}`);
+    } else {
+      showToast(`<div class="toast-title">Базовая подписка</div><div class="toast-sub">Нажмите, чтобы узнать о Premium</div>`);
+    }
+  }
+
+  // === Редем «одноразовой ссылки» / кода ===
   function normalizePremiumInput(input){
+    if (!input) return '';
+    const s = String(input).trim();
+    // если вставили URL — достаём startapp/start_param
     try{
-      if (/^https?:\/\//i.test(input)) {
-        const u = new URL(input);
-        return (u.searchParams.get('startapp') || u.searchParams.get('start_param') || '').replace(/^TPP_/, '');
+      if (/^https?:\/\//i.test(s)) {
+        const u = new URL(s);
+        const sp = u.searchParams.get('startapp') || u.searchParams.get('start') || u.searchParams.get('start_param') || '';
+        return sp.replace(/^TPP_/, '');
       }
     }catch(_){}
-    return input.replace(/^TPP_/, '');
+    return s.replace(/^TPP_/, '');
   }
 
-  // === ИСПРАВЛЕННАЯ ФУНКЦИЯ АКТИВАЦИИ ===
+  function getUsedSet(){
+    try{ return new Set(JSON.parse(localStorage.getItem(USED_LINKS_KEY) || '[]')); }catch(_){ return new Set(); }
+  }
+  function markUsed(token){
+    const set = getUsedSet();
+    set.add(token);
+    try{ localStorage.setItem(USED_LINKS_KEY, JSON.stringify([...set].slice(-300))); }catch(_){}
+  }
+
   async function redeemPremium(input){
     const tokenOrCode = normalizePremiumInput(input);
-    if (!tokenOrCode){ alert('Введите код'); return; }
-    
-    // 1. Попытка через сервер (Вариант А)
-    if (PREMIUM_API_BASE){
-      try{
-        const r = await fetch(PREMIUM_API_BASE+'/redeem', { method:'POST', body:JSON.stringify({token:tokenOrCode, initData:tg?.initData||''}) });
-        const j = await r.json();
-        if (r.ok && j.end_ts){
-           localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify({ end_ts:j.end_ts, source:'link' }));
-           fetchPremiumStatus(); showToast('Премиум активирован'); return;
-        }
-      }catch(e){}
-    }
-    
-    // 2. Локальная проверка (Вариант Б) - ВОССТАНОВЛЕННАЯ ЛОГИКА
+    if (!tokenOrCode){ alert('Введите код/ссылку'); return; }
+    // Вариант Б: без сервера — подписанный код TP1...
     const data = verifyAndParse(tokenOrCode);
     if (!data){ alert('Неверный код'); return; }
-    
-    const used = new Set(JSON.parse(localStorage.getItem(USED_LINKS_KEY)||'[]'));
-    if (data.one && used.has(data.one)){ alert('Уже использован'); return; }
-    
-    // Применяем дни
+
+    // «Одноразовость» локально
+    const used = getUsedSet();
+    const oneId = data.one || data.nonce || tokenOrCode;
+    if (used.has(oneId)){ alert('Эта ссылка уже использована'); return; }
+
     const days = Number(data.durDays || 31);
     const now = new Date();
-    const store = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY)||'{}');
-    let base = (store.end_ts && new Date(store.end_ts)>now) ? new Date(store.end_ts) : now;
-    const newEnd = new Date(base);
-    newEnd.setDate(newEnd.getDate() + days);
-    
-    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify({ end_ts:newEnd.toISOString(), source:'code' }));
-    if(data.one){
-      used.add(data.one);
-      localStorage.setItem(USED_LINKS_KEY, JSON.stringify([...used]));
+    const store = JSON.parse(localStorage.getItem(PREMIUM_LS_KEY) || '{}');
+
+    let base = now;
+    if (store.end_ts){
+      const oldEnd = new Date(store.end_ts);
+      if (oldEnd > now) base = oldEnd;
     }
-    
+    const newEnd = new Date(base);
+    newEnd.setDate(newEnd.getDate() + Math.max(1, days));
+    localStorage.setItem(PREMIUM_LS_KEY, JSON.stringify({ end_ts:newEnd.toISOString(), source:'link' }));
+    markUsed(oneId);
+
     fetchPremiumStatus();
-    showToast('<div class="toast-title">Успешно!</div><div class="toast-sub">Премиум продлен</div>');
+    showToast('<div class="toast-title">Успешно!</div><div class="toast-sub">Премиум активирован</div>');
   }
 
+  /* ========= Премиум модалки ========= */
   function openPremiumModal(){
     const id = 'premium-modal';
-    if(document.getElementById(id)) document.getElementById(id).remove();
-    const modal = document.createElement('div');
-    modal.id = id; modal.className = 'fixed inset-0 z-50';
+    let modal = document.getElementById(id);
+    if (modal) modal.remove();
+
+    const statusText = isPremiumActive()
+      ? (premium.expiresAt ? `Premium ${premium.trial?'(Trial) ':''}активна до ${fmtISOdate(premium.expiresAt)}` : 'Premium активна')
+      : 'Базовая подписка';
+
+    modal = document.createElement('div');
+    modal.id = id;
+    modal.className = 'fixed inset-0 z-50';
     modal.innerHTML = `
       <div class="absolute inset-0 bg-black/50"></div>
       <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
-        <div class="flex justify-between items-center"><h3 class="text-lg font-semibold">Premium</h3><button id="prem-close"><i class="fas fa-times"></i></button></div>
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold"><i class="fas fa-crown mr-2"></i>Премиум</h3>
+          <button id="prem-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
         <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)]">
-          <div>Статус: <b>${isPremiumActive()?'Premium':'Базовая'}</b></div>
-          <div class="text-xs text-hint mt-1">${premium.expiresAt? 'До: '+fmtISOdate(premium.expiresAt):''}</div>
+          <div class="text-sm">Статус: <b>${statusText}</b></div>
+          ${(!isPremiumActive() ? '<div class="text-xs text-hint mt-1">Новым пользователям уже выдан 3-дневный пробный период автоматически.</div>' : '')}
         </div>
+
         <div class="space-y-2">
-          <div class="text-sm font-medium">Есть код?</div>
-          <div class="flex gap-2"><input id="promo-input" class="flex-1 px-3 py-2 rounded-lg bg-secondary" placeholder="Код"/><button id="btn-redeem" class="px-3 py-2 rounded-lg btn-main">ОК</button></div>
+          <div class="text-sm font-medium">Оформить подписку</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-buy" class="px-3 py-2 rounded-lg border border-secondary hover:bg-secondary">Купить</button>
+            <a href="https://t.me/D_a_n_Vi" target="_blank" class="px-3 py-2 rounded-lg btn-main text-center">Написать админу</a>
+          </div>
+          <div class="text-xs text-hint">После оплаты вы получите промокод для активации.</div>
         </div>
-        <button id="btn-buy" class="w-full px-3 py-2 rounded-lg border border-secondary">Купить / Написать админу</button>
+
+        <div class="space-y-2">
+          <div class="text-sm font-medium">У меня есть промокод</div>
+          <div class="flex gap-2">
+            <input id="promo-input" class="flex-1 px-3 py-2 rounded-lg bg-secondary ring-focus" placeholder="TP1.xxxxx.yyyyy"/>
+            <button id="btn-redeem" class="px-3 py-2 rounded-lg btn-main">Активировать</button>
+          </div>
+        </div>
       </div>
     `;
     document.body.appendChild(modal);
     modal.querySelector('#prem-close').addEventListener('click', ()=> modal.remove());
-    modal.querySelector('#btn-redeem').addEventListener('click', ()=>{ redeemPremium(modal.querySelector('#promo-input').value); modal.remove(); });
-    modal.querySelector('#btn-buy').addEventListener('click', ()=>{ window.open('https://t.me/D_a_n_Vi','_blank'); modal.remove(); });
+    modal.querySelector('#btn-redeem').addEventListener('click', ()=>{
+      const code = modal.querySelector('#promo-input').value.trim();
+      redeemPremium(code);
+      modal.remove();
+    });
+    modal.querySelector('#btn-buy').addEventListener('click', ()=>{
+      modal.remove();
+      openPurchaseMenu();
+    });
   }
 
-  /* ========= ЛОГИКА ПРИЛОЖЕНИЯ ========= */
-  // Данные и состояние
-  const state = { projects:[], pinned:[], tasks:[], view:'list', filters:{due:'all',priority:'all',status:'all'}, sort:'due-asc', currentMonth:new Date(), selectedTaskId:null };
-  
+  function openPurchaseMenu(){
+    const id = 'purchase-modal';
+    let m = document.getElementById(id);
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = id;
+    m.className = 'fixed inset-0 z-50';
+    m.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold"><i class="fas fa-crown mr-2"></i>Оформить подписку</h3>
+          <button id="pur-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="space-y-2">
+          <label class="plan-card"><input type="radio" name="plan" value="1 месяц" checked><div><div class="font-medium">1 месяц</div><div class="text-xs text-hint">Стандартный период</div></div></label>
+          <label class="plan-card"><input type="radio" name="plan" value="3 месяца"><div><div class="font-medium">3 месяца</div><div class="text-xs text-hint">Выгодно при оплате за квартал</div></div></label>
+          <label class="plan-card"><input type="radio" name="plan" value="6 месяцев"><div><div class="font-medium">6 месяцев</div><div class="text-xs text-hint">Максимальная экономия</div></div></label>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="pur-send" class="px-4 py-2 rounded-lg btn-main flex-1">Написать (с текстом)</button>
+          <button id="pur-chat" class="px-4 py-2 rounded-lg border border-secondary hover:bg-secondary">Написать админу</button>
+          <button id="pur-cancel" class="px-4 py-2 rounded-lg border border-secondary hover:bg-secondary">Отмена</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    const close = ()=> m.remove();
+    m.querySelector('#pur-close').addEventListener('click', close);
+    m.querySelector('#pur-cancel').addEventListener('click', close);
+    m.querySelector('#pur-send').addEventListener('click', ()=>{
+      const val = m.querySelector('input[name="plan"]:checked')?.value || '1 месяц';
+      const msg = `добрый день хотел бы приобрести подписку на ${val}`;
+      const url = `https://t.me/D_a_n_Vi?text=${encodeURIComponent(msg)}`;
+      if (tg?.openTelegramLink){ tg.openTelegramLink(url); }
+      else if (tg?.openLink){ tg.openLink(url, { try_instant_view: false }); }
+      else { window.open(url, '_blank'); }
+      close();
+    });
+    m.querySelector('#pur-chat')?.addEventListener('click', ()=>{
+      const url = `https://t.me/D_a_n_Vi`;
+      if (tg?.openTelegramLink){ tg.openTelegramLink(url); }
+      else if (tg?.openLink){ tg.openLink(url, { try_instant_view:false }); }
+      else { window.open(url, '_blank'); }
+      close();
+    });
+  }
+
+  // Кнопка «Премиум» в меню
+  (function injectPremiumButton(){
+    const sideMenu = document.getElementById('side-menu');
+    const existing = sideMenu?.querySelector('#btn-premium');
+    if (!existing && sideMenu){
+      const wrap = sideMenu.querySelector('.p-3.space-y-1');
+      if (wrap){
+        const btn = document.createElement('button');
+        btn.id = 'btn-premium';
+        btn.className = 'w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
+        btn.innerHTML = `<i class="fas fa-crown mr-2"></i>Премиум`;
+        btn.addEventListener('click', openPremiumModal);
+        wrap.appendChild(btn);
+      }
+    }
+  })();
+
+  /* ========= Админ панель ========= */
+  function isAdmin(){ return String(tgUser?.id) === ADMIN_TG_ID_STR; }
+  const sideMenu = document.getElementById('side-menu');
+  const menuBtn = document.getElementById('menu-button');
+  const closeMenu = document.getElementById('close-menu');
+  const btnSettings = document.getElementById('btn-settings');
+
+  btnSettings?.addEventListener('click', ()=>{
+    sideMenu.classList.add('hidden');
+    openSettings();
+  });
+
+  function injectAdminButtonIfNeeded(){
+    if (!isAdmin()) return;
+    const wrap = sideMenu?.querySelector('.p-3.space-y-1');
+    if (!wrap || wrap.querySelector('#btn-admin-panel')) return;
+    const btn = document.createElement('button');
+    btn.id = 'btn-admin-panel';
+    btn.className = 'w-full text-left px-4 py-2 rounded-lg hover:bg-secondary';
+    btn.innerHTML = `<i class="fas fa-user-shield mr-2"></i>Админ панель`;
+    btn.addEventListener('click', openAdminPanelModal);
+    wrap.appendChild(btn);
+  }
+  injectAdminButtonIfNeeded();
+
+  function openAdminPanelModal(){
+    if (!isAdmin()){ alert('Доступ запрещён'); return; }
+    const id = 'admin-modal';
+    let m = document.getElementById(id);
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = id;
+    m.className = 'fixed inset-0 z-50';
+    m.innerHTML = `
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[var(--bg)] rounded-t-3xl shadow-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold"><i class="fas fa-user-shield mr-2"></i>Админ панель</h3>
+          <button id="adm-close" class="p-2 rounded-full hover:bg-secondary"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="p-3 rounded-lg border border-secondary bg-[var(--secondary)] space-y-3 elevated">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-medium">Генерация одноразовой ссылки Premium</div>
+            <span class="text-xs text-hint">без привязки к ID</span>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-2">
+            <select id="promo-plan" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary">
+              <option value="7">7 дней</option>
+              <option value="31" selected>1 месяц (31 день)</option>
+              <option value="92">3 месяца (92 дня)</option>
+              <option value="183">6 месяцев (183 дня)</option>
+            </select>
+            <input id="promo-custom-days" class="px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary" placeholder="или дни вручную (например 14)"/>
+          </div>
+          <div class="flex gap-2">
+            <button id="promo-generate" class="px-3 py-2 rounded-lg btn-main flex-1">Сгенерировать ссылку</button>
+            <button id="promo-refresh" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)]">Ещё</button>
+          </div>
+          <div>
+            <label class="block text-xs text-hint mb-1">Ссылка для пользователя</label>
+            <input id="promo-output" readonly class="w-full px-3 py-2 rounded-lg bg-[var(--bg)] border border-secondary"/>
+            <div class="mt-2 flex gap-2">
+              <button id="promo-copy" class="px-3 py-2 rounded-lg border border-secondary hover:bg-[var(--bg)] flex-1">
+                <i class="fas fa-copy mr-1"></i>Скопировать
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    const close = ()=> m.remove();
+    m.querySelector('#adm-close').addEventListener('click', close);
+
+    const planSel  = m.querySelector('#promo-plan');
+    const customDaysInp = m.querySelector('#promo-custom-days');
+    const out      = m.querySelector('#promo-output');
+
+    function rndToken(len=16){
+      const a = new Uint8Array(len);
+      (crypto?.getRandomValues || ((x)=>{for(let i=0;i<x.length;i++) x[i]=Math.floor(Math.random()*256);}))(a);
+      return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function buildMiniAppLink(token){
+      const payload = 'TPP_' + token;
+      if (BOT_USERNAME && MINIAPP_SHORTNAME && !BOT_USERNAME.startsWith('YOUR_')){
+        return `https://t.me/${BOT_USERNAME}/${MINIAPP_SHORTNAME}?startapp=${encodeURIComponent(payload)}`;
+      }
+      return payload;
+    }
+
+    async function doGen(){
+      const daysFromSelect = Number(planSel.value || 31);
+      const daysFromInput = Number((customDaysInp.value||'').trim());
+      const days = Number.isFinite(daysFromInput) && daysFromInput>0 ? daysFromInput : daysFromSelect;
+
+      const token = rndToken(10);
+      const payload = { durDays: days, iat: Date.now(), one: token };
+      const code = signPayload(payload);
+      const link = buildMiniAppLink(code);
+      out.value = link;
+    }
+
+    m.querySelector('#promo-generate').addEventListener('click', doGen);
+    m.querySelector('#promo-refresh').addEventListener('click', doGen);
+    m.querySelector('#promo-copy').addEventListener('click', ()=>{
+      const val = out.value.trim();
+      navigator.clipboard?.writeText(val).then(()=> showToast('<div class="toast-title">Скопировано</div>')).catch(()=>{});
+    });
+  }
+
+  /* ========= Ссылки на элементы ========= */
+  const statsBar = document.getElementById('stats-bar');
+  const projectSelector = document.getElementById('project-selector');
+  const addProjectButton = document.getElementById('add-project-button');
+  const deleteProjectButton = document.getElementById('delete-project-button');
+
+  const pinnedStrip = document.getElementById('pinned-strip');
+  const activeProjectsPanel = document.getElementById('active-projects-panel');
+  const activeProjectsGrid = document.getElementById('active-projects-grid');
+
+  const searchButton = document.getElementById('search-button');
+  const searchInput = document.getElementById('search-input');
+  const quickAddInput = document.getElementById('quick-add-input');
+
+  const filterButton = document.getElementById('filter-button');
+  const filterPanel = document.getElementById('filter-panel');
+  const filterDue = document.getElementById('filter-due');
+  const filterPriority = document.getElementById('filter-priority');
+  const filterStatus = document.getElementById('filter-status');
+
+  const sortButton = document.getElementById('sort-button');
+  const sortPanel = document.getElementById('sort-panel');
+  const sortSelect = document.getElementById('sort-select');
+
+  const listContainer = document.getElementById('list-container');
+  const emptyState = document.getElementById('empty-state');
+
+  const taskModal = document.getElementById('task-modal');
+  const taskBackdrop = document.getElementById('task-backdrop');
+  const taskModalTitle = document.getElementById('task-modal-title');
+  const addTaskButtons = document.querySelectorAll('#add-task-button, #mobile-add-task-button, #empty-state-add-task');
+  const closeTaskModal = document.getElementById('close-task-modal');
+  const cancelTask = document.getElementById('cancel-task');
+  const saveTaskBtn = document.getElementById('save-task');
+
+  const projectModal = document.getElementById('project-modal');
+  const projectBackdrop = document.getElementById('project-backdrop');
+  const closeProjectModal = document.getElementById('close-project-modal');
+  const cancelProject = document.getElementById('cancel-project');
+  const saveProject = document.getElementById('save-project');
+  const deleteProject = document.getElementById('delete-project');
+  const projectNameInput = document.getElementById('project-name');
+  const projectColorInput = document.getElementById('project-color');
+
+  const settingsModal = document.getElementById('settings-modal');
+  const settingsBackdrop = document.getElementById('settings-backdrop');
+  const closeSettings = document.getElementById('close-settings');
+  const themeGrid = document.getElementById('theme-grid');
+  const themeUpsell = document.getElementById('theme-upsell');
+
+  const commandPalette = document.getElementById('command-palette');
+  const commandInput = document.getElementById('command-input');
+  const commandOptions = document.querySelectorAll('.command-option');
+
+  const prevMonth = document.getElementById('prev-month');
+  const nextMonth = document.getElementById('next-month');
+  const todayButton = document.getElementById('today-button');
+  const monthTitle = document.getElementById('month-title');
+  const weekdayRow = document.getElementById('weekday-row');
+  const calendarGrid = document.getElementById('calendar-grid');
+
+  const viewContents = document.querySelectorAll('.view-content');
+  const viewSelectors = document.querySelectorAll('.view-selector');
+
+  /* ========= Состояние ========= */
+  const state = {
+    projects: [
+      { id:'work',     name:'Работа',   color:'#3b82f6' },
+      { id:'personal', name:'Личное',   color:'#10b981' },
+      { id:'team',     name:'Команда',  color:'#8b5cf6' }
+    ],
+    pinned: ['work','personal','team'],
+    tasks: [
+      { id: uid(), title:'Подготовить предложение по проекту', priority:'high', status:'in-progress', project:'work', dueDate: todayISO(1), description:'Согласовать разделы', tags:['Работа'], subtasks:['Исследовать конкурентов','Скелет документа'], subtasksDone:[false,false], completed:false, createdAt: nowISO() },
+      { id: uid(), title:'Командная встреча', priority:'medium', status:'backlog', project:'team', dueDate: todayISO(0), description:'Синк по задачам', tags:['Команда'], subtasks:[], subtasksDone:[], completed:false, createdAt: nowISO() },
+    ],
+    view:'list',
+    search:'',
+    filters:{ due:'all', priority:'all', status:'all' },
+    sort:'due-asc',
+    currentMonth:new Date(),
+    selectedTaskId:null
+  };
+
+  /* ========= Утилиты ========= */
+  function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+  function todayISO(shift=0){ const d=new Date(); d.setDate(d.getDate()+shift); return d.toISOString().slice(0,10); }
+  function nowISO(){ return new Date().toISOString(); }
+  function fmtDateHuman(iso){ if(!iso) return 'Без срока'; const d = new Date(iso+'T00:00:00'); return d.toLocaleDateString('ru-RU',{ day:'2-digit', month:'long' }); }
+  function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m])); }
+  function projectById(id){ return state.projects.find(p=>p.id===id) || null; }
+  function projectName(id){ return (projectById(id)?.name) || 'Без проекта'; }
+  function priorityRu(p){ return ({low:'Низкий', medium:'Средний', high:'Высокий', critical:'Критичный'})[p] || p; }
+  function statusRu(s){ return ({'backlog':'Бэклог','in-progress':'В работе','review':'Проверка','done':'Готово'})[s] || s; }
+  function hexToRgb(hex){ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex||''); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:{r:59,g:130,b:246}; }
+  function rgba(hex,a){ const {r,g,b}=hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+  function textColorForBg(hex){ const {r,g,b}=hexToRgb(hex); const yiq=(r*299+g*587+b*114)/1000; return yiq>=128?'#111827':'#f9fafb'; }
+  function startOfWeek(d=new Date()){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-wd); return x; }
+  function endOfWeek(d=new Date()){ const x=startOfWeek(d); x.setDate(x.getDate()+6); x.setHours(23,59,59,999); return x; }
+  function parseRussianWeekdayToken(tok){ const map = { '/пн':1,'/вт':2,'/ср':3,'/чт':4,'/пт':5,'/сб':6,'/вс':0 }; return map[tok] ?? null; }
+  function nextWeekdayISO(target){ const d=new Date(); const today=d.getDay(); let delta=(target-today+7)%7; if(delta===0) delta=7; d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10); }
+
   async function load(){
     let raw = localStorage.getItem(LS_DATA);
-    if(raw){
-      try{
-        const d = JSON.parse(raw);
-        state.projects = d.projects||[]; state.pinned = d.pinned||[]; state.tasks = d.tasks||[];
-        if(!state.projects.length) state.projects = [{id:'work',name:'Работа',color:'#3b82f6'},{id:'personal',name:'Личное',color:'#10b981'}];
-      }catch{}
-    } else {
-       state.projects = [{id:'work',name:'Работа',color:'#3b82f6'},{id:'personal',name:'Личное',color:'#10b981'}];
-       state.pinned = ['work','personal'];
-    }
+    if(!raw) return;
+    try{
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.projects)) state.projects = data.projects;
+      if (Array.isArray(data.pinned)) state.pinned = data.pinned.slice(0,6);
+      if (Array.isArray(data.tasks)) state.tasks = data.tasks;
+    }catch(e){ console.warn('load error', e); }
   }
-  function save(){ localStorage.setItem(LS_DATA, JSON.stringify({projects:state.projects, pinned:state.pinned, tasks:state.tasks})); }
 
+  async function save(){
+    const payload = JSON.stringify({ v: 3, updatedAt: new Date().toISOString(), projects: state.projects, pinned: state.pinned, tasks: state.tasks });
+    try{ localStorage.setItem(LS_DATA, payload); }catch(_){}
+  }
+
+  function exportBackup(){
+    const payload = JSON.stringify({ exportAt: new Date().toISOString(), data: { projects: state.projects, pinned: state.pinned, tasks: state.tasks } }, null, 2);
+    navigator.clipboard?.writeText(payload).then(()=>{
+      showToast('<div class="toast-title">Бэкап скопирован</div>');
+    }).catch(()=>{ prompt('Скопируйте JSON:', payload); });
+  }
+  function importBackup(){
+    const raw = prompt('Вставьте JSON бэкапа:');
+    if (!raw) return;
+    try{
+      const parsed = JSON.parse(raw);
+      const d = parsed.data || parsed;
+      if (Array.isArray(d.projects)) state.projects = d.projects;
+      if (Array.isArray(d.pinned)) state.pinned = d.pinned.slice(0,6);
+      if (Array.isArray(d.tasks)) state.tasks = d.tasks;
+      save(); renderAll();
+      showToast('<div class="toast-title">Восстановлено</div>');
+    }catch(e){ alert('Ошибка JSON'); }
+  }
+  function clearAllData(){
+    if (!confirm('Удалить все данные?')) return;
+    state.tasks = [];
+    state.projects = [{ id:'work', name:'Работа', color:'#3b82f6' }];
+    state.pinned = ['work'];
+    save(); renderAll();
+  }
+
+  /* ========= Инициализация ========= */
+  fetchPremiumStatus();
+  await load();
+  buildThemeCards();
+
+  const menuBackdrop = document.getElementById('side-menu-backdrop');
+  function openMenu(){ sideMenu.classList.remove('hidden'); menuBackdrop?.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+  function closeMenuFn(){ sideMenu.classList.add('hidden'); menuBackdrop?.classList.add('hidden'); document.body.style.overflow = ''; }
+  function toggleMenu(){ sideMenu.classList.contains('hidden') ? openMenu() : closeMenuFn(); }
+
+  menuBtn.addEventListener('click', toggleMenu);
+  closeMenu.addEventListener('click', closeMenuFn);
+  menuBackdrop?.addEventListener('click', closeMenuFn);
+
+  function openSettings(){ settingsModal.classList.remove('hidden'); buildThemeCards(); }
+  function closeSettingsModal(){ settingsModal.classList.add('hidden'); }
+  closeSettings.addEventListener('click', closeSettingsModal);
+  settingsBackdrop.addEventListener('click', closeSettingsModal);
+
+  document.getElementById('btn-export')?.addEventListener('click', exportBackup);
+  document.getElementById('btn-import')?.addEventListener('click', importBackup);
+  document.getElementById('btn-clear-data')?.addEventListener('click', clearAllData);
+
+  function buildThemeCards(){
+    themeGrid.innerHTML = '';
+    const current = document.documentElement.getAttribute('data-theme');
+    const isPrem = isPremiumActive();
+    const allowed = isPrem ? THEMES.map(t=>t.id) : ['light','dark'];
+    themeUpsell.classList.toggle('hidden', isPrem);
+
+    THEMES.forEach(t=>{
+      const locked = !allowed.includes(t.id);
+      const card = document.createElement('button');
+      card.className = 'w-full text-left rounded-xl border border-secondary p-3 ring-focus hover:bg-secondary relative ' + (locked?'opacity-60':'');
+      if (locked) card.classList.add('locked');
+      card.innerHTML = `<div class="h-10 w-full rounded-md mb-2" style="background:${t.grad}"></div><div class="font-medium">${t.name}</div>`;
+      card.addEventListener('click', ()=>{
+        if (locked){ openPremiumModal(); return; }
+        setTheme(t.id); buildThemeCards();
+      });
+      themeGrid.appendChild(card);
+    });
+  }
+
+  /* ========= Гейтинг ========= */
   function gateFeaturesByPlan(){
     const prem = isPremiumActive();
-    document.getElementById('active-projects-panel').classList.toggle('hidden', !prem);
-    if(!prem && (state.view==='kanban'||state.view==='calendar')) showView('list');
+    const lockViewBtn = (el)=>{ if (!el) return; el.dataset.requiresPremium='1'; };
+    lockViewBtn(document.getElementById('btn-view-kanban'));
+    lockViewBtn(document.getElementById('btn-view-calendar'));
+    lockViewBtn(document.getElementById('btn-mobile-kanban'));
+    lockViewBtn(document.getElementById('btn-mobile-calendar'));
+
+    [filterButton, sortButton].forEach(btn=>{
+      if (!btn) return;
+      btn.disabled = !prem; btn.classList.toggle('opacity-60', !prem);
+    });
+    if (!prem){ filterPanel.classList.add('hidden'); sortPanel.classList.add('hidden'); }
+    activeProjectsPanel.classList.toggle('hidden', !prem);
+
+    const currentView = state.view;
+    if (!prem && (currentView==='kanban' || currentView==='calendar')){
+      state.view='list';
+      showToast('<div class="toast-title">Premium-функция</div>');
+    }
   }
 
-  function renderAll(){
-    // Отрисовка списка
-    const list = document.getElementById('list-container');
-    list.innerHTML = '';
-    const tasks = state.tasks; // (Тут должна быть фильтрация, сокращено для надежности)
-    if(!tasks.length) document.getElementById('empty-state').classList.remove('hidden');
-    else document.getElementById('empty-state').classList.add('hidden');
-    
-    tasks.forEach(t => {
-      const d = document.createElement('div');
-      d.className = 'task-card bg-secondary rounded-lg p-4 mb-2 flex justify-between';
-      d.innerHTML = `<div><div class="font-medium">${t.title}</div><div class="text-sm text-hint">${t.status}</div></div>`;
-      list.appendChild(d);
+  /* ========= Проекты ========= */
+  function hydrateProjectSelector(){
+    projectSelector.innerHTML = '<option value="all">Все проекты</option>';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name; projectSelector.appendChild(opt);
     });
-    
-    renderPinned();
+  }
+  function hydrateTaskProjectSelect(){
+    const sel = document.getElementById('task-project'); sel.innerHTML = '';
+    state.projects.forEach(p=>{
+      const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name; sel.appendChild(opt);
+    });
   }
 
-  function renderPinned(){
-    const strip = document.getElementById('pinned-strip');
-    strip.innerHTML = '';
-    state.pinned.forEach(pid => {
-      const p = state.projects.find(x=>x.id===pid);
-      if(p) {
-        const ch = document.createElement('div');
-        ch.className='pin-chip px-3 py-2 rounded-lg text-sm';
-        ch.innerHTML = `<span style="color:${p.color}">●</span> ${p.name}`;
-        strip.appendChild(ch);
-      }
-    });
-  }
+  hydrateProjectSelector(); hydrateTaskProjectSelect();
+  addProjectButton.addEventListener('click', openProjectModal);
   
-  // Инициализация событий кнопок (Теперь работает, так как SyntaxError исправлен)
-  document.getElementById('add-task-button').addEventListener('click', ()=> { document.getElementById('task-modal').classList.remove('hidden'); });
-  document.getElementById('close-task-modal').addEventListener('click', ()=> { document.getElementById('task-modal').classList.add('hidden'); });
-  document.getElementById('save-task').addEventListener('click', ()=> {
-    const title = document.getElementById('task-title').value;
-    if(title) {
-      state.tasks.unshift({id:Date.now().toString(), title, status:'backlog', project:'work'});
-      save(); renderAll(); document.getElementById('task-modal').classList.add('hidden');
+  function openProjectModal(){
+    projectModal.classList.remove('hidden');
+    document.getElementById('project-id').value='';
+    projectNameInput.value=''; projectColorInput.value='#3b82f6';
+  }
+  function closeProjectModalFunc(){ projectModal.classList.add('hidden'); }
+  [closeProjectModal, cancelProject, projectBackdrop].forEach(x=> x.addEventListener('click', closeProjectModalFunc));
+
+  saveProject.addEventListener('click', ()=>{
+    const name = projectNameInput.value.trim();
+    if(!name) return;
+    const id = name.toLowerCase().replace(/\s+/g,'-');
+    const existing = state.projects.find(p=>p.id===id);
+    if(!existing){ state.projects.push({ id, name, color: projectColorInput.value }); }
+    else{ existing.name = name; existing.color = projectColorInput.value; }
+    save(); hydrateProjectSelector(); hydrateTaskProjectSelect(); renderAll(); closeProjectModalFunc();
+  });
+
+  /* ========= Закреплённые проекты ========= */
+  function renderPinnedStrip(){
+    pinnedStrip.innerHTML = '';
+    state.pinned.slice(0,6).forEach(pid=>{
+      const p = projectById(pid);
+      if (!p) return;
+      const chip = document.createElement('div');
+      chip.className = 'pin-chip flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer select-none';
+      chip.innerHTML = `<span class="w-2.5 h-2.5 rounded-full" style="background:${p.color}"></span><span class="text-sm">${escapeHtml(p.name)}</span>`;
+      chip.addEventListener('click', ()=>{ projectSelector.value = pid; renderAll(); });
+      pinnedStrip.appendChild(chip);
+    });
+    if(state.pinned.length < 6){
+      const add = document.createElement('button');
+      add.className = 'pin-chip px-3 py-2 rounded-lg flex items-center gap-2 hover:opacity-90 ring-focus';
+      add.innerHTML = '<i class="fas fa-plus"></i><span class="text-sm">Добавить</span>';
+      add.addEventListener('click', addPinnedFlow);
+      pinnedStrip.appendChild(add);
+    }
+  }
+
+  function addPinnedFlow(){
+    const name = prompt('Название проекта:');
+    if(!name) return;
+    const found = state.projects.find(p=>p.name.toLowerCase()===name.toLowerCase().trim());
+    if(found && !state.pinned.includes(found.id)){
+      state.pinned.push(found.id); save(); renderPinnedStrip();
+    }
+  }
+
+  /* ========= Виды ========= */
+  function showView(view){
+    if ((view==='kanban' || view==='calendar') && !isPremiumActive()){ openPremiumModal(); view='list'; }
+    state.view = view;
+    viewContents.forEach(el=> el.classList.toggle('hidden', el.id !== `${view}-view`));
+    viewSelectors.forEach(btn=>{
+      btn.classList.remove('btn-main','text-[var(--button-text)]');
+      if (btn.dataset.view === view) btn.classList.add('btn-main');
+    });
+    if (view==='calendar') renderCalendar();
+    if (view==='kanban') renderKanban();
+    if (view==='list') renderList();
+  }
+  viewSelectors.forEach(b=>{
+    b.addEventListener('click', ()=>{ showView(b.dataset.view); });
+  });
+
+  /* ========= Поиск / Фильтры ========= */
+  searchButton.addEventListener('click', ()=> { openCommandPalette(); });
+  if (searchInput) searchInput.addEventListener('input', ()=>{ state.search = searchInput.value.trim().toLowerCase(); renderAll(); });
+
+  filterButton.addEventListener('click', (e)=>{
+    if (!isPremiumActive()){ openPremiumModal(); return; }
+    filterPanel.classList.toggle('hidden'); e.stopPropagation();
+  });
+  sortButton.addEventListener('click', (e)=>{
+    if (!isPremiumActive()){ openPremiumModal(); return; }
+    sortPanel.classList.toggle('hidden'); e.stopPropagation();
+  });
+
+  /* ========= Быстрое добавление ========= */
+  quickAddInput.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const raw = quickAddInput.value.trim();
+      if (!raw) return;
+      state.tasks.unshift({
+        id: uid(), title: raw, priority: 'medium', status: 'backlog',
+        project: state.projects[0]?.id || '', dueDate: '',
+        tags: [], subtasks: [], subtasksDone: [], completed: false, createdAt: nowISO()
+      });
+      save(); quickAddInput.value = ''; renderAll();
     }
   });
 
-  // Запуск
-  await load();
-  fetchPremiumStatus();
-  renderAll();
+  /* ========= Командная палитра ========= */
+  function openCommandPalette(){ commandPalette.classList.remove('hidden'); commandInput.focus(); }
+  function closeCommandPalette(){ commandPalette.classList.add('hidden'); }
+  commandPalette.addEventListener('click', (e)=>{ if(e.target===commandPalette) closeCommandPalette(); });
 
-})();
+  /* ========= Фильтрация ========= */
+  function getFilteredTasks(){
+    const q = state.search;
+    const proj = projectSelector.value;
+    return state.tasks.filter(t=>{
+      if (proj!=='all' && t.project!==proj) return false;
+      if (q && !t.title.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  /* ========= Список ========= */
+  function renderList(){
+    const tasks = getFilteredTasks();
+    listContainer.innerHTML = '';
+    if (tasks.length===0){ emptyState.classList.remove('hidden'); return; }
+    emptyState.classList.add('hidden');
+
+    tasks.forEach(t=>{
+      const project = projectById(t.project);
+      const card = document.createElement('div');
+      card.className = 'task-card bg-secondary rounded-lg p-4 relative';
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-start gap-3">
+            <input type="checkbox" ${t.completed?'checked':''} data-act="toggle" data-id="${t.id}" class="rounded border-secondary mt-1">
+            <div>
+              <h3 class="font-medium ${t.completed?'line-through opacity-70':''}">${escapeHtml(t.title)}</h3>
+              <p class="text-sm text-hint mt-1">${t.dueDate?('Срок: '+fmtDateHuman(t.dueDate)):'Без срока'}</p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span class="${priorityClass(t.priority)} text-xs px-2 py-1 rounded-full">${priorityRu(t.priority)}</span>
+                ${project ? `<span class="text-xs px-2 py-1 rounded-full bg-white/50">${project.name}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <button class="text-hint" data-act="edit" data-id="${t.id}"><i class="fas fa-pen"></i></button>
+        </div>
+      `;
+      listContainer.appendChild(card);
+      
+      // Свайп для удаления/выполнения
+      let startX=0;
+      card.addEventListener('touchstart',e=>startX=e.touches[0].clientX);
+      card.addEventListener('touchend',e=>{
+        const diff = e.changedTouches[0].clientX - startX;
+        if(diff < -100 && confirm('Удалить?')) { state.tasks = state.tasks.filter(x=>x.id!==t.id); save(); renderAll(); }
+      });
+    });
+
+    listContainer.querySelectorAll('[data-act="toggle"]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const t = state.tasks.find(x=>x.id===inp.dataset.id);
+        if (t){ t.completed = inp.checked; t.status = t.completed ? 'done' : 'backlog'; save(); renderAll(); }
+      });
+    });
+    listContainer.querySelectorAll('[data-act="edit"]').forEach(b=> b.addEventListener('click', (e)=>{
+      const t = state.tasks.find(x=>x.id===b.dataset.id);
+      if (t) openTaskModal(t);
+    }));
+  }
+
+  function priorityClass(p){ return ({low:'priority-low',medium:'priority-medium',high:'priority-high',critical:'priority-critical'})[p]; }
+
+  /* ========= Канбан ========= */
+  function renderKanban(){
+    if (!isPremiumActive()){ openPremiumModal(); showView('list'); return; }
+    document.querySelectorAll('.kanban-column').forEach(col=>{
+      const body = col.querySelector('.column-body'); body.innerHTML = '';
+      const status = col.getAttribute('data-col');
+      const tasks = getFilteredTasks().filter(t=>t.status===status);
+      tasks.forEach(t=>{
+        const card = document.createElement('div');
+        card.className='task-card bg-[var(--bg)] rounded-lg p-3 cursor-move';
+        card.draggable=true;
+        card.dataset.id = t.id;
+        card.innerHTML = `<h4 class="font-medium">${escapeHtml(t.title)}</h4>`;
+        card.addEventListener('dragstart', ()=> card.classList.add('opacity-50'));
+        card.addEventListener('dragend', ()=> card.classList.remove('opacity-50'));
+        body.appendChild(card);
+      });
+      // Drop zone
+      col.addEventListener('dragover', e=>{ e.preventDefault(); col.classList.add('bg-blue-50/50'); });
+      col.addEventListener('dragleave', ()=> col.classList.remove('bg-blue-50/50'));
+      col.addEventListener('drop', e=>{
+        e.preventDefault(); col.classList.remove('bg-blue-50/50');
+        const dragged = document.querySelector('.kanban-column .task-card.opacity-50');
+        if(dragged){
+          const t = state.tasks.find(x=>x.id===dragged.dataset.id);
+          if(t){ t.status = status; save(); renderKanban(); renderList(); }
+        }
+      });
+    });
+  }
+
+  /* ========= Календарь ========= */
+  const WEEKDAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  function renderCalendar(){
+    if (!isPremiumActive()){ openPremiumModal(); showView('list'); return; }
+    weekdayRow.innerHTML = '';
+    WEEKDAYS.forEach(w=>{ weekdayRow.innerHTML+=`<div class="text-center text-sm py-2">${w}</div>`; });
+
+    const d = new Date(state.currentMonth);
+    d.setDate(1);
+    monthTitle.textContent = d.toLocaleDateString('ru-RU',{month:'long', year:'numeric'});
+
+    let startIdx = (d.getDay() + 6) % 7;
+    const daysInMonth = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+
+    calendarGrid.innerHTML = '';
+    for(let i=0;i<startIdx;i++) calendarGrid.appendChild(document.createElement('div'));
+    
+    for(let day=1; day<=daysInMonth; day++){
+      const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day border border-secondary rounded p-1';
+      cell.dataset.date = iso;
+      cell.innerHTML = `<div class="text-right text-sm mb-1">${day}</div>`;
+
+      const tasks = getFilteredTasks().filter(t=>t.dueDate===iso);
+      tasks.forEach(t=>{
+        const b = document.createElement('div');
+        b.className = 'text-xs truncate px-1 py-0.5 rounded mb-1 bg-blue-100 text-blue-800';
+        b.textContent = t.title;
+        b.draggable = true;
+        b.dataset.id = t.id;
+        b.addEventListener('dragstart', ()=> b.classList.add('opacity-50'));
+        b.addEventListener('dragend', ()=> b.classList.remove('opacity-50'));
+        cell.appendChild(b);
+      });
+
+      cell.addEventListener('dragover', e=> e.preventDefault());
+      cell.addEventListener('drop', e=>{
+        e.preventDefault();
+        const dragged = document.querySelector('.calendar-day .opacity-50');
+        if(dragged){
+          const t = state.tasks.find(x=>x.id===dragged.dataset.id);
+          if(t){ t.dueDate = iso; save(); renderCalendar(); renderList(); }
+        }
+      });
+      calendarGrid.appendChild(cell);
+    }
+  }
+
+  /* ========= Модалка задач ========= */
+  addTaskButtons.forEach(b=> b.addEventListener('click', ()=> openTaskModal()));
+  function openTaskModal(task=null){
+    taskModal.classList.remove('hidden');
+    taskModalTitle.textContent = task ? 'Редактировать задачу' : 'Новая задача';
+    document.getElementById('task-id').value = task?.id || '';
+    document.getElementById('task-title').value = task?.title || '';
+    document.getElementById('task-due-date').value = task?.dueDate || '';
+  }
+  function closeTaskModalFunc(){ taskModal.classList.add('hidden'); }
+  [closeTaskModal, cancelTask, taskBackdrop].forEach(x=> x.addEventListener('click', closeTaskModalFunc));
+
+  saveTaskBtn.addEventListener('click', ()=>{
+    const id = document.getElementById('task-id').value;
+    const title = document.getElementById('task-title').value.trim();
+    if(!title) return;
+    const priority = document.getElementById('task-priority').value;
+    const status = document.getElementById('task-status').value;
+    const project = document.getElementById('task-project').value;
+    const dueDate = document.getElementById('task-due-date').value;
+
+    if(id){
+      const t = state.tasks.find(t=>t.id===id);
+      Object.assign(t,{title,priority,status,project,dueDate});
+    } else {
+      state.tasks.unshift({
+        id: uid(), title, priority, status, project, dueDate, 
+        completed: status==='done', createdAt: nowISO()
+      });
+    }
+    save(); closeTaskModalFunc(); renderAll();
+  });
+
+  function renderAll(){
+    if (state.view==='list') renderList();
+    if (state.view==='kanban') renderKanban();
+    if (state.view==='calendar') renderCalendar();
+    renderPinnedStrip();
+  }
+
+})(); 
 </script>
 </body>
 </html>
