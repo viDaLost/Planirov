@@ -1,802 +1,894 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="glass">
+<html lang="ru" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Task Master Premium</title>
+  <title>Task Master Ultimate</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', '-apple-system', 'system-ui', 'sans-serif'] },
-          colors: {
-            glass: {
-              bg: '#09090b',         /* Очень темный фон */
-              panel: 'rgba(24, 24, 27, 0.6)', /* Полупрозрачная панель */
-              border: 'rgba(255, 255, 255, 0.08)',
-              highlight: 'rgba(255, 255, 255, 0.03)',
-              text: '#e4e4e7',
-              muted: '#a1a1aa',
-              accent: '#3b82f6',     /* Синий неон */
-              success: '#10b981',
-              danger: '#ef4444'
-            }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.3s ease-out forwards',
-            'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          },
-          keyframes: {
-            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-            slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
-          }
-        }
-      }
-    }
-  </script>
-
   <style>
+    /* === НАСТРОЙКИ ТЕМ (CSS Variables) === */
     :root {
-      --safe-area-top: env(safe-area-inset-top, 0px);
-      --safe-area-bottom: env(safe-area-inset-bottom, 20px);
-    }
-    
-    body {
-      background-color: #000;
-      background-image: 
-        radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%), 
-        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
-      color: #e4e4e7;
-      font-family: 'Inter', sans-serif;
-      -webkit-font-smoothing: antialiased;
-      overflow: hidden; /* App-like feel */
+      --bg-image: none;
+      --glass-opacity: 0.7;
+      --radius: 1rem;
     }
 
-    /* Glassmorphism Classes */
+    /* 1. Dark (Default Premium) */
+    html[data-theme="dark"] {
+      --bg: #09090b;
+      --text: #e4e4e7;
+      --panel: rgba(24, 24, 27, 0.6);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.4);
+    }
+    /* 2. Light */
+    html[data-theme="light"] {
+      --bg: #f4f4f5;
+      --text: #18181b;
+      --panel: rgba(255, 255, 255, 0.75);
+      --border: rgba(0, 0, 0, 0.06);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.2);
+    }
+    /* 3. Sunset */
+    html[data-theme="sunset"] {
+      --bg: #2a1b15;
+      --bg-image: linear-gradient(to top right, #2a1b15, #431407);
+      --text: #ffedd5;
+      --panel: rgba(67, 20, 7, 0.5);
+      --border: rgba(251, 146, 60, 0.2);
+      --accent: #f97316;
+      --accent-glow: rgba(249, 115, 22, 0.4);
+    }
+    /* 4. Peach */
+    html[data-theme="peach"] {
+      --bg: #fff1f2;
+      --bg-image: linear-gradient(120deg, #fff1f2, #ffe4e6);
+      --text: #881337;
+      --panel: rgba(255, 255, 255, 0.6);
+      --border: rgba(251, 113, 133, 0.2);
+      --accent: #fb7185;
+      --accent-glow: rgba(251, 113, 133, 0.3);
+    }
+    /* 5. Olive */
+    html[data-theme="olive"] {
+      --bg: #1a2e05;
+      --bg-image: linear-gradient(to bottom, #1a2e05, #365314);
+      --text: #ecfccb;
+      --panel: rgba(54, 83, 20, 0.5);
+      --border: rgba(132, 204, 22, 0.2);
+      --accent: #84cc16;
+      --accent-glow: rgba(132, 204, 22, 0.4);
+    }
+    /* 6. Plum */
+    html[data-theme="plum"] {
+      --bg: #2e1065;
+      --bg-image: radial-gradient(circle at top, #4c1d95, #2e1065);
+      --text: #e9d5ff;
+      --panel: rgba(76, 29, 149, 0.4);
+      --border: rgba(167, 139, 250, 0.2);
+      --accent: #a855f7;
+      --accent-glow: rgba(168, 85, 247, 0.5);
+    }
+
+    /* === ГЛОБАЛЬНЫЕ СТИЛИ === */
+    body {
+      background-color: var(--bg);
+      background-image: var(--bg-image);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden; /* App-like layout */
+    }
+
+    /* Glass Component */
     .glass-panel {
-      background: var(--tw-colors-glass-panel);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--tw-colors-glass-border);
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
-    
-    .glass-input {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: white;
-      transition: all 0.2s;
+
+    .btn-main {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 15px var(--accent-glow);
+      transition: transform 0.1s, box-shadow 0.2s;
     }
-    .glass-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-      outline: none;
-    }
+    .btn-main:active { transform: scale(0.96); }
 
     /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    /* Hide standard checkboxes */
-    .custom-check {
-      appearance: none;
-      width: 1.25rem;
-      height: 1.25rem;
-      border: 2px solid #52525b;
-      border-radius: 50%;
-      display: grid;
-      place-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .custom-check::before {
-      content: "";
-      width: 0.65rem;
-      height: 0.65rem;
-      transform: scale(0);
-      transition: 120ms transform ease-in-out;
-      box-shadow: inset 1em 1em white;
-      transform-origin: center;
-      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-    }
-    .custom-check:checked {
-      background-color: #3b82f6;
-      border-color: #3b82f6;
-    }
-    .custom-check:checked::before { transform: scale(1); }
-
+    /* Kanban & Calendar */
+    .kanban-col { min-width: 260px; height: 100%; overflow-y: auto; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .calendar-day { min-height: 80px; font-size: 0.75rem; }
+    
     /* Animations */
     .premium-shimmer {
       background: linear-gradient(90deg, #ffd700, #fff3b0, #ffd700);
       background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: shine 3s linear infinite;
-      font-weight: 700;
+      animation: shimmer 3s linear infinite;
     }
-    @keyframes shine { to { background-position: 200% center; } }
+    @keyframes shimmer { to { background-position: 200% center; } }
+    
+    /* Checkbox */
+    .task-check {
+      appearance: none; width: 1.2rem; height: 1.2rem;
+      border: 2px solid var(--border); border-radius: 50%;
+      display: grid; place-content: center; cursor: pointer;
+    }
+    .task-check::before {
+      content: ""; width: 0.6rem; height: 0.6rem;
+      transform: scale(0); transition: 0.2s;
+      box-shadow: inset 1em 1em var(--bg);
+      transform-origin: center;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+    .task-check:checked { background: var(--accent); border-color: var(--accent); }
+    .task-check:checked::before { transform: scale(1); }
 
-    /* Layout tweaks */
-    .view-container { height: calc(100vh - 80px - var(--safe-area-top) - var(--safe-area-bottom)); overflow-y: auto; padding-bottom: 80px; }
+    /* Drag & Drop Visuals */
+    .dragging { opacity: 0.5; }
+    .drag-over { background: var(--accent-glow); border: 2px dashed var(--accent); }
+
   </style>
 </head>
-<body class="h-screen flex flex-col">
+<body class="flex flex-col">
 
-<div id="app" class="flex-1 flex flex-col relative max-w-2xl mx-auto w-full h-full shadow-2xl overflow-hidden bg-glass-bg">
-  
-  <header class="glass-panel sticky top-0 z-20 px-4 py-3 flex justify-between items-center border-b-0 border-b-glass-border">
+  <header class="glass-panel sticky top-0 z-30 px-4 py-3 flex justify-between items-center border-b-0">
     <div class="flex items-center gap-3">
-      <div id="avatar-container" class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-blue-500/20 cursor-pointer">
-        G
-      </div>
+      <button id="btn-menu" class="p-2 rounded-full hover:bg-black/5 active:scale-90 transition"><i class="fas fa-bars"></i></button>
       <div>
-        <h1 class="text-base font-semibold leading-tight tracking-wide">Task Master</h1>
-        <div id="premium-indicator" class="text-[10px] uppercase tracking-wider text-glass-muted">Basic Plan</div>
+        <h1 class="font-bold text-lg leading-tight">Планировщик</h1>
+        <div id="header-prem-badge" class="text-[10px] uppercase tracking-wider opacity-60">Basic</div>
       </div>
     </div>
     <div class="flex gap-2">
-      <button id="btn-focus" class="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-glass-text hover:text-white transition active:scale-95" title="Фокус режим">
-        <i class="fas fa-stopwatch"></i>
-      </button>
-      <button id="btn-settings" class="w-9 h-9 rounded-full glass-panel flex items-center justify-center text-glass-text hover:text-white transition active:scale-95">
-        <i class="fas fa-cog"></i>
-      </button>
+      <button id="btn-focus" class="w-9 h-9 rounded-full glass-panel flex items-center justify-center hover:text-[var(--accent)] transition" title="Фокус"><i class="fas fa-stopwatch"></i></button>
+      <button id="btn-add-main" class="w-9 h-9 rounded-full btn-main flex items-center justify-center"><i class="fas fa-plus"></i></button>
     </div>
   </header>
 
-  <main id="main-content" class="flex-1 relative overflow-hidden">
-    
-    <div id="view-dashboard" class="view-container px-4 py-4 space-y-6 animate-fade-in">
-      
-      <div class="flex justify-between items-end mb-2">
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden backdrop-blur-sm transition-opacity"></div>
+  <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 glass-panel z-50 transform -translate-x-full transition-transform duration-300 border-r border-[var(--border)]">
+    <div class="p-5 flex flex-col h-full">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">U</div>
         <div>
-          <h2 class="text-2xl font-bold text-white">Мои задачи</h2>
-          <p class="text-sm text-glass-muted" id="date-display">Понедельник, 12 мая</p>
-        </div>
-        <div class="text-right">
-          <div class="text-2xl font-bold text-blue-400" id="stat-done">0/0</div>
-          <div class="text-[10px] text-glass-muted uppercase">Выполнено</div>
+          <div class="font-bold">Пользователь</div>
+          <div class="text-xs opacity-60" id="user-id-display">ID: ---</div>
         </div>
       </div>
 
-      <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-        <button data-filter="all" class="filter-btn active px-4 py-1.5 rounded-full text-xs font-medium glass-panel bg-white/10 text-white border-white/20">Все</button>
-        <button data-filter="today" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium glass-panel text-glass-muted">Сегодня</button>
-        <button data-filter="high" class="filter-btn px-4 py-1.5 rounded-full text-xs font-medium glass-panel text-glass-muted">Важные</button>
-        <button id="btn-add-habit" class="ml-auto px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i class="fas fa-plus mr-1"></i> Привычка</button>
-      </div>
+      <nav class="space-y-1 flex-1">
+        <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-black/5 flex items-center gap-3 transition" onclick="app.setPage('list')">
+          <i class="fas fa-list w-5 text-center"></i> Список
+        </button>
+        <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-black/5 flex items-center gap-3 transition" onclick="app.setPage('kanban')">
+          <i class="fas fa-columns w-5 text-center"></i> Канбан (Premium)
+        </button>
+        <button class="w-full text-left px-4 py-3 rounded-xl hover:bg-black/5 flex items-center gap-3 transition" onclick="app.setPage('calendar')">
+          <i class="fas fa-calendar w-5 text-center"></i> Календарь (Premium)
+        </button>
+        <div class="h-px bg-[var(--border)] my-2"></div>
+        <button id="btn-open-settings" class="w-full text-left px-4 py-3 rounded-xl hover:bg-black/5 flex items-center gap-3 transition">
+          <i class="fas fa-cog w-5 text-center"></i> Настройки
+        </button>
+        <button id="btn-admin-panel" class="hidden w-full text-left px-4 py-3 rounded-xl hover:bg-black/5 flex items-center gap-3 transition text-red-400">
+          <i class="fas fa-shield-alt w-5 text-center"></i> Админка
+        </button>
+      </nav>
 
-      <div id="habits-section" class="hidden">
-        <h3 class="text-xs font-bold text-glass-muted uppercase mb-2 tracking-wider">Привычки</h3>
-        <div id="habits-grid" class="grid grid-cols-4 gap-2"></div>
-      </div>
-
-      <div id="task-list" class="space-y-3 pb-20">
-        </div>
-      
-      <div id="empty-state" class="hidden flex flex-col items-center justify-center py-12 text-glass-muted">
-        <i class="fas fa-clipboard-check text-4xl mb-3 opacity-20"></i>
-        <p class="text-sm">Задач нет. Отличная работа!</p>
+      <div class="mt-auto">
+         <div id="sidebar-prem-card" class="p-3 rounded-xl border border-[var(--border)] bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hidden">
+           <div class="text-xs font-bold text-yellow-500 mb-1"><i class="fas fa-crown"></i> Premium активен</div>
+           <div class="text-[10px] opacity-70">Спасибо за поддержку!</div>
+         </div>
       </div>
     </div>
+  </aside>
 
-    <div id="view-focus" class="hidden view-container flex flex-col items-center justify-center text-center px-6">
-      <div class="w-64 h-64 rounded-full border-4 border-white/5 flex items-center justify-center relative mb-8">
-        <svg class="absolute inset-0 w-full h-full transform -rotate-90 text-blue-500" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" stroke-width="4" stroke-dasharray="289" stroke-dashoffset="0" id="timer-progress" class="transition-all duration-1000 ease-linear"></circle>
+  <main id="app-content" class="flex-1 relative overflow-hidden flex flex-col">
+    
+    <div class="px-4 py-2 flex gap-2 overflow-x-auto no-scrollbar border-b border-[var(--border)] bg-[var(--bg)]/50 backdrop-blur-sm z-20">
+      <button data-filter="all" class="filter-chip px-3 py-1 rounded-full text-xs font-medium border border-[var(--border)] bg-[var(--panel)] active">Все</button>
+      <button data-filter="today" class="filter-chip px-3 py-1 rounded-full text-xs font-medium border border-[var(--border)] bg-[var(--panel)]">Сегодня</button>
+      <button data-filter="high" class="filter-chip px-3 py-1 rounded-full text-xs font-medium border border-[var(--border)] bg-[var(--panel)]">Важные</button>
+    </div>
+
+    <div id="view-list" class="view-page flex-1 overflow-y-auto p-4 space-y-3 pb-20">
+      </div>
+
+    <div id="view-kanban" class="view-page hidden flex-1 overflow-x-auto p-4 flex gap-4 pb-20 h-full">
+      </div>
+
+    <div id="view-calendar" class="view-page hidden flex-1 overflow-y-auto p-4 pb-20">
+      <div class="flex justify-between items-center mb-4">
+        <button id="cal-prev" class="p-2 glass-panel rounded-full"><i class="fas fa-chevron-left"></i></button>
+        <h2 id="cal-month" class="font-bold text-lg">Месяц</h2>
+        <button id="cal-next" class="p-2 glass-panel rounded-full"><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <div class="grid grid-cols-7 gap-1 text-center text-xs opacity-60 mb-2">
+        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+      </div>
+      <div id="calendar-grid" class="calendar-grid"></div>
+    </div>
+
+    <div id="view-focus" class="view-page hidden flex-1 flex flex-col items-center justify-center p-6 text-center">
+      <div class="relative w-64 h-64 flex items-center justify-center">
+        <svg class="absolute inset-0 w-full h-full transform -rotate-90 text-[var(--border)]" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="3"></circle>
+          <circle id="timer-ring" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000"></circle>
         </svg>
-        <div class="text-5xl font-mono font-bold text-white" id="timer-display">25:00</div>
+        <div id="timer-value" class="text-5xl font-mono font-bold">25:00</div>
       </div>
-      <h3 class="text-xl font-medium text-white mb-2" id="focus-status">Время фокусировки</h3>
-      <p class="text-sm text-glass-muted mb-8 max-w-xs">Сконцентрируйтесь на одной задаче. Отложите уведомления.</p>
-      
+      <h2 class="text-xl font-bold mt-8 mb-2">Время фокуса</h2>
+      <p class="text-sm opacity-60 mb-8 max-w-xs">Никаких уведомлений. Только одна задача.</p>
       <div class="flex gap-4">
-        <button id="timer-toggle" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center text-xl shadow-lg hover:scale-105 transition">
-          <i class="fas fa-play ml-1"></i>
-        </button>
-        <button id="timer-reset" class="w-16 h-16 rounded-full glass-panel text-white flex items-center justify-center text-xl hover:bg-white/10 transition">
-          <i class="fas fa-redo"></i>
-        </button>
+        <button id="timer-toggle" class="px-8 py-3 rounded-xl btn-main text-lg font-bold">Старт</button>
+        <button id="timer-reset" class="px-4 py-3 rounded-xl glass-panel text-lg"><i class="fas fa-redo"></i></button>
       </div>
+      <button class="mt-8 text-sm opacity-50 underline" onclick="app.setPage('list')">Выйти</button>
     </div>
 
   </main>
 
-  <button id="fab-add" class="absolute bottom-6 right-6 w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full shadow-lg shadow-blue-600/40 flex items-center justify-center text-white text-2xl z-30 transition transform hover:scale-110 active:scale-90 ring-4 ring-black/50">
-    <i class="fas fa-plus"></i>
-  </button>
-
   <div id="modal-task" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" id="modal-backdrop"></div>
-    <div class="absolute bottom-0 left-0 right-0 bg-[#18181b] rounded-t-3xl border-t border-glass-border shadow-2xl p-6 animate-slide-up pb-[env(safe-area-inset-bottom,20px)]">
-      <div class="w-12 h-1 bg-white/10 rounded-full mx-auto mb-6"></div>
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="app.closeModals()"></div>
+    <div class="absolute bottom-0 left-0 right-0 glass-panel rounded-t-2xl border-b-0 p-5 animate-[slideUp_0.3s_ease-out] max-h-[90vh] overflow-y-auto">
+      <div class="w-12 h-1 bg-[var(--border)] rounded-full mx-auto mb-6"></div>
       
-      <input type="text" id="inp-task-title" placeholder="Что нужно сделать?" class="w-full bg-transparent text-xl font-medium text-white placeholder-glass-muted mb-4 border-none focus:ring-0 p-0" autocomplete="off">
+      <input type="hidden" id="inp-id">
+      <input type="text" id="inp-title" placeholder="Название задачи" class="w-full bg-transparent text-xl font-bold mb-4 outline-none placeholder-opacity-50 border-b border-[var(--border)] pb-2">
       
-      <div class="flex gap-3 mb-6">
-        <div class="flex-1">
-          <label class="block text-xs text-glass-muted mb-1">Категория</label>
-          <select id="inp-task-project" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none">
-            <option value="work">Работа</option>
-            <option value="personal">Личное</option>
-            <option value="shopping">Покупки</option>
-          </select>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="text-xs opacity-60 mb-1 block">Дата</label>
+          <input type="date" id="inp-date" class="w-full glass-panel rounded-lg px-3 py-2 outline-none text-sm bg-transparent">
         </div>
-        <div class="flex-1">
-          <label class="block text-xs text-glass-muted mb-1">Приоритет</label>
-          <div class="flex bg-white/5 rounded-lg p-1 border border-white/10">
-            <button data-prio="low" class="prio-select flex-1 py-1 rounded text-xs text-center hover:bg-white/10">Wait</button>
-            <button data-prio="high" class="prio-select flex-1 py-1 rounded text-xs text-center text-red-400 bg-white/10 font-bold">ASAP</button>
-          </div>
+        <div>
+          <label class="text-xs opacity-60 mb-1 block">Приоритет</label>
+          <select id="inp-prio" class="w-full glass-panel rounded-lg px-3 py-2 outline-none text-sm bg-transparent">
+             <option value="low">Низкий</option>
+             <option value="medium">Средний</option>
+             <option value="high">Высокий</option>
+          </select>
         </div>
       </div>
       
-      <div class="flex justify-between items-center">
-        <button id="btn-save-task" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition shadow-lg shadow-blue-900/20">
-          Сохранить задачу
-        </button>
+      <div class="mb-4">
+        <label class="text-xs opacity-60 mb-1 block">Проект</label>
+        <div class="flex gap-2 overflow-x-auto" id="project-chips"></div>
+      </div>
+
+      <div class="mb-4">
+        <label class="text-xs opacity-60 mb-1 block">Подзадачи</label>
+        <textarea id="inp-subtasks" rows="3" placeholder="Купить молоко&#10;Забрать почту" class="w-full glass-panel rounded-lg px-3 py-2 outline-none text-sm bg-transparent"></textarea>
+      </div>
+      
+      <div class="flex gap-3 mt-6">
+        <button id="btn-delete-task" class="px-4 py-3 rounded-xl glass-panel text-red-400 hidden"><i class="fas fa-trash"></i></button>
+        <button id="btn-save-task" class="flex-1 py-3 rounded-xl btn-main font-bold">Сохранить</button>
       </div>
     </div>
   </div>
 
   <div id="modal-settings" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
-    <div class="absolute inset-x-4 top-10 bottom-10 glass-panel rounded-2xl overflow-hidden flex flex-col animate-fade-in max-w-lg mx-auto">
-      <div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-        <h2 class="font-semibold text-white">Настройки</h2>
-        <button id="close-settings" class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    <div class="absolute inset-x-4 top-10 bottom-10 glass-panel rounded-2xl flex flex-col overflow-hidden animate-[fadeIn_0.2s]">
+      <div class="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--panel)]">
+        <h2 class="font-bold">Настройки</h2>
+        <button class="w-8 h-8 rounded-full hover:bg-black/10 flex items-center justify-center" onclick="app.closeModals()"><i class="fas fa-times"></i></button>
       </div>
       
       <div class="flex-1 overflow-y-auto p-4 space-y-6">
         
-        <div class="glass-panel p-4 rounded-xl bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border-yellow-500/20">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h3 class="text-yellow-500 font-bold text-sm"><i class="fas fa-crown mr-1"></i> Premium Status</h3>
-              <p class="text-xs text-glass-muted mt-1" id="settings-prem-status">Не активен</p>
+        <div>
+          <h3 class="text-xs font-bold opacity-60 uppercase mb-3 tracking-wider">Тема оформления</h3>
+          <div class="grid grid-cols-2 gap-3" id="theme-grid">
             </div>
-            <button id="btn-buy-premium" class="text-xs bg-yellow-500/20 text-yellow-400 px-3 py-1.5 rounded-lg border border-yellow-500/30 hover:bg-yellow-500/30">Продлить</button>
-          </div>
         </div>
 
-        <div class="space-y-2">
-          <h3 class="text-xs font-bold text-glass-muted uppercase tracking-wider">Данные</h3>
-          <button id="btn-backup" class="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 transition">
-            <i class="fas fa-cloud-download-alt text-blue-400"></i>
-            <div class="flex-1">
-              <div class="text-sm font-medium">Сохранить резервную копию</div>
-              <div class="text-[10px] text-glass-muted">Скачать JSON файл с задачами</div>
+        <div>
+          <h3 class="text-xs font-bold opacity-60 uppercase mb-3 tracking-wider">Данные</h3>
+          <button onclick="app.backup()" class="w-full text-left px-4 py-3 rounded-xl glass-panel hover:bg-black/5 flex items-center gap-3 mb-2">
+            <i class="fas fa-file-download text-blue-400"></i>
+            <div>
+              <div class="font-medium">Скачать бэкап</div>
+              <div class="text-[10px] opacity-60">Сохранить задачи в файл</div>
             </div>
           </button>
-          <label class="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-3 transition cursor-pointer">
-            <i class="fas fa-cloud-upload-alt text-green-400"></i>
-            <div class="flex-1">
-              <div class="text-sm font-medium">Восстановить из файла</div>
-              <div class="text-[10px] text-glass-muted">Заменит текущие данные</div>
+          <label class="w-full text-left px-4 py-3 rounded-xl glass-panel hover:bg-black/5 flex items-center gap-3 cursor-pointer">
+            <i class="fas fa-file-upload text-green-400"></i>
+            <div>
+              <div class="font-medium">Восстановить</div>
+              <div class="text-[10px] opacity-60">Загрузить из файла</div>
             </div>
-            <input type="file" id="inp-restore" class="hidden" accept=".json">
+            <input type="file" class="hidden" onchange="app.restore(this)">
           </label>
         </div>
 
-        <div id="admin-section" class="hidden space-y-2 pt-4 border-t border-white/10">
-          <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider">Администратор</h3>
-          <div class="glass-panel p-4 rounded-xl space-y-3">
-            <div class="text-sm font-medium mb-2">Генератор ссылок доступа</div>
-            <select id="adm-duration" class="w-full glass-input rounded-lg px-3 py-2 text-sm">
-              <option value="1">1 День (Тест)</option>
-              <option value="30">1 Месяц</option>
-              <option value="365">1 Год</option>
-              <option value="9999">Навсегда</option>
-            </select>
-            <button id="adm-gen-link" class="w-full py-2 rounded-lg bg-white text-black font-semibold text-sm hover:bg-gray-200">Создать Magic Link</button>
-            <div id="adm-result" class="hidden mt-2 p-2 bg-black/40 rounded text-xs break-all font-mono select-all cursor-pointer text-glass-muted"></div>
+        <div class="glass-panel p-4 rounded-xl border border-yellow-500/20 bg-yellow-500/5">
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="text-sm font-bold text-yellow-500 mb-1">Premium статус</div>
+              <div class="text-xs opacity-70" id="settings-prem-info">Не активен</div>
+            </div>
+            <button class="text-xs bg-yellow-500 text-black px-3 py-1 rounded font-bold" onclick="alert('Напишите админу за ссылкой')">Купить</button>
           </div>
         </div>
         
-        <div class="text-center text-[10px] text-glass-muted pt-4">
-          ID: <span id="user-id-display">Guest</span> • v2.0 Glass
+        <div id="admin-tools" class="hidden pt-4 border-t border-[var(--border)]">
+          <h3 class="text-xs font-bold text-red-400 uppercase mb-3">Панель администратора</h3>
+          <div class="glass-panel p-4 rounded-xl space-y-3">
+            <label class="block text-xs opacity-60">Срок действия ссылки (дней)</label>
+            <input type="number" id="adm-days" value="30" class="w-full glass-panel px-3 py-2 rounded-lg bg-transparent border-[var(--border)]">
+            <button onclick="app.generateLink()" class="w-full py-2 btn-main rounded-lg text-sm">Создать Magic Link</button>
+            <div id="adm-result" class="hidden p-2 bg-black/40 rounded text-xs font-mono break-all select-all cursor-pointer" onclick="app.copyLink()"></div>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
 
-</div>
+  <script>
+    // === CONFIGURATION ===
+    const ADMIN_IDS = [1288379477]; // ВАШ ID
+    const SECRET = "SuperSecretKey123"; // В реальном продакшене нужен бэкенд
+    const LS_KEY = "tm_ultimate_data";
+    const TG = window.Telegram?.WebApp;
+    
+    // === STATE ===
+    const THEMES = [
+      { id: 'dark', name: 'Dark', color: '#18181b' },
+      { id: 'light', name: 'Light', color: '#f4f4f5' },
+      { id: 'sunset', name: 'Sunset', color: '#431407' },
+      { id: 'peach', name: 'Peach', color: '#fff1f2' },
+      { id: 'olive', name: 'Olive', color: '#1a2e05' },
+      { id: 'plum', name: 'Plum', color: '#2e1065' }
+    ];
 
-<script>
-(() => {
-  /* ================= CONFIG & CONSTANTS ================= */
-  const ADMIN_IDS = [1288379477]; // Впишите сюда свой ID
-  const SECRET_KEY = "TaskMaster_S3cr3t_K3y"; // В продакшене это должно быть на сервере!
-  const LS_KEY = "tm_data_v2";
-  
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user || { id: 0, first_name: 'Guest', username: 'guest' };
-
-  /* ================= STATE MANAGEMENT ================= */
-  let state = {
-    tasks: [],
-    habits: [
-      { id: 'h1', icon: '💧', name: 'Вода', doneDates: [] },
-      { id: 'h2', icon: '📖', name: 'Чтение', doneDates: [] },
-    ],
-    premium: { active: false, until: null },
-    usedPromoIds: [], // To prevent reuse of same UUID link by same user
-    settings: { theme: 'glass' }
-  };
-
-  /* ================= PERSISTENCE (AUTO-SAVE) ================= */
-  function loadData() {
-    try {
-      const raw = localStorage.getItem(LS_KEY + `_${user.id}`);
-      if (raw) {
-        const data = JSON.parse(raw);
-        state = { ...state, ...data };
-        // Migrate legacy tasks if needed
-        if(!state.habits) state.habits = [];
-      }
-    } catch (e) { console.error("Load failed", e); }
-    checkPremiumValidity();
-  }
-
-  // Debounced Save
-  let saveTimeout;
-  function saveData() {
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-      localStorage.setItem(LS_KEY + `_${user.id}`, JSON.stringify(state));
-    }, 500); // Save 0.5s after last change
-  }
-
-  function backupData() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "task_master_backup_" + new Date().toISOString().slice(0,10) + ".json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  }
-
-  function restoreData(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.tasks) {
-          state = data;
-          saveData();
-          renderDashboard();
-          alert("Данные успешно восстановлены!");
-        } else { throw new Error("Invalid format"); }
-      } catch (err) { alert("Ошибка файла: " + err.message); }
+    let state = {
+      tasks: [],
+      projects: [
+        { id: 'work', name: 'Работа', color: '#3b82f6' },
+        { id: 'personal', name: 'Личное', color: '#10b981' },
+        { id: 'shop', name: 'Покупки', color: '#f59e0b' }
+      ],
+      premium: { active: false, until: null },
+      settings: { theme: 'dark' },
+      used_links: [] // Protection against replay
     };
-    reader.readAsText(file);
-  }
+    
+    let currentView = 'list';
+    let currentFilter = 'all';
+    let currentMonth = new Date();
+    
+    // === APP LOGIC ===
+    const app = {
+      init: () => {
+        TG?.ready();
+        TG?.expand();
+        // TG Colors
+        TG?.setHeaderColor(getComputedStyle(document.body).getPropertyValue('--bg').trim());
+        
+        // Load Data
+        const raw = localStorage.getItem(LS_KEY);
+        if(raw) {
+          try { state = { ...state, ...JSON.parse(raw) }; } catch(e){console.error(e);}
+        }
+        
+        // Check Admin
+        const userId = TG?.initDataUnsafe?.user?.id || 0;
+        document.getElementById('user-id-display').textContent = `ID: ${userId}`;
+        if(ADMIN_IDS.includes(userId)) {
+          document.getElementById('btn-admin-panel').classList.remove('hidden');
+          document.getElementById('admin-tools').classList.remove('hidden');
+        }
+        
+        // Check Premium Link
+        app.checkMagicLink();
+        
+        // Initial Render
+        app.applyTheme(state.settings.theme);
+        app.render();
+        app.renderCalendar();
+        
+        // Listeners
+        document.getElementById('btn-menu').onclick = () => document.getElementById('sidebar').classList.remove('-translate-x-full', 'translate-x-0') || document.getElementById('sidebar').classList.add('translate-x-0') || document.getElementById('sidebar-overlay').classList.remove('hidden');
+        document.getElementById('sidebar-overlay').onclick = () => document.getElementById('sidebar').classList.add('-translate-x-full') || document.getElementById('sidebar-overlay').classList.add('hidden');
+        document.getElementById('btn-add-main').onclick = () => app.openTaskModal();
+        document.getElementById('btn-open-settings').onclick = () => { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden'); document.getElementById('modal-settings').classList.remove('hidden'); app.renderThemes(); };
+        document.getElementById('btn-focus').onclick = () => app.setPage('focus');
+        
+        // Filters
+        document.querySelectorAll('.filter-chip').forEach(b => b.onclick = (e) => {
+           document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active', 'bg-[var(--panel)]', 'bg-[var(--accent)]', 'text-white'));
+           e.target.classList.add('active', 'bg-[var(--accent)]', 'text-white');
+           currentFilter = e.target.dataset.filter;
+           app.render();
+        });
+        
+        // Cal Nav
+        document.getElementById('cal-prev').onclick = () => { currentMonth.setMonth(currentMonth.getMonth()-1); app.renderCalendar(); };
+        document.getElementById('cal-next').onclick = () => { currentMonth.setMonth(currentMonth.getMonth()+1); app.renderCalendar(); };
 
-  /* ================= PREMIUM SYSTEM (MAGIC LINKS) ================= */
-  // Encryption logic (Simulated for client-side)
-  function signData(payload) {
-    // Simple mock signature. In real app, use HMAC-SHA256
-    return btoa(JSON.stringify(payload) + "|" + SECRET_KEY);
-  }
+        // Save Button
+        document.getElementById('btn-save-task').onclick = app.saveTask;
+        document.getElementById('btn-delete-task').onclick = app.deleteTask;
+      },
 
-  function verifyLink(token) {
-    try {
-      const parts = atob(token).split('|');
-      if (parts[1] !== SECRET_KEY) return null;
-      return JSON.parse(parts[0]);
-    } catch { return null; }
-  }
+      save: () => {
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+      },
 
-  function generatePremiumLink(days) {
-    const uuid = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    const payload = {
-      d: days,    // Duration
-      u: uuid,    // Unique ID of this link
-      t: Date.now() // Created at
-    };
-    const token = signData(payload);
-    // Format: https://t.me/YourBotName/AppName?startapp=promo_TOKEN
-    // For demo we use a query param format if user is not in TG, but TG uses startapp
-    return `https://t.me/D_a_n_Vi?startapp=promo__${token}`;
-  }
+      setPage: (page) => {
+        if(page === 'kanban' || page === 'calendar') {
+          if(!state.premium.active) {
+            alert('Эта функция доступна только в Premium версии');
+            return;
+          }
+        }
+        currentView = page;
+        document.querySelectorAll('.view-page').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`view-${page}`).classList.remove('hidden');
+        
+        // Close sidebar
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebar-overlay').classList.add('hidden');
+        
+        if(page === 'kanban') app.renderKanban();
+        if(page === 'calendar') app.renderCalendar();
+      },
 
-  function checkStartParam() {
-    // Check Telegram start_param or URL Query
-    let param = tg?.initDataUnsafe?.start_param;
-    if (!param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      param = urlParams.get('startapp');
-    }
+      applyTheme: (id) => {
+        document.documentElement.setAttribute('data-theme', id);
+        state.settings.theme = id;
+        app.save();
+        TG?.setHeaderColor(getComputedStyle(document.body).getPropertyValue('--bg').trim());
+        TG?.setBackgroundColor(getComputedStyle(document.body).getPropertyValue('--bg').trim());
+      },
 
-    if (param && param.startsWith('promo__')) {
-      const token = param.split('promo__')[1];
-      const data = verifyLink(token);
-      
-      if (data) {
-        if (state.usedPromoIds.includes(data.u)) {
-          alert("Эта ссылка уже была использована вами.");
+      renderThemes: () => {
+        const grid = document.getElementById('theme-grid');
+        grid.innerHTML = '';
+        THEMES.forEach(t => {
+           const btn = document.createElement('button');
+           btn.className = `p-3 rounded-xl border ${state.settings.theme === t.id ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]' : 'border-[var(--border)]'} flex flex-col items-center gap-2 transition`;
+           btn.style.background = t.color;
+           btn.innerHTML = `<span class="text-xs font-bold ${t.id==='light'?'text-black':'text-white'}">${t.name}</span>`;
+           if(!state.premium.active && t.id !== 'dark' && t.id !== 'light') {
+             btn.innerHTML += `<i class="fas fa-lock text-[10px] ${t.id==='light'?'text-black':'text-white'}"></i>`;
+             btn.classList.add('opacity-70');
+             btn.onclick = () => alert('Цветные темы доступны в Premium');
+           } else {
+             btn.onclick = () => { app.applyTheme(t.id); app.renderThemes(); };
+           }
+           grid.appendChild(btn);
+        });
+      },
+
+      render: () => {
+        // Main List Render
+        const container = document.getElementById('view-list');
+        container.innerHTML = '';
+        const tasks = app.getFilteredTasks();
+
+        if(tasks.length === 0) {
+          container.innerHTML = `<div class="text-center opacity-40 mt-10"><i class="fas fa-leaf text-4xl mb-2"></i><br>Задач нет</div>`;
           return;
         }
+
+        tasks.forEach(t => {
+           const el = document.createElement('div');
+           const proj = state.projects.find(p => p.id === t.project);
+           // Subtasks progress
+           const doneSubs = (t.subtasks || []).filter(s => s.done).length;
+           const totalSubs = (t.subtasks || []).length;
+           
+           el.className = `glass-panel p-4 rounded-xl flex items-start gap-3 transition ${t.done ? 'opacity-50' : ''}`;
+           el.innerHTML = `
+             <div class="pt-1"><input type="checkbox" class="task-check" ${t.done ? 'checked' : ''}></div>
+             <div class="flex-1 min-w-0" onclick="app.openTaskModal('${t.id}')">
+               <div class="font-medium truncate ${t.done ? 'line-through' : ''}">${t.title}</div>
+               <div class="flex gap-2 mt-1 items-center">
+                 ${proj ? `<span class="text-[10px] px-2 py-0.5 rounded" style="background:${proj.color}33; color:${proj.color}">${proj.name}</span>` : ''}
+                 ${t.date ? `<span class="text-[10px] opacity-60"><i class="fas fa-calendar-alt mr-1"></i>${t.date.slice(5)}</span>` : ''}
+                 ${totalSubs > 0 ? `<span class="text-[10px] opacity-60"><i class="fas fa-tasks mr-1"></i>${doneSubs}/${totalSubs}</span>` : ''}
+               </div>
+             </div>
+           `;
+           
+           el.querySelector('.task-check').onclick = (e) => {
+             e.stopPropagation();
+             t.done = !t.done;
+             if(t.done) confetti({ particleCount: 50, origin: { y: 0.7 } });
+             app.save();
+             app.render();
+           };
+           container.appendChild(el);
+        });
         
-        // Apply Premium
-        const now = new Date();
-        const currentEnd = state.premium.until ? new Date(state.premium.until) : now;
-        const base = currentEnd > now ? currentEnd : now;
-        base.setDate(base.getDate() + parseInt(data.d));
-        
-        state.premium.active = true;
-        state.premium.until = base.toISOString();
-        state.usedPromoIds.push(data.u);
-        saveData();
-        
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        alert(`Premium активирован на ${data.d} дней!`);
-        
-        // Clear param to avoid re-trigger on reload (UI only)
-        if(history.pushState) {
-            var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.pushState({path:newurl},'',newurl);
+        // Update Premium Badge UI
+        if(state.premium.active) {
+          document.getElementById('header-prem-badge').textContent = 'Premium';
+          document.getElementById('header-prem-badge').className = 'text-[10px] uppercase font-bold premium-shimmer';
+          document.getElementById('sidebar-prem-card').classList.remove('hidden');
+          document.getElementById('settings-prem-info').textContent = `Активен до ${new Date(state.premium.until).toLocaleDateString()}`;
+          document.getElementById('settings-prem-info').className = "text-xs text-green-400";
         }
-      } else {
-        alert("Неверная или поврежденная ссылка.");
-      }
-    }
-  }
+      },
 
-  function checkPremiumValidity() {
-    if (state.premium.active && state.premium.until) {
-      if (new Date(state.premium.until) < new Date()) {
-        state.premium.active = false;
-        saveData();
-      }
-    }
-    updatePremiumUI();
-  }
+      renderKanban: () => {
+        const board = document.getElementById('view-kanban');
+        board.innerHTML = '';
+        const columns = [
+          {id: 'todo', title: 'Нужно сделать'},
+          {id: 'in-progress', title: 'В работе'},
+          {id: 'done', title: 'Готово'}
+        ];
 
-  /* ================= UI RENDERERS ================= */
-  function renderDashboard() {
-    const list = document.getElementById('task-list');
-    const doneCountEl = document.getElementById('stat-done');
-    const filter = document.querySelector('.filter-btn.active').dataset.filter;
-    
-    list.innerHTML = '';
-    
-    const tasks = state.tasks.filter(t => !t.deleted);
-    let filtered = tasks;
+        columns.forEach(col => {
+           const colDiv = document.createElement('div');
+           colDiv.className = 'kanban-col glass-panel rounded-xl flex flex-col min-w-[280px] border-t-4';
+           // Colorize borders
+           if(col.id==='todo') colDiv.classList.add('border-gray-500');
+           if(col.id==='in-progress') colDiv.classList.add('border-blue-500');
+           if(col.id==='done') colDiv.classList.add('border-green-500');
+           
+           colDiv.innerHTML = `<div class="p-3 font-bold opacity-70 sticky top-0 bg-[var(--panel)] backdrop-blur-md z-10">${col.title}</div><div class="p-2 space-y-2 flex-1" id="kanban-${col.id}"></div>`;
+           
+           // Drop Zone
+           const zone = colDiv.querySelector(`#kanban-${col.id}`);
+           zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('bg-white/5'); };
+           zone.ondragleave = () => zone.classList.remove('bg-white/5');
+           zone.ondrop = (e) => {
+             e.preventDefault();
+             zone.classList.remove('bg-white/5');
+             const taskId = e.dataTransfer.getData('text');
+             const t = state.tasks.find(x => x.id === taskId);
+             if(t) {
+               t.status = col.id;
+               if(col.id === 'done') t.done = true; else t.done = false;
+               app.save(); app.renderKanban();
+             }
+           };
 
-    // Filter Logic
-    const todayStr = new Date().toISOString().slice(0,10);
-    if (filter === 'today') filtered = tasks.filter(t => (t.due || '').startsWith(todayStr));
-    if (filter === 'high') filtered = tasks.filter(t => t.prio === 'high');
+           const tasks = app.getFilteredTasks().filter(t => {
+             if(!t.status) return col.id === 'todo';
+             return t.status === col.id;
+           });
 
-    // Sort: Pending first, then by priority
-    filtered.sort((a,b) => {
-      if (a.done === b.done) return (b.prio === 'high' ? 1 : 0) - (a.prio === 'high' ? 1 : 0);
-      return a.done ? 1 : -1;
-    });
+           tasks.forEach(t => {
+             const card = document.createElement('div');
+             card.draggable = true;
+             card.className = 'glass-panel p-3 rounded-lg text-sm cursor-move active:opacity-50';
+             card.textContent = t.title;
+             card.ondragstart = (e) => {
+               e.dataTransfer.setData('text', t.id);
+               card.classList.add('dragging');
+             };
+             card.ondragend = () => card.classList.remove('dragging');
+             card.onclick = () => app.openTaskModal(t.id);
+             zone.appendChild(card);
+           });
 
-    if (filtered.length === 0) {
-      document.getElementById('empty-state').classList.remove('hidden');
-    } else {
-      document.getElementById('empty-state').classList.add('hidden');
-      filtered.forEach(task => {
-        const el = document.createElement('div');
-        // Task Card Styling
-        el.className = `glass-panel rounded-xl p-3 flex items-center gap-3 transition-all duration-300 ${task.done ? 'opacity-50' : 'hover:bg-white/5'}`;
-        el.innerHTML = `
-          <div class="custom-check ${task.done ? 'checked' : ''}" data-id="${task.id}"></div>
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-medium truncate ${task.done ? 'line-through text-glass-muted' : 'text-white'}">${escapeHtml(task.title)}</div>
-            <div class="flex gap-2 mt-1">
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-glass-muted border border-white/5 uppercase tracking-wide">${task.project}</span>
-              ${task.prio === 'high' ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">Важно</span>' : ''}
-            </div>
-          </div>
-          <button class="text-glass-muted hover:text-red-400 w-8 h-8 flex items-center justify-center transition" onclick="deleteTask('${task.id}')">
-            <i class="fas fa-trash-alt text-xs"></i>
-          </button>
-        `;
+           board.appendChild(colDiv);
+        });
+      },
+
+      renderCalendar: () => {
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
         
-        // Click Logic
-        const check = el.querySelector('.custom-check');
-        check.addEventListener('click', () => toggleTask(task.id));
-        if (task.done) check.classList.add('checked');
+        document.getElementById('cal-month').textContent = currentMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
         
-        list.appendChild(el);
-      });
-    }
+        const firstDay = new Date(year, month, 1).getDay() || 7; // 1=Mon
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        // Empty cells
+        for(let i=1; i<firstDay; i++) {
+           const d = document.createElement('div');
+           d.className = 'calendar-day glass-panel opacity-30 rounded-lg';
+           grid.appendChild(d);
+        }
+        
+        // Days
+        for(let day=1; day<=daysInMonth; day++) {
+           const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+           const cell = document.createElement('div');
+           cell.className = 'calendar-day glass-panel rounded-lg p-1 overflow-hidden hover:border-[var(--accent)] transition border border-transparent';
+           cell.innerHTML = `<div class="text-right text-[10px] opacity-50 mb-1">${day}</div>`;
+           
+           // Tasks
+           const tasks = state.tasks.filter(t => t.date === dateStr);
+           tasks.forEach(t => {
+             const tag = document.createElement('div');
+             tag.className = `text-[9px] truncate px-1 rounded mb-1 ${t.done ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'} cursor-pointer`;
+             tag.textContent = t.title;
+             tag.draggable = true;
+             tag.ondragstart = (e) => e.dataTransfer.setData('text', t.id);
+             tag.onclick = (e) => { e.stopPropagation(); app.openTaskModal(t.id); };
+             cell.appendChild(tag);
+           });
+           
+           // Drop
+           cell.ondragover = (e) => { e.preventDefault(); cell.style.background = 'var(--accent-glow)'; };
+           cell.ondragleave = () => cell.style.background = '';
+           cell.ondrop = (e) => {
+             e.preventDefault();
+             cell.style.background = '';
+             const id = e.dataTransfer.getData('text');
+             const t = state.tasks.find(x => x.id === id);
+             if(t) { t.date = dateStr; app.save(); app.renderCalendar(); }
+           };
+           
+           grid.appendChild(cell);
+        }
+      },
 
-    // Stats
-    const done = tasks.filter(t => t.done).length;
-    doneCountEl.textContent = `${done}/${tasks.length}`;
-    
-    // Habits Render
-    renderHabits();
-  }
+      getFilteredTasks: () => {
+        let res = state.tasks;
+        const today = new Date().toISOString().slice(0,10);
+        
+        if(currentFilter === 'today') res = res.filter(t => t.date === today);
+        if(currentFilter === 'high') res = res.filter(t => t.prio === 'high');
+        
+        return res.sort((a,b) => (a.done === b.done) ? 0 : a.done ? 1 : -1);
+      },
 
-  function renderHabits() {
-    const grid = document.getElementById('habits-grid');
-    grid.innerHTML = '';
-    const today = new Date().toISOString().slice(0,10);
-    
-    state.habits.forEach(h => {
-      const isDone = h.doneDates.includes(today);
-      const btn = document.createElement('button');
-      btn.className = `flex flex-col items-center justify-center p-2 rounded-xl border transition active:scale-95 ${isDone ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-white/5 border-white/5 hover:bg-white/10'}`;
-      btn.innerHTML = `
-        <div class="text-xl mb-1 filter ${isDone ? 'grayscale-0' : 'grayscale opacity-70'}">${h.icon}</div>
-        <div class="text-[9px] font-medium ${isDone ? 'text-emerald-400' : 'text-glass-muted'}">${h.name}</div>
-      `;
-      btn.onclick = () => toggleHabit(h.id);
-      grid.appendChild(btn);
-    });
-  }
+      openTaskModal: (id = null) => {
+        const modal = document.getElementById('modal-task');
+        modal.classList.remove('hidden');
+        
+        // Fill Projects
+        const pCont = document.getElementById('project-chips');
+        pCont.innerHTML = '';
+        state.projects.forEach(p => {
+          const chip = document.createElement('button');
+          chip.className = 'px-3 py-1 rounded-full text-xs font-bold border border-transparent opacity-60 grayscale';
+          chip.style.backgroundColor = p.color + '33';
+          chip.style.color = p.color;
+          chip.textContent = p.name;
+          chip.dataset.id = p.id;
+          chip.onclick = () => {
+             Array.from(pCont.children).forEach(c => {c.classList.add('opacity-60', 'grayscale'); c.style.border='1px solid transparent'});
+             chip.classList.remove('opacity-60', 'grayscale');
+             chip.style.border = `1px solid ${p.color}`;
+             chip.classList.add('selected-proj');
+          };
+          pCont.appendChild(chip);
+        });
 
-  /* ================= LOGIC ACTIONS ================= */
-  window.toggleTask = (id) => {
-    const t = state.tasks.find(x => x.id === id);
-    if (t) {
-      t.done = !t.done;
-      if (t.done) confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, colors: ['#3b82f6', '#ffffff'] });
-      saveData();
-      renderDashboard();
-    }
-  };
-
-  window.deleteTask = (id) => {
-    if(confirm('Удалить задачу?')) {
-      state.tasks = state.tasks.filter(x => x.id !== id);
-      saveData();
-      renderDashboard();
-    }
-  };
-
-  function toggleHabit(id) {
-    const today = new Date().toISOString().slice(0,10);
-    const h = state.habits.find(x => x.id === id);
-    if (h) {
-      if (h.doneDates.includes(today)) {
-        h.doneDates = h.doneDates.filter(d => d !== today);
-      } else {
-        h.doneDates.push(today);
-        confetti({ shapes: ['star'], colors: ['#10b981'] });
-      }
-      saveData();
-      renderHabits();
-    }
-  }
-
-  function addTask(title, project, prio) {
-    state.tasks.unshift({
-      id: Math.random().toString(36).substr(2, 9),
-      title,
-      project,
-      prio,
-      done: false,
-      created: new Date().toISOString()
-    });
-    saveData();
-    renderDashboard();
-  }
-
-  /* ================= FOCUS TIMER (POMODORO) ================= */
-  let timerInterval;
-  let timeLeft = 25 * 60;
-  let isTimerRunning = false;
-
-  function updateTimerDisplay() {
-    const m = Math.floor(timeLeft / 60).toString().padStart(2,'0');
-    const s = (timeLeft % 60).toString().padStart(2,'0');
-    document.getElementById('timer-display').textContent = `${m}:${s}`;
-    
-    // Circle progress
-    const circle = document.getElementById('timer-progress');
-    const radius = 46;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (timeLeft / (25 * 60)) * circumference;
-    circle.style.strokeDasharray = `${circumference} ${circumference}`;
-    circle.style.strokeDashoffset = offset;
-  }
-
-  function toggleTimer() {
-    const btn = document.getElementById('timer-toggle');
-    if (isTimerRunning) {
-      clearInterval(timerInterval);
-      isTimerRunning = false;
-      btn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-    } else {
-      isTimerRunning = true;
-      btn.innerHTML = '<i class="fas fa-pause"></i>';
-      timerInterval = setInterval(() => {
-        if (timeLeft > 0) {
-          timeLeft--;
-          updateTimerDisplay();
+        if(id) {
+          const t = state.tasks.find(x => x.id === id);
+          document.getElementById('inp-id').value = t.id;
+          document.getElementById('inp-title').value = t.title;
+          document.getElementById('inp-date').value = t.date || '';
+          document.getElementById('inp-prio').value = t.prio || 'medium';
+          document.getElementById('inp-subtasks').value = (t.subtasks || []).map(s => s.title).join('\n');
+          document.getElementById('btn-delete-task').classList.remove('hidden');
+          
+          // Select project
+          if(t.project) {
+             const chip = pCont.querySelector(`[data-id="${t.project}"]`);
+             if(chip) chip.click();
+          }
         } else {
-          clearInterval(timerInterval);
-          isTimerRunning = false;
-          btn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-          alert("Время вышло! Отдохни.");
-          confetti();
-          timeLeft = 25 * 60;
-          updateTimerDisplay();
+          document.getElementById('inp-id').value = '';
+          document.getElementById('inp-title').value = '';
+          document.getElementById('inp-date').value = new Date().toISOString().slice(0,10);
+          document.getElementById('inp-prio').value = 'medium';
+          document.getElementById('inp-subtasks').value = '';
+          document.getElementById('btn-delete-task').classList.add('hidden');
+          if(pCont.firstChild) pCont.firstChild.click();
         }
-      }, 1000);
-    }
-  }
+      },
 
-  /* ================= EVENT LISTENERS ================= */
-  
-  // Navigation (Simple View Switcher)
-  document.getElementById('btn-focus').addEventListener('click', () => {
-    document.getElementById('view-dashboard').classList.add('hidden');
-    document.getElementById('view-focus').classList.remove('hidden');
-    document.getElementById('fab-add').classList.add('hidden');
-  });
+      saveTask: () => {
+        const id = document.getElementById('inp-id').value;
+        const title = document.getElementById('inp-title').value.trim();
+        if(!title) return;
+        
+        const projBtn = document.querySelector('.selected-proj');
+        const subRaw = document.getElementById('inp-subtasks').value.split('\n').filter(x => x.trim());
+        
+        // Preserve subtask 'done' state if editing
+        let subtasks = [];
+        if(id) {
+           const old = state.tasks.find(x => x.id === id);
+           subtasks = subRaw.map(s => {
+              const exist = old.subtasks?.find(os => os.title === s);
+              return { title: s, done: exist ? exist.done : false };
+           });
+        } else {
+           subtasks = subRaw.map(s => ({ title: s, done: false }));
+        }
 
-  // Back to Dashboard logic could be added, but for now clicking Header title resets
-  document.querySelector('h1').addEventListener('click', () => {
-    document.getElementById('view-dashboard').classList.remove('hidden');
-    document.getElementById('view-focus').classList.add('hidden');
-    document.getElementById('fab-add').classList.remove('hidden');
-  });
+        const taskObj = {
+          id: id || Math.random().toString(36).substr(2,9),
+          title,
+          date: document.getElementById('inp-date').value,
+          prio: document.getElementById('inp-prio').value,
+          project: projBtn ? projBtn.dataset.id : null,
+          status: id ? (state.tasks.find(x => x.id===id)?.status || 'todo') : 'todo',
+          done: id ? (state.tasks.find(x => x.id===id)?.done || false) : false,
+          subtasks
+        };
 
-  // Add Task UI
-  const modalTask = document.getElementById('modal-task');
-  const inpTitle = document.getElementById('inp-task-title');
-  
-  document.getElementById('fab-add').addEventListener('click', () => {
-    modalTask.classList.remove('hidden');
-    inpTitle.focus();
-  });
-  
-  document.getElementById('modal-backdrop').addEventListener('click', () => {
-    modalTask.classList.add('hidden');
-  });
+        if(id) {
+          const idx = state.tasks.findIndex(x => x.id === id);
+          state.tasks[idx] = taskObj;
+        } else {
+          state.tasks.unshift(taskObj);
+        }
+        
+        app.save();
+        app.closeModals();
+        app.render();
+        if(currentView === 'kanban') app.renderKanban();
+        if(currentView === 'calendar') app.renderCalendar();
+      },
 
-  let selectedPrio = 'low';
-  document.querySelectorAll('.prio-select').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      selectedPrio = e.target.dataset.prio;
-      document.querySelectorAll('.prio-select').forEach(b => b.classList.remove('ring-2', 'ring-white'));
-      e.target.classList.add('ring-2', 'ring-white');
-    });
-  });
+      deleteTask: () => {
+        const id = document.getElementById('inp-id').value;
+        if(confirm('Удалить?')) {
+          state.tasks = state.tasks.filter(x => x.id !== id);
+          app.save(); app.closeModals(); app.render();
+          if(currentView === 'kanban') app.renderKanban();
+          if(currentView === 'calendar') app.renderCalendar();
+        }
+      },
 
-  document.getElementById('btn-save-task').addEventListener('click', () => {
-    const title = inpTitle.value.trim();
-    if (title) {
-      addTask(title, document.getElementById('inp-task-project').value, selectedPrio);
-      inpTitle.value = '';
-      modalTask.classList.add('hidden');
-    }
-  });
+      closeModals: () => {
+        document.querySelectorAll('.fixed.inset-0.z-50').forEach(m => m.classList.add('hidden'));
+      },
+      
+      backup: () => {
+        const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+        const a = document.createElement('a');
+        a.href = data;
+        a.download = `backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+      },
+      
+      restore: (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+           try {
+             state = JSON.parse(e.target.result);
+             app.save();
+             location.reload();
+           } catch(err) { alert('Ошибка файла'); }
+        };
+        reader.readAsText(file);
+      },
+      
+      // === PREMIUM MAGIC LINK LOGIC ===
+      generateLink: () => {
+        const days = document.getElementById('adm-days').value;
+        const uuid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        const payload = { d: parseInt(days), u: uuid };
+        // Simple hash sig for demo (In prod, use HMAC on server)
+        const sig = btoa(JSON.stringify(payload) + SECRET); 
+        const link = `https://t.me/D_a_n_Vi?startapp=prem_${sig}`;
+        
+        const res = document.getElementById('adm-result');
+        res.textContent = link;
+        res.classList.remove('hidden');
+      },
+      
+      copyLink: () => {
+        const txt = document.getElementById('adm-result').textContent;
+        navigator.clipboard.writeText(txt);
+        alert('Ссылка скопирована!');
+      },
+      
+      checkMagicLink: () => {
+        const params = new URLSearchParams(window.location.search);
+        let startapp = TG?.initDataUnsafe?.start_param || params.get('startapp');
+        
+        if(startapp && startapp.startsWith('prem_')) {
+           const token = startapp.split('prem_')[1];
+           try {
+             const raw = atob(token);
+             const split = raw.split('}'); // naive split for demo
+             const payloadStr = split[0] + '}';
+             const verify = btoa(payloadStr + SECRET);
+             
+             if(verify === token) {
+                const data = JSON.parse(payloadStr);
+                if(state.used_links.includes(data.u)) {
+                  alert('Эта ссылка уже использована');
+                  return;
+                }
+                
+                const now = new Date();
+                const currentEnd = state.premium.until ? new Date(state.premium.until) : now;
+                const base = currentEnd > now ? currentEnd : now;
+                base.setDate(base.getDate() + data.d);
+                
+                state.premium.active = true;
+                state.premium.until = base.toISOString();
+                state.used_links.push(data.u);
+                app.save();
+                
+                setTimeout(() => confetti({ particleCount: 150, spread: 100 }), 500);
+                alert(`Premium активирован на ${data.d} дней!`);
+             }
+           } catch(e) { console.log(e); }
+        }
+        
+        // Expire check
+        if(state.premium.active && new Date(state.premium.until) < new Date()) {
+           state.premium.active = false;
+           app.save();
+        }
+      }
+    };
 
-  // Settings & Admin
-  const modalSettings = document.getElementById('modal-settings');
-  document.getElementById('btn-settings').addEventListener('click', () => {
-    modalSettings.classList.remove('hidden');
-    document.getElementById('user-id-display').textContent = `ID: ${user.id}`;
+    // Pomodoro Logic
+    let timerInt;
+    let timerSec = 1500;
+    let isRunning = false;
     
-    // Check Admin
-    if (ADMIN_IDS.includes(user.id)) {
-      document.getElementById('admin-section').classList.remove('hidden');
-    }
-    updatePremiumUI();
-  });
-
-  document.getElementById('close-settings').addEventListener('click', () => modalSettings.classList.add('hidden'));
-
-  function updatePremiumUI() {
-    const ind = document.getElementById('premium-indicator');
-    const st = document.getElementById('settings-prem-status');
-    const habits = document.getElementById('habits-section');
+    document.getElementById('timer-toggle').onclick = () => {
+       if(isRunning) {
+         clearInterval(timerInt); isRunning = false;
+         document.getElementById('timer-toggle').textContent = "Продолжить";
+       } else {
+         isRunning = true;
+         document.getElementById('timer-toggle').textContent = "Пауза";
+         timerInt = setInterval(() => {
+            timerSec--;
+            const m = Math.floor(timerSec/60).toString().padStart(2,'0');
+            const s = (timerSec%60).toString().padStart(2,'0');
+            document.getElementById('timer-value').textContent = `${m}:${s}`;
+            
+            // Ring
+            const total = 1500;
+            const offset = 283 - (timerSec/total)*283;
+            document.getElementById('timer-ring').style.strokeDashoffset = offset;
+            
+            if(timerSec <= 0) {
+              clearInterval(timerInt);
+              confetti();
+              alert('Время вышло!');
+              timerSec = 1500;
+              isRunning = false;
+            }
+         }, 1000);
+       }
+    };
     
-    if (state.premium.active) {
-      ind.textContent = "Premium";
-      ind.classList.add('premium-shimmer', 'text-yellow-400');
-      st.innerHTML = `Активен до <span class="text-white">${new Date(state.premium.until).toLocaleDateString()}</span>`;
-      st.className = "text-xs text-green-400 mt-1";
-      habits.classList.remove('hidden'); // Habits is a Premium feature example
-    } else {
-      ind.textContent = "Basic";
-      ind.classList.remove('premium-shimmer', 'text-yellow-400');
-      st.textContent = "Не активен. Приобретите подписку.";
-      st.className = "text-xs text-glass-muted mt-1";
-      habits.classList.add('hidden');
-    }
-  }
+    document.getElementById('timer-reset').onclick = () => {
+       clearInterval(timerInt); isRunning = false; timerSec = 1500;
+       document.getElementById('timer-value').textContent = "25:00";
+       document.getElementById('timer-toggle').textContent = "Старт";
+       document.getElementById('timer-ring').style.strokeDashoffset = 0;
+    };
 
-  // Backup / Restore
-  document.getElementById('btn-backup').addEventListener('click', backupData);
-  document.getElementById('inp-restore').addEventListener('change', function(e) {
-    if(this.files[0]) restoreData(this.files[0]);
-  });
-
-  // Admin Generator
-  document.getElementById('adm-gen-link').addEventListener('click', () => {
-    const days = document.getElementById('adm-duration').value;
-    const link = generatePremiumLink(days);
-    const res = document.getElementById('adm-result');
-    res.textContent = link;
-    res.classList.remove('hidden');
-    navigator.clipboard.writeText(link);
-    alert('Ссылка скопирована в буфер обмена');
-  });
-
-  // Filters
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.remove('active', 'bg-white/10', 'text-white', 'border-white/20');
-        b.classList.add('text-glass-muted');
-      });
-      btn.classList.add('active', 'bg-white/10', 'text-white', 'border-white/20');
-      btn.classList.remove('text-glass-muted');
-      renderDashboard();
-    });
-  });
-
-  // Focus Timer
-  document.getElementById('timer-toggle').addEventListener('click', toggleTimer);
-  document.getElementById('timer-reset').addEventListener('click', () => {
-    isTimerRunning = false;
-    clearInterval(timerInterval);
-    timeLeft = 25 * 60;
-    updateTimerDisplay();
-    document.getElementById('timer-toggle').innerHTML = '<i class="fas fa-play ml-1"></i>';
-  });
-
-  document.getElementById('btn-add-habit').addEventListener('click', () => {
-    if(!state.premium.active) { alert("Трекер привычек доступен только в Premium"); return; }
-    const name = prompt("Название привычки:");
-    if(name) {
-      state.habits.push({ id: 'h'+Date.now(), name, icon: '🌟', doneDates:[] });
-      saveData();
-      renderHabits();
-    }
-  });
-
-  /* ================= INIT ================= */
-  tg?.ready();
-  tg?.expand();
-  
-  // Set theme colors for Telegram header
-  tg?.setHeaderColor('#09090b');
-  tg?.setBackgroundColor('#09090b');
-
-  // Init
-  document.getElementById('date-display').textContent = new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-  loadData();
-  checkStartParam();
-  renderDashboard();
-  updateTimerDisplay();
-
-  // Avatar Init
-  if (user.first_name) {
-    document.getElementById('avatar-container').textContent = user.first_name[0].toUpperCase();
-  }
-
-})();
-
-// Escape HTML utility
-function escapeHtml(text) {
-  if (!text) return text;
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-</script>
+    // START
+    app.init();
+    
+  </script>
 </body>
 </html>
