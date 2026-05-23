@@ -82,3 +82,13 @@ ios/TaskPlannerIOS/                # SwiftUI app + WidgetKit extension code
 ## Почему Telegram CloudStorage оставлен
 
 Telegram CloudStorage по-прежнему используется как быстрый fallback внутри Telegram. Но для PWA/iOS WidgetKit нужен отдельный Sync API, потому что вне Telegram нет доступа к `Telegram.WebApp.CloudStorage` и `initDataUnsafe`.
+
+## Иконка приложения
+
+В эту сборку добавлена выбранная первая премиум-иконка в стиле тёмный navy/indigo + золото. Она уже подключена как:
+
+- PWA icon в `manifest.webmanifest`;
+- `apple-touch-icon.png` для добавления на экран «Домой» в iOS;
+- favicon 16/32 px;
+- набор размеров 120/152/167/180/192/384/512/1024 px;
+- `ios/TaskPlannerIOS/Assets.xcassets/AppIcon.appiconset` для нативного iOS-приложения и WidgetKit-сборки.
