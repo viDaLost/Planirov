@@ -122,9 +122,8 @@
     }
     html[data-theme="dark"] .locked::after { background: rgba(255,255,255,0.1); }
 
-    /* Полоса прокрутки */
-    ::-webkit-scrollbar { height: 4px; width: 4px; }
-    ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 15%, transparent); border-radius: 10px; }
+    ::-webkit-scrollbar { height: 0px; width: 0px; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -170,7 +169,7 @@
       </nav>
     </div>
     <div class="p-5 border-t border-slate-200/10 text-xs text-[var(--hint)] text-center">
-      Task Planner v3.0 Premium Edition
+      Task Planner v3.5 Premium Edition
     </div>
   </aside>
   <div id="menu-backdrop" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden transition-opacity duration-300"></div>
@@ -203,19 +202,28 @@
   </div>
 
   <div class="mb-4 flex items-center gap-2 overflow-x-auto pb-1" id="project-strip-container">
-    <select id="project-filter-dropdown" class="bg-[var(--secondary)] text-[var(--text)] text-xs font-medium rounded-xl px-3 py-2.5 border-none outline-none ring-1 ring-black/5 dark:ring-white/5 shadow-sm">
+    <select id="project-filter-dropdown" class="bg-[var(--secondary)] text-[var(--text)] text-xs font-medium rounded-xl px-3 py-2.5 border-none outline-none ring-1 ring-black/5 dark:ring-white/5 shadow-sm shrink-0">
       <option value="all">Все проекты</option>
     </select>
     <div id="pinned-projects-layer" class="flex items-center gap-2"></div>
-    <button id="add-project-fast" class="min-w-[36px] h-[36px] rounded-xl bg-[var(--secondary)] text-[var(--hint)] flex items-center justify-center hover:text-[var(--text)] btn-bounce">
+    <button id="add-project-fast" class="min-w-[36px] h-[36px] rounded-xl bg-[var(--secondary)] text-[var(--hint)] flex items-center justify-center hover:text-[var(--text)] btn-bounce shrink-0">
       <i class="fas fa-plus text-xs"></i>
     </button>
   </div>
 
-  <div class="mb-4 relative">
-    <input id="smart-quick-input" type="text" 
-      class="w-full px-4 py-3.5 rounded-xl bg-[var(--secondary)] border-none outline-none focus:ring-2 focus:ring-[var(--button)] text-sm shadow-inner text-[var(--text)]"
-      placeholder="Новая задача... /сегодня @Работа #важно" />
+  <div class="mb-4">
+    <div class="flex gap-2">
+      <input id="smart-quick-input" type="text" 
+        class="flex-1 px-4 py-3.5 rounded-xl bg-[var(--secondary)] border-none outline-none focus:ring-2 focus:ring-[var(--button)] text-sm shadow-inner text-[var(--text)]"
+        placeholder="Новая задача... /сегодня @Работа #важно" />
+      <button id="smart-submit-btn" class="w-12 h-12 rounded-xl bg-[var(--button)] text-[var(--button-text)] flex items-center justify-center shadow-md btn-bounce shrink-0">
+        <i class="fas fa-paper-plane text-sm"></i>
+      </button>
+    </div>
+    
+    <div id="quick-tags-container" class="flex gap-1.5 overflow-x-auto pt-2 pb-1 scrollbar-none mask-image">
+      </div>
+    
     <div class="text-[10px] text-[var(--hint)] mt-1 px-1 flex justify-between">
       <span>Поддерживает: /сегодня, /завтра, @проект, #тег</span>
       <span id="input-parser-preview" class="text-[var(--button)] font-medium"></span>
@@ -223,7 +231,6 @@
   </div>
 
   <main class="flex-1 flex flex-col">
-    
     <section id="view-list" class="view-panel space-y-2.5">
       <div class="flex items-center justify-between text-xs text-[var(--hint)] mb-2 px-1">
         <button id="toggle-filter-panel" class="font-medium hover:text-[var(--text)] flex items-center gap-1 btn-bounce">
@@ -262,8 +269,7 @@
       <div id="kanban-touch-helper" class="text-[11px] text-amber-500 font-medium text-center bg-amber-500/10 p-2 rounded-xl hidden mb-2">
         Выберите задачу тапом, затем выберите колонку назначения
       </div>
-      <div class="grid grid-cols-1 gap-3" id="kanban-columns-container">
-        </div>
+      <div class="grid grid-cols-1 gap-3" id="kanban-columns-container"></div>
     </section>
 
     <section id="view-calendar" class="view-panel hidden glass rounded-2xl border border-slate-200/5 p-3">
@@ -286,16 +292,33 @@
   </main>
 </div>
 
+<div id="task-action-drawer" class="fixed inset-0 z-50 flex items-end justify-center hidden">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-xs drawer-close-trigger"></div>
+  <div class="relative w-full max-w-xl bg-[var(--bg)] rounded-t-3xl shadow-2xl p-4 space-y-3 transform translate-y-0 transition-transform duration-300 ease-out border-t border-slate-200/10 text-sm">
+    <div class="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2"></div>
+    <div id="drawer-task-title" class="font-bold text-center px-4 pb-1 text-xs text-[var(--hint)] border-b border-slate-200/5 truncate">Название задачи</div>
+    
+    <button id="drawer-action-complete" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--secondary)] font-medium text-left btn-bounce">
+      <i class="fas fa-check-circle text-emerald-500 w-5 text-center"></i> <span id="drawer-complete-text">Выполнить</span>
+    </button>
+    <button id="drawer-action-edit" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--secondary)] font-medium text-left btn-bounce">
+      <i class="fas fa-sliders text-blue-500 w-5 text-center"></i> Изменить параметры (Полное меню)
+    </button>
+    <button id="drawer-action-delete" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--secondary)] font-medium text-left text-rose-500 btn-bounce">
+      <i class="fas fa-trash-alt w-5 text-center"></i> Удалить задачу
+    </button>
+  </div>
+</div>
+
 <div id="task-modal" class="fixed inset-0 z-50 flex items-end justify-center hidden">
   <div class="absolute inset-0 bg-black/60 backdrop-blur-sm modal-close-trigger"></div>
-  <div class="relative w-full max-w-xl bg-[var(--bg)] rounded-t-3xl shadow-2xl p-5 space-y-4 max-h-[92vh] overflow-y-auto transform translate-y-0 transition-transform duration-300 ease-out border-t border-slate-200/10">
+  <div class="relative w-full max-w-xl bg-[var(--bg)] rounded-t-3xl shadow-2xl p-5 space-y-4 max-h-[92vh] overflow-y-auto border-t border-slate-200/10">
     <div class="flex items-center justify-between pb-2 border-b border-slate-200/10">
       <h3 id="task-modal-headline" class="font-bold text-base">Параметры задачи</h3>
       <button class="w-8 h-8 rounded-full bg-[var(--secondary)] flex items-center justify-center modal-close-trigger"><i class="fas fa-times text-xs"></i></button>
     </div>
     
     <input type="hidden" id="modal-task-id" />
-    
     <div class="space-y-3 text-sm">
       <div>
         <label class="block text-xs font-semibold text-[var(--hint)] mb-1">Название задачи</label>
@@ -358,6 +381,21 @@
     </div>
 
     <div class="space-y-4">
+      <div>
+        <h4 class="text-xs font-bold text-[var(--hint)] uppercase tracking-wider mb-2">Шаблон структуры списка</h4>
+        <div class="grid grid-cols-3 gap-2">
+          <button data-template="standard" class="template-selector p-2 rounded-xl text-xs font-semibold border border-slate-200/10 bg-[var(--secondary)] text-center btn-bounce">Стандарт</button>
+          <button data-template="compact" class="template-selector p-2 rounded-xl text-xs font-semibold border border-slate-200/10 bg-[var(--secondary)] text-center btn-bounce">Компакт</button>
+          <button data-template="minimal" class="template-selector p-2 rounded-xl text-xs font-semibold border border-slate-200/10 bg-[var(--secondary)] text-center btn-bounce">Мини</button>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="text-xs font-bold text-[var(--hint)] uppercase tracking-wider mb-2">Менеджер проектов</h4>
+        <div id="settings-projects-list" class="space-y-1.5 max-h-40 overflow-y-auto border border-slate-200/10 rounded-xl p-2 bg-[var(--secondary)]/50">
+          </div>
+      </div>
+
       <div>
         <h4 class="text-xs font-bold text-[var(--hint)] uppercase tracking-wider mb-2">Выбор Дизайна (Темы)</h4>
         <div id="theme-selection-grid" class="grid grid-cols-2 gap-2"></div>
@@ -458,8 +496,7 @@
   const tg = window.Telegram?.WebApp;
   const tgUser = tg?.initDataUnsafe?.user || null;
   const isTgEnv = !!(window.Telegram && Telegram.WebApp && tg?.platform !== 'unknown');
-  
-  // Принудительное развертывание на весь экран Telegram
+
   try {
     tg?.ready();
     tg?.expand();
@@ -469,11 +506,11 @@
   const ADMIN_ID = 1288379477;
   const CRYPTO_SECRET = 'tp$S3cr3t@v1';
 
-  // Локальные суффиксы для изоляции данных аккаунтов на одном клиенте
   const userKeySuffix = tgUser?.id ? `tg_${tgUser.id}` : 'guest';
   const STORAGE_KEY_DATA = `tp_v3_dataset_${userKeySuffix}`;
   const STORAGE_KEY_THEME = `tp_v3_theme_${userKeySuffix}`;
   const STORAGE_KEY_PREMIUM = `tp_v3_prem_token_${userKeySuffix}`;
+  const STORAGE_KEY_TEMPLATE = `tp_v3_layout_tpl_${userKeySuffix}`;
 
   /* ==========================================================================
      БАЗОВОЕ СОСТОЯНИЕ (STATE)
@@ -485,6 +522,7 @@
     ],
     tasks: [],
     view: 'list',
+    layoutTemplate: 'standard', // 'standard' | 'compact' | 'minimal'
     filter: {
       project: 'all',
       priority: 'all'
@@ -492,7 +530,8 @@
     sort: 'due-asc',
     calendarMonth: new Date(),
     premium: { active: false, expires: null, source: 'none' },
-    selectedKanbanTaskId: null 
+    selectedKanbanTaskId: null,
+    activeDrawerTaskId: null
   };
 
   const THEMES_CONFIG = [
@@ -535,16 +574,13 @@
     
     container.appendChild(el);
     setTimeout(() => { el.classList.remove('translate-y-4', 'opacity-0'); }, 50);
-    
     const removeToast = () => {
       el.classList.add('translate-y-2', 'opacity-0');
       setTimeout(() => el.remove(), 300);
     };
-    
     setTimeout(removeToast, 3000);
   }
 
-  // Сверхлёгкий алгоритм хеширования для верификации подписей без тяжелых библиотек
   function generateFNV1a(str) {
     let hash = 0x811c9dc5;
     for (let i = 0; i < str.length; i++) {
@@ -553,6 +589,10 @@
     }
     return ('0000000' + (hash >>> 0).toString(16)).slice(-8);
   }
+
+  document.querySelectorAll('.drawer-close-trigger').forEach(el => el.addEventListener('click', () => {
+    document.getElementById('task-action-drawer').classList.add('hidden');
+  }));
 
   function createSignedToken(payloadObj) {
     const rawPayload = btoa(unescape(encodeURIComponent(JSON.stringify(payloadObj))));
@@ -581,10 +621,7 @@
       projects: state.projects,
       tasks: state.tasks
     });
-    // Легкий синхронный сейв для мгновенного отклика UI
     localStorage.setItem(STORAGE_KEY_DATA, serialized);
-    
-    // Асинхронный фоновый сейв в отказоустойчивое облако TG CloudStorage
     if (isTgEnv && tg?.CloudStorage) {
       try {
         tg.CloudStorage.setItem(STORAGE_KEY_DATA, serialized, (err, success) => {
@@ -596,8 +633,6 @@
 
   async function loadAllDataFromDataStores() {
     let dataLoaded = null;
-    
-    // Попытка №1: Извлечь из нативного облака мессенджера
     if (isTgEnv && tg?.CloudStorage) {
       const cloudData = await new Promise((resolve) => {
         try {
@@ -610,7 +645,6 @@
       if (cloudData) dataLoaded = cloudData;
     }
     
-    // Попытка №2: Локальный кэш
     if (!dataLoaded) {
       dataLoaded = localStorage.getItem(STORAGE_KEY_DATA);
     }
@@ -622,20 +656,20 @@
         if (Array.isArray(parsed.tasks)) state.tasks = parsed.tasks;
       } catch (e) { console.error("Data Parse Fatal Error", e); }
     } else {
-      // Первичный запуск: Наполнение демо-данными
       state.tasks = [
-        { id: 'demo-1', title: '🚀 Изучить функционал Telegram мини-приложения', priority: 'high', status: 'in-progress', project: 'work', dueDate: new Date().toISOString().slice(0,10), description: 'Проверить темы, канбан и авто-парсер ввода', completed: false },
-        { id: 'demo-2', title: '💎 Активировать тестовый Premium режим', priority: 'critical', status: 'backlog', project: 'personal', dueDate: '', description: 'Написать админу или ввести промокод', completed: false }
+        { id: 'demo-1', title: '🚀 Изведать мощь кастомизации списков', priority: 'high', status: 'in-progress', project: 'work', dueDate: new Date().toISOString().slice(0,10), description: 'Проверить шаблоны: Стандарт, Компакт и Мини', completed: false },
+        { id: 'demo-2', title: '💎 Пощупать обновленные быстрые теги ввода', priority: 'critical', status: 'backlog', project: 'personal', dueDate: '', description: 'Нажмите кнопку добавления параметров под строкой ввода', completed: false }
       ];
       await saveAllDataToDataStores();
     }
+    
+    state.layoutTemplate = localStorage.getItem(STORAGE_KEY_TEMPLATE) || 'standard';
   }
 
   /* ==========================================================================
      ЛОГИКА PREMIUM ПОДПИСКИ
      ========================================================================== */
   function evaluatePremiumState() {
-    // Проверка на жесткий ID администратора
     if (tgUser && tgUser.id === ADMIN_ID) {
       state.premium = { active: true, expires: '2099-12-31', source: 'admin_override' };
       document.getElementById('menu-to-admin').classList.remove('hidden');
@@ -653,7 +687,6 @@
       }
     }
     
-    // Если токен отсутствует или просрочен - активируем триал на 3 дня при первом входе
     const trialKey = `tp_v3_trial_activated_${userKeySuffix}`;
     const activatedTrialTimestamp = localStorage.getItem(trialKey);
     const now = new Date();
@@ -686,13 +719,10 @@
       badgeContainer.innerHTML = `<span class="badge-subscription text-[10px] bg-slate-500/10 border border-slate-500/20 text-[var(--hint)] rounded-full px-2 py-0.5 font-medium w-max mt-0.5 btn-bounce cursor-pointer">Базовый статус</span>`;
     }
     
-    // Навешивание триггера на бейдж подписки
     badgeContainer.firstElementChild.addEventListener('click', () => {
       triggerHaptic('light');
       openPremiumModalView();
     });
-
-    // Ограничение визуальных элементов
     document.getElementById('btn-kanban').classList.toggle('locked', !isPrem);
     document.getElementById('btn-calendar').classList.toggle('locked', !isPrem);
   }
@@ -736,14 +766,12 @@
     let dueDate = '';
     let tags = [];
 
-    // Извлечение тегов (#тег)
-    const tagMatches = title.match(/#[\wа-яА-Я]+/g);
+    const tagMatches = title.match(/#[\wа-яА-Я\-]+/g);
     if (tagMatches) {
       tags = tagMatches.map(t => t.substring(1));
-      title = title.replace(/#[\wа-яА-Я]+/g, '');
+      title = title.replace(/#[\wа-яА-Я\-]+/g, '');
     }
 
-    // Извлечение проекта (@Проект)
     const projectMatch = title.match(/@([\wа-яА-Я\-]+)/);
     if (projectMatch) {
       const matchName = projectMatch[1].toLowerCase();
@@ -752,7 +780,6 @@
       title = title.replace(/@[\wа-яА-Я\-]+/, '');
     }
 
-    // Извлечение дат (/сегодня, /завтра)
     if (title.includes('/сегодня')) {
       dueDate = new Date().toISOString().slice(0, 10);
       title = title.replace('/сегодня', '');
@@ -763,13 +790,21 @@
       title = title.replace('/завтра', '');
     }
 
-    // Извлечение приоритетов (/высокий, /критично)
+    const dateExactMatch = title.match(/\/(\d{4}-\d{2}-\d{2})/);
+    if (dateExactMatch) {
+      dueDate = dateExactMatch[1];
+      title = title.replace(/\/\d{4}-\d{2}-\d{2}/, '');
+    }
+
     if (title.includes('/критично') || title.includes('/🔥')) {
-      priority = 'critical'; title = title.replace(/\/критично|\/🔥/, '');
-    } else if (title.includes('/высокий')) {
-      priority = 'high'; title = title.replace('/высокий', '');
+      priority = 'critical';
+      title = title.replace(/\/критично|\/🔥/, '');
+    } else if (title.includes('/высокий') || title.includes('/срочно')) {
+      priority = 'high';
+      title = title.replace(/\/высокий|\/срочно/, '');
     } else if (title.includes('/низкий')) {
-      priority = 'low'; title = title.replace('/низкий', '');
+      priority = 'low';
+      title = title.replace('/низкий', '');
     }
 
     return {
@@ -779,6 +814,68 @@
       dueDate,
       tags
     };
+  }
+
+  /* ==========================================================================
+     РЕНДЕРИНГ БЫСТРЫХ КНОПОК ПОД СТРОКОЙ ВВОДА
+     ========================================================================== */
+  function renderQuickTagsPanel() {
+    const container = document.getElementById('quick-tags-container');
+    container.innerHTML = '';
+
+    const actionChips = [
+      { text: '/сегодня', type: 'cmd' },
+      { text: '/завтра', type: 'cmd' },
+      { text: '/выбрать дату', type: 'date-prompt' },
+      { text: '#важно', type: 'cmd' },
+      { text: '#срочно', type: 'cmd' }
+    ];
+
+    state.projects.forEach(p => {
+      actionChips.push({ text: `@${p.name}`, type: 'proj', color: p.color });
+    });
+
+    actionChips.push({ text: '@новый проект', type: 'new-proj' });
+
+    actionChips.forEach(chip => {
+      const btn = document.createElement('button');
+      btn.className = 'px-3 py-1.5 rounded-xl bg-[var(--secondary)] text-[var(--text)] text-[11px] font-semibold whitespace-nowrap btn-bounce flex items-center gap-1.5 shadow-sm border border-slate-200/5';
+      
+      if (chip.color) {
+        btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full inline-block" style="background:${chip.color}"></span>${chip.text}`;
+      } else if (chip.type === 'new-proj') {
+        btn.innerHTML = `<i class="fas fa-folder-plus text-indigo-500 text-[10px]"></i>${chip.text}`;
+      } else if (chip.type === 'date-prompt') {
+        btn.innerHTML = `<i class="fas fa-calendar-day text-sky-500 text-[10px]"></i>${chip.text}`;
+      } else {
+        btn.textContent = chip.text;
+      }
+
+      btn.addEventListener('click', () => {
+        triggerHaptic('light');
+        const input = document.getElementById('smart-quick-input');
+        
+        if (chip.type === 'new-proj') {
+          document.getElementById('add-project-fast').click();
+          return;
+        }
+        
+        if (chip.type === 'date-prompt') {
+          const userDate = prompt('Введите точную дату в формате ГГГГ-ММ-ДД:', new Date().toISOString().slice(0,10));
+          if (userDate && /^\d{4}-\d{2}-\d{2}$/.test(userDate)) {
+            input.value += ` /${userDate}`;
+          }
+        } else {
+          if (!input.value.includes(chip.text)) {
+            input.value += (input.value ? ' ' : '') + chip.text;
+          }
+        }
+        input.focus();
+        input.dispatchEvent(new Event('input'));
+      });
+
+      container.appendChild(btn);
+    });
   }
 
   /* ==========================================================================
@@ -816,7 +913,6 @@
     document.querySelectorAll('.view-panel').forEach(p => {
       p.id === activePanelId ? p.classList.remove('hidden') : p.classList.add('hidden');
     });
-
     document.querySelectorAll('.view-selector').forEach(btn => {
       if (btn.dataset.view === state.view) {
         btn.classList.add('bg-[var(--card-bg)]', 'shadow-sm', 'text-[var(--button)]');
@@ -826,20 +922,18 @@
         btn.classList.add('opacity-60');
       }
     });
-
     if (state.view === 'list') renderListViewContent();
     else if (state.view === 'kanban') renderKanbanViewContent();
     else if (state.view === 'calendar') renderCalendarViewContent();
   }
 
-  // Рендеринг: Список задач
+  // Рендеринг: Список задач с поддержкой 3х видов кастомизации (Шаблонов)
   function renderListViewContent() {
     const container = document.getElementById('list-render-target');
     const tasks = extractFilteredTasksStack();
     container.innerHTML = '';
     
     document.getElementById('task-count-label').textContent = `Найдено: ${tasks.length}`;
-    
     if (tasks.length === 0) {
       document.getElementById('fallback-empty-state').classList.remove('hidden');
       return;
@@ -848,8 +942,6 @@
 
     tasks.forEach(task => {
       const card = document.createElement('div');
-      card.className = `task-card p-3.5 rounded-2xl flex items-start justify-between gap-3 shadow-sm relative overflow-hidden ${task.completed ? 'opacity-60' : ''}`;
-      
       const currentProj = state.projects.find(p => p.id === task.project);
       const dotColor = currentProj ? currentProj.color : '#cbd5e1';
 
@@ -860,29 +952,61 @@
         low: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
       };
       const badgeCls = priorityBadges[task.priority] || 'bg-slate-500/10 text-slate-500';
-
       const humanDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : 'Без срока';
 
-      card.innerHTML = `
-        <div class="flex items-start gap-3 flex-1 min-w-0">
-          <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task.id}" class="task-toggle-checkbox w-5 h-5 rounded-md border-slate-300 text-[var(--button)] mt-0.5 focus:ring-0 cursor-pointer accent-indigo-600" />
-          <div class="min-w-0 flex-1">
-            <h4 class="text-sm font-semibold truncate ${task.completed ? 'line-through opacity-60' : ''}">${task.title}</h4>
-            ${task.description ? `<p class="text-[11px] text-[var(--hint)] truncate mt-0.5">${task.description}</p>` : ''}
-            <div class="flex items-center gap-2 mt-2 flex-wrap">
-              <span class="w-2 h-2 rounded-full" style="background:${dotColor}" title="${currentProj?.name || ''}"></span>
-              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${badgeCls}">${task.priority.toUpperCase()}</span>
-              <span class="text-[10px] text-[var(--hint)] font-medium"><i class="far fa-calendar text-[10px] mr-1"></i>${humanDate}</span>
+      // Переключатель кастомных UI шаблонов отображения задач
+      if (state.layoutTemplate === 'minimal') {
+        // Шаблон Минимализм: Тонкие линии, компактный вид
+        card.className = `p-2 flex items-center justify-between gap-3 relative border-b border-slate-200/5 ${task.completed ? 'opacity-40' : ''}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task.id}" class="task-toggle-checkbox w-4 h-4 rounded text-[var(--button)] focus:ring-0 cursor-pointer accent-indigo-600" />
+            <span class="w-1.5 h-6 rounded-full shrink-0" style="background:${dotColor}"></span>
+            <div class="min-w-0 flex-1">
+              <h4 class="text-xs font-medium truncate ${task.completed ? 'line-through opacity-60' : ''}">${task.title}</h4>
+            </div>
+            <span class="text-[9px] font-bold tracking-tight px-1.5 py-0.5 rounded ${badgeCls}">${task.priority.toUpperCase()}</span>
+          </div>
+          <button data-id="${task.id}" class="task-drawer-trigger text-[var(--hint)] hover:text-[var(--text)] p-1 btn-bounce"><i class="fas fa-ellipsis-v text-xs"></i></button>
+        `;
+      } else if (state.layoutTemplate === 'compact') {
+        // Шаблон Компактный: Энергоэффективный плотный вариант для работы одной рукой
+        card.className = `task-card p-2.5 rounded-xl flex items-center justify-between gap-2 shadow-xs ${task.completed ? 'opacity-50' : ''}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5 flex-1 min-w-0">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task.id}" class="task-toggle-checkbox w-4.5 h-4.5 rounded text-[var(--button)] focus:ring-0 cursor-pointer accent-indigo-600" />
+            <div class="min-w-0 flex-1 flex items-center justify-between gap-2">
+              <h4 class="text-xs font-semibold truncate ${task.completed ? 'line-through' : ''}">${task.title}</h4>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="w-2 h-2 rounded-full" style="background:${dotColor}"></span>
+                <span class="text-[10px] text-[var(--hint)] font-medium">${humanDate}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <button data-id="${task.id}" class="task-edit-trigger text-[var(--hint)] hover:text-[var(--text)] p-1 btn-bounce"><i class="fas fa-ellipsis-v text-xs"></i></button>
-      `;
-      
+          <button data-id="${task.id}" class="task-drawer-trigger text-[var(--hint)] hover:text-[var(--text)] p-1 btn-bounce"><i class="fas fa-ellipsis-v text-xs"></i></button>
+        `;
+      } else {
+        // Шаблон Стандартный (Ваш исходный красивый дизайн с карточками)
+        card.className = `task-card p-3.5 rounded-2xl flex items-start justify-between gap-3 shadow-sm relative overflow-hidden ${task.completed ? 'opacity-60' : ''}`;
+        card.innerHTML = `
+          <div class="flex items-start gap-3 flex-1 min-w-0">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} data-id="${task.id}" class="task-toggle-checkbox w-5 h-5 rounded-md border-slate-300 text-[var(--button)] mt-0.5 focus:ring-0 cursor-pointer accent-indigo-600" />
+            <div class="min-w-0 flex-1">
+              <h4 class="text-sm font-semibold truncate ${task.completed ? 'line-through opacity-60' : ''}">${task.title}</h4>
+              ${task.description ? `<p class="text-[11px] text-[var(--hint)] truncate mt-0.5">${task.description}</p>` : ''}
+              <div class="flex items-center gap-2 mt-2 flex-wrap">
+                <span class="w-2 h-2 rounded-full" style="background:${dotColor}" title="${currentProj?.name || ''}"></span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${badgeCls}">${task.priority.toUpperCase()}</span>
+                <span class="text-[10px] text-[var(--hint)] font-medium"><i class="far fa-calendar text-[10px] mr-1"></i>${humanDate}</span>
+              </div>
+            </div>
+          </div>
+          <button data-id="${task.id}" class="task-drawer-trigger text-[var(--hint)] hover:text-[var(--text)] p-1 btn-bounce"><i class="fas fa-ellipsis-v text-xs"></i></button>
+        `;
+      }
       container.appendChild(card);
     });
 
-    // Обработчики чекбоксов
     container.querySelectorAll('.task-toggle-checkbox').forEach(box => {
       box.addEventListener('change', async (e) => {
         triggerHaptic('light');
@@ -897,20 +1021,60 @@
       });
     });
 
-    // Обработчики открытия модального окна
-    container.querySelectorAll('.task-edit-trigger').forEach(btn => {
+    // Нажатие на 3 точки теперь вызывает нативный нижний Action Sheet
+    container.querySelectorAll('.task-drawer-trigger').forEach(btn => {
       btn.addEventListener('click', () => {
         triggerHaptic('light');
-        launchTaskModalEdit(btn.dataset.id);
+        openTaskActionDrawer(btn.dataset.id);
       });
     });
   }
+
+  /* ==========================================================================
+     ЛОГИКА НАТИВНОЙ ШТОРКИ (ACTION SHEET) ДЛЯ ТРЁХ ТОЧЕК
+     ========================================================================== */
+  function openTaskActionDrawer(taskId) {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (!task) return;
+    state.activeDrawerTaskId = taskId;
+
+    document.getElementById('drawer-task-title').textContent = task.title;
+    document.getElementById('drawer-complete-text').textContent = task.completed ? 'Вернуть в работу' : 'Отметить как выполнено';
+    document.getElementById('task-action-drawer').classList.remove('hidden');
+  }
+
+  document.getElementById('drawer-action-complete').addEventListener('click', async () => {
+    const task = state.tasks.find(t => t.id === state.activeDrawerTaskId);
+    if (task) {
+      task.completed = !task.completed;
+      task.status = task.completed ? 'done' : 'in-progress';
+      triggerHaptic('success');
+      await saveAllDataToDataStores();
+      document.getElementById('task-action-drawer').classList.add('hidden');
+      renderMasterLayout();
+    }
+  });
+
+  document.getElementById('drawer-action-edit').addEventListener('click', () => {
+    document.getElementById('task-action-drawer').classList.add('hidden');
+    launchTaskModalEdit(state.activeDrawerTaskId);
+  });
+
+  document.getElementById('drawer-action-delete').addEventListener('click', async () => {
+    if (confirm('Вы уверены, что хотите удалить эту задачу?')) {
+      state.tasks = state.tasks.filter(t => t.id !== state.activeDrawerTaskId);
+      triggerHaptic('medium');
+      await saveAllDataToDataStores();
+      document.getElementById('task-action-drawer').classList.add('hidden');
+      renderMasterLayout();
+      pushToast('Задача удалена');
+    }
+  });
 
   // Рендеринг: Доска Kanban
   function renderKanbanViewContent() {
     const container = document.getElementById('kanban-columns-container');
     container.innerHTML = '';
-    
     const isPrem = state.premium.active;
     if (!isPrem) {
       container.innerHTML = `<div class="p-8 text-center text-xs text-[var(--hint)]">Компонент доступен исключительно пользователям с активным Premium-аккаунтом.</div>`;
@@ -923,7 +1087,6 @@
       { id: 'review', name: 'Проверка', icon: 'fa-magnifying-glass', cls: 'text-purple-500' },
       { id: 'done', name: 'Готово', icon: 'fa-circle-check', cls: 'text-emerald-500' }
     ];
-
     const tasks = extractFilteredTasksStack();
     const helperBlock = document.getElementById('kanban-touch-helper');
     helperBlock.classList.remove('hidden');
@@ -943,7 +1106,6 @@
       `;
 
       const cardsStack = colEl.querySelector('.kanban-cards-stack');
-      
       colTasks.forEach(task => {
         const card = document.createElement('div');
         const isSelected = state.selectedKanbanTaskId === task.id;
@@ -953,18 +1115,12 @@
         card.addEventListener('click', (e) => {
           e.stopPropagation();
           triggerHaptic('light');
-          if (state.selectedKanbanTaskId === task.id) {
-            state.selectedKanbanTaskId = null; // сброс выбора
-          } else {
-            state.selectedKanbanTaskId = task.id;
-          }
+          state.selectedKanbanTaskId = (state.selectedKanbanTaskId === task.id) ? null : task.id;
           renderKanbanViewContent();
         });
-
         cardsStack.appendChild(card);
       });
 
-      // Логика перемещения тапом по шапке колонки
       colEl.querySelector('.column-header-target').addEventListener('click', async () => {
         if (state.selectedKanbanTaskId) {
           const task = state.tasks.find(t => t.id === state.selectedKanbanTaskId);
@@ -978,7 +1134,6 @@
           }
         }
       });
-
       container.appendChild(colEl);
     });
   }
@@ -991,7 +1146,6 @@
     
     grid.innerHTML = '';
     weekdaysRow.innerHTML = '';
-
     if (!state.premium.active) {
       grid.innerHTML = `<div class="col-span-7 py-8 text-center text-xs text-[var(--hint)]">Календарный вид доступен пользователям с Premium подпиской.</div>`;
       return;
@@ -999,15 +1153,12 @@
 
     const labels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     labels.forEach(l => weekdaysRow.innerHTML += `<div>${l}</div>`);
-
     const year = state.calendarMonth.getFullYear();
     const month = state.calendarMonth.getMonth();
     title.textContent = state.calendarMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
-
     const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
     const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // Пустые ячейки для выравнивания начала месяца
     for (let i = 0; i < firstDayIndex; i++) {
       grid.appendChild(document.createElement('div'));
     }
@@ -1017,12 +1168,10 @@
     for (let day = 1; day <= totalDaysInMonth; day++) {
       const currentCellDateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const cell = document.createElement('button');
-      
       const isToday = new Date().toISOString().slice(0, 10) === currentCellDateISO;
       cell.className = `h-11 rounded-xl flex flex-col items-center justify-between p-1 transition-all border ${isToday ? 'bg-[var(--button)] text-[var(--button-text)] border-transparent font-bold' : 'bg-[var(--secondary)] border-transparent'} btn-bounce`;
       
       const dayTasks = filteredTasks.filter(t => t.dueDate === currentCellDateISO);
-      
       let dotsHtml = '';
       if (dayTasks.length > 0) {
         dotsHtml = `<div class="flex gap-0.5 justify-center w-full overflow-hidden">`;
@@ -1038,14 +1187,11 @@
         <span class="text-xs">${day}</span>
         ${dotsHtml}
       `;
-
       cell.addEventListener('click', () => {
         triggerHaptic('light');
         if (dayTasks.length > 0) {
-          // Если задачи есть - фильтруем по дню в списке или открываем первую
           launchTaskModalEdit(dayTasks[0].id);
         } else {
-          // Быстрое создание на этот день
           document.getElementById('modal-task-id').value = '';
           document.getElementById('modal-task-title').value = '';
           document.getElementById('modal-task-date').value = currentCellDateISO;
@@ -1056,33 +1202,92 @@
           document.getElementById('task-modal').classList.remove('hidden');
         }
       });
-
       grid.appendChild(cell);
     }
   }
 
   /* ==========================================================================
-     МОДАЛЬНЫЕ ОКНА И КОНТРОЛЛЕРЫ УПРАВЛЕНИЯ ДАННЫМИ
+     ОБНОВЛЯЕМЫЙ МЕНЕДЖЕР ПРОЕКТОВ (ИЗМЕНЕНИЕ И УДАЛЕНИЕ) В НАСТРОЙКАХ
      ========================================================================== */
+  function renderSettingsProjectsManager() {
+    const container = document.getElementById('settings-projects-list');
+    container.innerHTML = '';
+
+    state.projects.forEach(project => {
+      const el = document.createElement('div');
+      el.className = 'flex items-center justify-between p-2 rounded-lg bg-[var(--bg)] border border-slate-200/5 text-xs';
+      el.innerHTML = `
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+          <span class="w-2.5 h-2.5 rounded-full inline-block shrink-0" style="background:${project.color}"></span>
+          <span class="font-semibold truncate">${project.name}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button class="p-1 text-sky-500 hover:text-sky-600 btn-bounce action-edit-proj" data-id="${project.id}"><i class="fas fa-edit"></i></button>
+          <button class="p-1 text-rose-500 hover:text-rose-600 btn-bounce action-delete-proj" data-id="${project.id}"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      `;
+
+      // Изменение проекта
+      el.querySelector('.action-edit-proj').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        triggerHaptic('light');
+        const nextName = prompt('Введите новое название проекта:', project.name);
+        if (nextName && nextName.trim()) {
+          project.name = nextName.trim();
+          await saveAllDataToDataStores();
+          hydrateProjectDropdowns();
+          renderQuickTagsPanel();
+          renderSettingsProjectsManager();
+          renderMasterLayout();
+        }
+      });
+
+      // Удаление проекта с каскадным перенаправлением задач
+      el.querySelector('.action-delete-proj').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        triggerHaptic('medium');
+        if (state.projects.length <= 1) {
+          alert('Невозможно удалить единственный проект!');
+          return;
+        }
+        if (confirm(`Вы действительно хотите безвозвратно удалить проект "${project.name}"? Все его задачи перейдут в оставшийся глобальный раздел.`)) {
+          const fallbackProj = state.projects.find(p => p.id !== project.id);
+          state.tasks.forEach(t => {
+            if (t.project === project.id) t.project = fallbackProj.id;
+          });
+          state.projects = state.projects.filter(p => p.id !== project.id);
+          if (state.filter.project === project.id) state.filter.project = 'all';
+
+          await saveAllDataToDataStores();
+          hydrateProjectDropdowns();
+          renderQuickTagsPanel();
+          renderSettingsProjectsManager();
+          renderMasterLayout();
+          pushToast('Проект удален', 'Задачи перераспределены');
+        }
+      });
+
+      container.appendChild(el);
+    });
+  }
+
   function hydrateProjectDropdowns() {
     const filterSelect = document.getElementById('project-filter-dropdown');
     const modalSelect = document.getElementById('modal-task-project');
     
     filterSelect.innerHTML = '<option value="all">Все проекты</option>';
     modalSelect.innerHTML = '';
-
     state.projects.forEach(p => {
       const opt = `<option value="${p.id}">${p.name}</option>`;
       filterSelect.innerHTML += opt;
       modalSelect.innerHTML += opt;
     });
-    
-    // Отрендерить чипсы закрепленных проектов рядом
+
     const pinnedLayer = document.getElementById('pinned-projects-layer');
     pinnedLayer.innerHTML = '';
     state.projects.slice(0, 3).forEach(p => {
       const chip = document.createElement('button');
-      chip.className = `px-2.5 py-1.5 rounded-xl bg-[var(--secondary)] text-[var(--text)] text-xs font-semibold border border-transparent transition-all btn-bounce ${state.filter.project === p.id ? 'ring-1 ring-[var(--button)]' : ''}`;
+      chip.className = `px-2.5 py-1.5 rounded-xl bg-[var(--secondary)] text-[var(--text)] text-xs font-semibold border border-transparent transition-all btn-bounce ${state.filter.project === p.id ? 'ring-1 ring-[var(--button)] font-bold' : ''}`;
       chip.innerHTML = `<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background:${p.color}"></span> ${p.name}`;
       chip.addEventListener('click', () => {
         triggerHaptic('light');
@@ -1097,7 +1302,6 @@
   function launchTaskModalEdit(taskId) {
     const task = state.tasks.find(t => t.id === taskId);
     if (!task) return;
-
     document.getElementById('modal-task-id').value = task.id;
     document.getElementById('modal-task-title').value = task.title;
     document.getElementById('modal-task-priority').value = task.priority;
@@ -1106,7 +1310,7 @@
     document.getElementById('modal-task-date').value = task.dueDate || '';
     document.getElementById('modal-task-desc').value = task.description || '';
     
-    document.getElementById('modal-task-headline').textContent = 'Редактирование';
+    document.getElementById('task-modal-headline').textContent = 'Редактирование';
     document.getElementById('modal-task-delete-btn').classList.remove('hidden');
     document.getElementById('task-modal').classList.remove('hidden');
   }
@@ -1122,54 +1326,44 @@
   }
 
   /* ==========================================================================
-     ОБРАБОТЧИКИ СОБЫТИЙ И СЛУШАТЕЛИ КЛИКОВ
+     ОБРАБОТЧИКИ СОБЫТИЙ И ФУНКЦИОНАЛ ФИЗИЧЕСКОЙ КНОПКИ «СОЗДАТЬ»
      ========================================================================== */
-  // Роутинг вкладок отображения
-  document.querySelectorAll('.view-selector').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetView = btn.dataset.view;
-      if ((targetView === 'kanban' || targetView === 'calendar') && !state.premium.active) {
-        triggerHaptic('error');
-        openPremiumModalView();
-        return;
-      }
-      triggerHaptic('light');
-      state.view = targetView;
-      renderMasterLayout();
-    });
-  });
+  async function triggerSmartTaskCreation() {
+    const inputEl = document.getElementById('smart-quick-input');
+    const val = inputEl.value.trim();
+    if (!val) return;
+    
+    triggerHaptic('success');
+    const parsedStruct = executeSmartInputParser(val);
+    
+    const newTask = {
+      id: 'task_' + Math.random().toString(36).substring(2, 11),
+      title: parsedStruct.title || 'Новая задача',
+      priority: parsedStruct.priority,
+      status: 'backlog',
+      project: parsedStruct.project,
+      dueDate: parsedStruct.dueDate,
+      description: parsedStruct.tags.length > 0 ? 'Теги: ' + parsedStruct.tags.join(', ') : '',
+      completed: false
+    };
 
-  // Быстрый умный ввод
+    state.tasks.unshift(newTask);
+    inputEl.value = '';
+    document.getElementById('input-parser-preview').textContent = '';
+    
+    await saveAllDataToDataStores();
+    renderMasterLayout();
+    pushToast('Задача успешно создана!', parsedStruct.dueDate ? `Дедлайн: ${parsedStruct.dueDate}` : '');
+  }
+
+  document.getElementById('smart-submit-btn').addEventListener('click', triggerSmartTaskCreation);
+
   document.getElementById('smart-quick-input').addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
-      const val = e.target.value.trim();
-      if (!val) return;
-      
-      triggerHaptic('success');
-      const parsedStruct = executeSmartInputParser(val);
-      
-      const newTask = {
-        id: 'task_' + Math.random().toString(36).substring(2, 11),
-        title: parsedStruct.title || 'Новая задача',
-        priority: parsedStruct.priority,
-        status: 'backlog',
-        project: parsedStruct.project,
-        dueDate: parsedStruct.dueDate,
-        description: parsedStruct.tags.length > 0 ? 'Теги: ' + parsedStruct.tags.join(', ') : '',
-        completed: false
-      };
-
-      state.tasks.unshift(newTask);
-      e.target.value = '';
-      document.getElementById('input-parser-preview').textContent = '';
-      
-      await saveAllDataToDataStores();
-      renderMasterLayout();
-      pushToast('Задача успешно создана!', parsedStruct.dueDate ? `Дедлайн: ${parsedStruct.dueDate}` : '');
+      await triggerSmartTaskCreation();
     }
   });
 
-  // Превью парсера в реальном времени при вводе
   document.getElementById('smart-quick-input').addEventListener('input', (e) => {
     const val = e.target.value;
     const previewEl = document.getElementById('input-parser-preview');
@@ -1186,17 +1380,49 @@
     previewEl.textContent = hints.join(' | ');
   });
 
-  // Выпадающий список фильтрации проектов
+  document.querySelectorAll('.view-selector').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetView = btn.dataset.view;
+      if ((targetView === 'kanban' || targetView === 'calendar') && !state.premium.active) {
+        triggerHaptic('error');
+        openPremiumModalView();
+        return;
+      }
+      triggerHaptic('light');
+      state.view = targetView;
+      renderMasterLayout();
+    });
+  });
+
+  /* Инициализация логики переключения и сохранения шаблонов списков */
+  document.querySelectorAll('.template-selector').forEach(btn => {
+    btn.addEventListener('click', () => {
+      triggerHaptic('light');
+      state.layoutTemplate = btn.dataset.template;
+      localStorage.setItem(STORAGE_KEY_TEMPLATE, state.layoutTemplate);
+      syncTemplateSelectorUI();
+      renderListViewContent();
+    });
+  });
+
+  function syncTemplateSelectorUI() {
+    document.querySelectorAll('.template-selector').forEach(btn => {
+      if (btn.dataset.template === state.layoutTemplate) {
+        btn.className = 'template-selector p-2 rounded-xl text-xs font-bold border border-[var(--button)] bg-[var(--card-bg)] text-[var(--button)] text-center btn-bounce shadow-sm';
+      } else {
+        btn.className = 'template-selector p-2 rounded-xl text-xs font-semibold border border-slate-200/10 bg-[var(--secondary)] text-center opacity-60 btn-bounce';
+      }
+    });
+  }
+
   document.getElementById('project-filter-dropdown').addEventListener('change', (e) => {
     state.filter.project = e.target.value;
     renderMasterLayout();
-    hydrateProjectDropdowns(); // обновление активных чипсов
+    hydrateProjectDropdowns();
   });
 
-  // Дополнительная панель фильтрации
   document.getElementById('toggle-filter-panel').addEventListener('click', () => {
-    const block = document.getElementById('advanced-filter-block');
-    block.classList.toggle('hidden');
+    document.getElementById('advanced-filter-block').classList.toggle('hidden');
   });
 
   document.getElementById('filter-priority').addEventListener('change', (e) => {
@@ -1209,7 +1435,6 @@
     renderMasterLayout();
   });
 
-  // Быстрое добавление нового проекта
   document.getElementById('add-project-fast').addEventListener('click', async () => {
     triggerHaptic('light');
     const name = prompt('Введите наименование нового проекта:');
@@ -1223,10 +1448,10 @@
     state.projects.push({ id, name: cleanName, color: randomColor });
     await saveAllDataToDataStores();
     hydrateProjectDropdowns();
+    renderQuickTagsPanel();
     pushToast(`Проект "${cleanName}" создан`);
   });
 
-  // Обработчики сохранения/удаления из модального окна задачи
   document.getElementById('modal-task-save-btn').addEventListener('click', async () => {
     const id = document.getElementById('modal-task-id').value;
     const title = document.getElementById('modal-task-title').value.trim();
@@ -1243,11 +1468,9 @@
     };
 
     if (id) {
-      // Редактирование
       const idx = state.tasks.findIndex(t => t.id === id);
       if (idx !== -1) state.tasks[idx] = { ...state.tasks[idx], ...payload };
     } else {
-      // Создание с нуля из пустого слота календаря
       payload.id = 'task_' + Math.random().toString(36).substring(2, 11);
       state.tasks.unshift(payload);
     }
@@ -1271,7 +1494,6 @@
     }
   });
 
-  // Контроллеры переключения месяцев в календаре
   document.getElementById('cal-prev').addEventListener('click', () => {
     state.calendarMonth.setMonth(state.calendarMonth.getMonth() - 1);
     renderCalendarViewContent();
@@ -1281,10 +1503,8 @@
     renderCalendarViewContent();
   });
 
-  // Переключатели открытия/закрытия главного меню (aside)
   const asideMenu = document.getElementById('side-menu');
   const menuBackdrop = document.getElementById('menu-backdrop');
-  
   function openAsideMenu() {
     triggerHaptic('light');
     asideMenu.classList.remove('-translate-x-full');
@@ -1298,9 +1518,10 @@
   document.getElementById('menu-button').addEventListener('click', openAsideMenu);
   document.getElementById('close-menu').addEventListener('click', closeAsideMenu);
   menuBackdrop.addEventListener('click', closeAsideMenu);
-
+  
   document.getElementById('menu-to-settings').addEventListener('click', () => {
     closeAsideMenu();
+    renderSettingsProjectsManager();
     document.getElementById('settings-modal').classList.remove('hidden');
   });
   document.getElementById('menu-to-premium').addEventListener('click', () => {
@@ -1308,6 +1529,7 @@
     openPremiumModalView();
   });
   document.getElementById('palette-button').addEventListener('click', () => {
+    renderSettingsProjectsManager();
     document.getElementById('settings-modal').classList.remove('hidden');
   });
   document.getElementById('add-task-top').addEventListener('click', () => {
@@ -1322,19 +1544,16 @@
     document.getElementById('task-modal-headline').textContent = 'Новая задача';
     document.getElementById('task-modal').classList.remove('hidden');
   });
-
   document.getElementById('menu-to-admin').addEventListener('click', () => {
     closeAsideMenu();
     document.getElementById('admin-modal').classList.remove('hidden');
   });
 
-  // Закрытие модальных окон по триггерам
   document.querySelectorAll('.modal-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('task-modal').classList.add('hidden')));
   document.querySelectorAll('.settings-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('settings-modal').classList.add('hidden')));
   document.querySelectorAll('.premium-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('premium-modal').classList.add('hidden')));
   document.querySelectorAll('.admin-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('admin-modal').classList.add('hidden')));
 
-  // Активация кода премиума
   document.getElementById('premium-code-activate-btn').addEventListener('click', () => {
     const inp = document.getElementById('premium-code-input');
     if (processTokenActivation(inp.value)) {
@@ -1344,7 +1563,6 @@
     }
   });
 
-  // Покупка (генерация предзаполненного сообщения админу)
   document.getElementById('btn-buy-1m').addEventListener('click', () => {
     triggerHaptic('light');
     const msg = encodeURIComponent("Привет! Хочу приобрести Premium подписку на 1 месяц для Task Planner.");
@@ -1353,7 +1571,6 @@
     else window.open(targetUrl, '_blank');
   });
 
-  // Логика панели администратора (генерация автономного токена)
   document.getElementById('admin-gen-btn').addEventListener('click', () => {
     triggerHaptic('success');
     const days = parseInt(document.getElementById('admin-gen-days').value) || 31;
@@ -1375,9 +1592,6 @@
     pushToast('Токен скопирован в буфер');
   });
 
-  /* ==========================================================================
-     РЕЗЕРВНОЕ КОПИРОВАНИЕ ДАННЫХ (ЭКСПОРТ/ИМПОРТ)
-     ========================================================================== */
   document.getElementById('btn-export-clipboard').addEventListener('click', () => {
     const packet = {
       v: 3,
@@ -1399,6 +1613,7 @@
         state.tasks = parsed.tasks;
         await saveAllDataToDataStores();
         hydrateProjectDropdowns();
+        renderQuickTagsPanel();
         renderMasterLayout();
         pushToast('Данные восстановлены!');
       } else { alert('Неверный формат структуры данных.'); }
@@ -1426,10 +1641,8 @@
   function renderThemesGrid() {
     const target = document.getElementById('theme-selection-grid');
     target.innerHTML = '';
-    
     const activeTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'light';
     const isPrem = state.premium.active;
-
     THEMES_CONFIG.forEach(t => {
       const isLocked = t.premium && !isPrem;
       const btn = document.createElement('button');
@@ -1450,30 +1663,27 @@
         triggerHaptic('light');
         applyThemeEngine(t.id);
       });
-
       target.appendChild(btn);
     });
   }
 
   /* ==========================================================================
-     СТАРТ ПРИЛОЖЕНИЯ (BOOSTRAP)
+     СТАРТ ПРИЛОЖЕНИЯ (BOOTSTRAP)
      ========================================================================== */
-  // Инициализация профиля Telegram
   if (tgUser) {
     const nameStr = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') || 'Пользователь';
     document.getElementById('profile-name').textContent = nameStr;
   }
 
-  // Запуск цепочки загрузки данных
   await loadAllDataFromDataStores();
   evaluatePremiumState();
   
-  // Установка сохраненной темы
   const initialTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'light';
   applyThemeEngine(initialTheme);
 
-  // Первичный рендер интерфейса
   hydrateProjectDropdowns();
+  renderQuickTagsPanel();
+  syncTemplateSelectorUI();
   renderMasterLayout();
 
 })();
