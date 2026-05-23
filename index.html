@@ -4,16 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Планировщик задач Premium</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="./icons/icon-152.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="./icons/icon-167.png">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Task Planner">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -131,18 +121,6 @@
       background: rgba(0,0,0,0.05); color: var(--text); font-weight: 600;
     }
     html[data-theme="dark"] .locked::after { background: rgba(255,255,255,0.1); }
-
-    .sync-dot {
-      width: 8px; height: 8px; border-radius: 999px; display: inline-block;
-      background: var(--hint); box-shadow: 0 0 0 3px color-mix(in srgb, var(--hint) 14%, transparent);
-    }
-    .sync-dot.online { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.16); }
-    .sync-dot.syncing { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.18); }
-    .sync-dot.error { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.16); }
-    .install-step {
-      border: 1px solid color-mix(in srgb, var(--text) 7%, transparent);
-      background: color-mix(in srgb, var(--secondary) 82%, transparent);
-    }
 
     ::-webkit-scrollbar { height: 0px; width: 0px; }
     .scrollbar-none::-webkit-scrollbar { display: none; }
@@ -270,9 +248,6 @@
         </button>
         <button id="menu-to-premium" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--secondary)] transition-colors text-left font-medium text-amber-500">
           <i class="fas fa-crown"></i> Премиум Центр
-        </button>
-        <button id="menu-to-install-ios" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--secondary)] transition-colors text-left font-medium text-sky-500">
-          <i class="fas fa-mobile-screen-button"></i> iOS / Виджет / Синхронизация
         </button>
         <button id="menu-to-admin" class="hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--secondary)] transition-colors text-left font-medium text-purple-500">
           <i class="fas fa-user-shield"></i> Панель Администратора
@@ -574,30 +549,9 @@
         <div id="theme-selection-grid" class="grid grid-cols-2 gap-2"></div>
       </div>
 
-      <div id="cloud-sync-settings-card" class="p-3.5 rounded-xl bg-[var(--secondary)] space-y-3 text-xs border border-slate-200/10">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <h4 class="font-bold flex items-center gap-1.5"><i class="fas fa-cloud-arrow-up text-sky-500"></i> Облачная синхронизация Telegram ↔ iOS</h4>
-            <p class="text-[var(--hint)] mt-1 leading-relaxed">Для одинаковых данных в Telegram WebApp, PWA на главном экране iPhone и настоящем iOS WidgetKit-виджете нужен общий API. Вставьте URL Worker/API после деплоя.</p>
-          </div>
-          <span class="shrink-0 flex items-center gap-1.5 text-[10px] font-bold"><span id="sync-status-dot" class="sync-dot"></span><span id="sync-status-label">Локально</span></span>
-        </div>
-        <div class="space-y-1">
-          <label class="block text-[10px] font-bold text-[var(--hint)] uppercase tracking-wider">Sync API URL</label>
-          <input id="cloud-sync-api-input" type="url" class="w-full px-3 py-2.5 rounded-xl bg-[var(--bg)] border-none outline-none text-[var(--text)] font-mono text-[11px]" placeholder="https://task-sync.yourname.workers.dev/api" />
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <button id="btn-save-sync-api" class="p-2.5 rounded-lg bg-[var(--bg)] font-medium text-center border border-slate-200/5 btn-bounce">Сохранить API</button>
-          <button id="btn-connect-cloud-sync" class="p-2.5 rounded-lg bg-[var(--button)] text-[var(--button-text)] font-bold text-center btn-bounce">Связать Telegram ID</button>
-          <button id="btn-copy-pwa-link" class="p-2.5 rounded-lg bg-[var(--bg)] font-medium text-center border border-slate-200/5 btn-bounce">Ссылка для iPhone</button>
-          <button id="btn-pull-cloud-now" class="p-2.5 rounded-lg bg-[var(--bg)] font-medium text-center border border-slate-200/5 btn-bounce">Обновить из облака</button>
-        </div>
-        <div class="text-[10px] text-[var(--hint)] leading-relaxed">Telegram ID: <span id="sync-telegram-label" class="font-mono">—</span> · Ревизия: <span id="sync-revision-label" class="font-mono">0</span> · <button id="btn-open-ios-install" class="text-[var(--button)] font-bold underline underline-offset-2">инструкция iOS</button></div>
-      </div>
-
       <div class="p-3.5 rounded-xl bg-[var(--secondary)] space-y-2 text-xs">
         <h4 class="font-bold">Резервное копирование и Хранилище</h4>
-        <p class="text-[var(--hint)]">Telegram CloudStorage работает внутри Telegram. Для синхронизации с iOS/PWA используется общий Sync API из блока выше.</p>
+        <p class="text-[var(--hint)]">Синхронизация с серверами Telegram CloudStorage выполняется автоматически в фоновом режиме.</p>
         <div class="grid grid-cols-2 gap-2 pt-1">
           <button id="btn-export-clipboard" class="p-2.5 rounded-lg bg-[var(--bg)] font-medium text-center border border-slate-200/5 btn-bounce">Экспорт в буфер</button>
           <button id="btn-import-clipboard" class="p-2.5 rounded-lg bg-[var(--bg)] font-medium text-center border border-slate-200/5 btn-bounce">Импорт структуры</button>
@@ -683,41 +637,6 @@
   </div>
 </div>
 
-
-<div id="install-sync-modal" class="fixed inset-0 z-50 flex items-end justify-center hidden">
-  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm install-close-trigger"></div>
-  <div class="relative w-full max-w-xl bg-[var(--bg)] rounded-t-3xl shadow-2xl p-5 space-y-4 max-h-[92vh] overflow-y-auto border-t border-slate-200/10">
-    <div class="flex items-center justify-between pb-2 border-b border-slate-200/10">
-      <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-mobile-screen-button text-sky-500"></i> iOS: главный экран и виджет</h3>
-      <button class="w-8 h-8 rounded-full bg-[var(--secondary)] flex items-center justify-center install-close-trigger"><i class="fas fa-times text-xs"></i></button>
-    </div>
-
-    <div class="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs leading-relaxed">
-      <div class="font-bold text-sky-600 dark:text-sky-300">Что реализовано</div>
-      <div class="text-[var(--hint)] mt-1">WebApp можно открыть как PWA с главного экрана iPhone. Настоящий iOS-виджет работает через отдельный WidgetKit-код из архива и читает тот же Sync API, поэтому данные Telegram и iOS совпадают.</div>
-    </div>
-
-    <div class="grid grid-cols-1 gap-2 text-xs">
-      <div class="install-step rounded-xl p-3"><b>1.</b> В Telegram откройте настройки синхронизации, укажите Sync API и нажмите «Связать Telegram ID».</div>
-      <div class="install-step rounded-xl p-3"><b>2.</b> Скопируйте ссылку для iPhone, откройте её в Safari: <b>Поделиться → На экран «Домой»</b>.</div>
-      <div class="install-step rounded-xl p-3"><b>3.</b> Для настоящего виджета соберите папку <b>ios/TaskPlannerIOS</b> в Xcode, установите приложение и вставьте тот же токен/ссылку.</div>
-    </div>
-
-    <div class="space-y-2 text-xs">
-      <div class="font-bold text-[var(--hint)] uppercase tracking-wider">Статус подключения</div>
-      <div class="p-3 rounded-xl bg-[var(--secondary)]"><span id="install-sync-status-label">Проверка...</span></div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-2 text-xs">
-      <button id="btn-copy-pwa-link-modal" class="p-3 rounded-xl bg-[var(--button)] text-[var(--button-text)] font-bold btn-bounce">Скопировать PWA-ссылку</button>
-      <button id="btn-copy-widget-deeplink" class="p-3 rounded-xl bg-[var(--secondary)] font-bold btn-bounce">Скопировать Widget-ссылку</button>
-      <button id="btn-share-pwa-link" class="col-span-2 p-3 rounded-xl bg-[var(--secondary)] font-bold btn-bounce"><i class="fas fa-share-nodes mr-1.5"></i>Поделиться ссылкой</button>
-    </div>
-
-    <div class="text-[10px] text-[var(--hint)] leading-relaxed">Важно: не публикуйте sync-ссылку открыто. Она содержит токен доступа к задачам конкретного Telegram ID.</div>
-  </div>
-</div>
-
 <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-xs space-y-2 pointer-events-none"></div>
 
 <script>
@@ -744,10 +663,6 @@
   const STORAGE_KEY_PREMIUM = `tp_v3_prem_token_${userKeySuffix}`;
   const STORAGE_KEY_TEMPLATE = `tp_v3_layout_tpl_${userKeySuffix}`;
   const STORAGE_KEY_UI_PREFS = `tp_v4_ui_prefs_${userKeySuffix}`;
-  const STORAGE_KEY_SYNC_TOKEN = `tp_v5_sync_token_${userKeySuffix}`;
-  const STORAGE_KEY_SYNC_API = 'tp_v5_sync_api_base';
-  const STORAGE_KEY_SYNC_META = `tp_v5_sync_meta_${userKeySuffix}`;
-  const FALLBACK_SYNC_API_BASE = ''; // После деплоя Worker можно вписать сюда: https://your-worker.workers.dev/api
 
   /* ==========================================================================
      БАЗОВОЕ СОСТОЯНИЕ (STATE)
@@ -777,17 +692,6 @@
     sort: 'due-asc',
     calendarMonth: new Date(),
     premium: { active: false, expires: null, source: 'none' },
-    sync: {
-      apiBase: '',
-      token: null,
-      telegramId: tgUser?.id ? String(tgUser.id) : null,
-      status: 'local',
-      revision: 0,
-      updatedAt: null,
-      lastError: null,
-      suppressPush: false,
-      pollTimer: null
-    },
     selectedKanbanTaskId: null,
     activeDrawerTaskId: null
   };
@@ -993,256 +897,16 @@
     } catch(e) { return null; }
   }
 
-
-  /* ========================================================================== 
-     PWA + CLOUD SYNC: TELEGRAM ID ↔ IOS HOME SCREEN ↔ WIDGETKIT
-     ========================================================================== */
-  function sanitizeApiBase(value = '') {
-    const normalized = String(value || '').trim().replace(/\/+$/, '');
-    return normalized;
-  }
-
-  function getUrlParam(name) {
-    try { return new URL(window.location.href).searchParams.get(name); } catch(e) { return null; }
-  }
-
-  function captureSyncParamsFromUrl() {
-    const urlToken = getUrlParam('sync') || getUrlParam('token');
-    const urlApi = getUrlParam('api');
-    if (urlApi) localStorage.setItem(STORAGE_KEY_SYNC_API, sanitizeApiBase(urlApi));
-    if (urlToken) localStorage.setItem(STORAGE_KEY_SYNC_TOKEN, urlToken.trim());
-    if (urlApi || urlToken) {
-      try {
-        const clean = new URL(window.location.href);
-        clean.searchParams.delete('sync');
-        clean.searchParams.delete('token');
-        clean.searchParams.delete('api');
-        window.history.replaceState({}, document.title, clean.pathname + clean.search + clean.hash);
-      } catch(e) {}
-    }
-  }
-
-  function hydrateSyncStateFromStorage() {
-    state.sync.apiBase = sanitizeApiBase(localStorage.getItem(STORAGE_KEY_SYNC_API) || FALLBACK_SYNC_API_BASE);
-    state.sync.token = localStorage.getItem(STORAGE_KEY_SYNC_TOKEN) || null;
-    try {
-      const meta = JSON.parse(localStorage.getItem(STORAGE_KEY_SYNC_META) || '{}');
-      state.sync.revision = Number(meta.revision || 0);
-      state.sync.updatedAt = meta.updatedAt || null;
-      state.sync.telegramId = meta.telegramId || state.sync.telegramId;
-    } catch(e) {}
-  }
-
-  async function registerPwaServiceWorker() {
-    if (!('serviceWorker' in navigator)) return;
-    try { await navigator.serviceWorker.register('./sw.js'); } catch (e) { console.warn('Service worker registration failed', e); }
-  }
-
-  function buildSyncDataset() {
-    return {
-      v: 5,
-      app: 'task-planner-premium',
-      telegramId: state.sync.telegramId || (tgUser?.id ? String(tgUser.id) : null),
-      updatedAt: new Date().toISOString(),
-      projects: state.projects,
-      tasks: state.tasks,
-      uiPrefs: state.uiPrefs,
-      layoutTemplate: state.uiPrefs.listTemplate
-    };
-  }
-
-  function persistSyncMeta(meta = {}) {
-    state.sync.revision = Number(meta.revision ?? state.sync.revision ?? 0);
-    state.sync.updatedAt = meta.updatedAt || state.sync.updatedAt || null;
-    state.sync.telegramId = meta.telegramId || state.sync.telegramId || null;
-    localStorage.setItem(STORAGE_KEY_SYNC_META, JSON.stringify({
-      revision: state.sync.revision,
-      updatedAt: state.sync.updatedAt,
-      telegramId: state.sync.telegramId
-    }));
-    renderCloudSyncPanel();
-  }
-
-  function setSyncStatus(status, message = '') {
-    state.sync.status = status;
-    state.sync.lastError = status === 'error' ? message : null;
-    renderCloudSyncPanel();
-  }
-
-  async function cloudRequest(path, options = {}) {
-    if (!state.sync.apiBase) throw new Error('SYNC_API_NOT_CONFIGURED');
-    const headers = new Headers(options.headers || {});
-    headers.set('Content-Type', 'application/json');
-    if (state.sync.token) headers.set('Authorization', `Bearer ${state.sync.token}`);
-    const res = await fetch(`${state.sync.apiBase}${path}`, { ...options, headers, mode: 'cors' });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || json.ok === false) throw new Error(json.error || `HTTP_${res.status}`);
-    return json;
-  }
-
-  async function authenticateTelegramCloudSync() {
-    if (!isTgEnv || !tg?.initData) throw new Error('TELEGRAM_CONTEXT_REQUIRED');
-    if (!state.sync.apiBase) throw new Error('SYNC_API_NOT_CONFIGURED');
-    setSyncStatus('syncing');
-    const json = await cloudRequest('/auth/telegram', {
-      method: 'POST',
-      headers: {},
-      body: JSON.stringify({ initData: tg.initData })
-    });
-    if (json.token) {
-      state.sync.token = json.token;
-      state.sync.telegramId = String(json.telegramId || tgUser?.id || '');
-      localStorage.setItem(STORAGE_KEY_SYNC_TOKEN, state.sync.token);
-      persistSyncMeta({ telegramId: state.sync.telegramId, revision: json.revision || 0, updatedAt: json.updatedAt || null });
-      pushToast('Telegram ID связан', `ID ${state.sync.telegramId} готов к синхронизации`);
-      await pullCloudSync({ silent: true, pushIfEmpty: true });
-      return true;
-    }
-    return false;
-  }
-
-  function applyRemotePayload(payload, meta = {}) {
-    if (!payload || typeof payload !== 'object') return false;
-    if (!Array.isArray(payload.projects) || !Array.isArray(payload.tasks)) return false;
-    state.sync.suppressPush = true;
-    state.projects = payload.projects;
-    state.tasks = payload.tasks;
-    state.uiPrefs = { ...DEFAULT_UI_PREFS, ...(payload.uiPrefs || {}) };
-    state.layoutTemplate = state.uiPrefs.listTemplate;
-    const serialized = JSON.stringify({ ...payload, uiPrefs: state.uiPrefs, layoutTemplate: state.layoutTemplate });
-    localStorage.setItem(STORAGE_KEY_DATA, serialized);
-    localStorage.setItem(STORAGE_KEY_UI_PREFS, JSON.stringify(state.uiPrefs));
-    localStorage.setItem(STORAGE_KEY_TEMPLATE, state.uiPrefs.listTemplate);
-    state.sync.suppressPush = false;
-    persistSyncMeta(meta);
-    hydrateProjectDropdowns();
-    renderQuickTagsPanel();
-    syncTemplateSelectorUI();
-    renderMasterLayout();
-    return true;
-  }
-
-  async function pullCloudSync(options = {}) {
-    if (!state.sync.apiBase || !state.sync.token) {
-      setSyncStatus('local');
-      return false;
-    }
-    try {
-      setSyncStatus('syncing');
-      const json = await cloudRequest('/sync', { method: 'GET' });
-      if (json.payload) {
-        applyRemotePayload(json.payload, { revision: json.revision, updatedAt: json.updatedAt, telegramId: json.telegramId });
-        setSyncStatus('online');
-        if (!options.silent) pushToast('Данные обновлены из облака', `Ревизия ${json.revision || 0}`);
-        return true;
-      }
-      if (options.pushIfEmpty) await pushCloudSync(JSON.stringify(buildSyncDataset()), { silent: true });
-      setSyncStatus('online');
-      return false;
-    } catch (e) {
-      console.warn('Cloud pull failed', e);
-      setSyncStatus('error', e.message);
-      if (!options.silent) pushToast('Ошибка синхронизации', e.message, true);
-      return false;
-    }
-  }
-
-  async function pushCloudSync(serializedDataset, options = {}) {
-    if (!state.sync.apiBase || !state.sync.token || state.sync.suppressPush) return false;
-    try {
-      setSyncStatus('syncing');
-      const payload = JSON.parse(serializedDataset || JSON.stringify(buildSyncDataset()));
-      const json = await cloudRequest('/sync', {
-        method: 'PUT',
-        body: JSON.stringify({ payload, clientRevision: state.sync.revision || 0 })
-      });
-      persistSyncMeta({ revision: json.revision, updatedAt: json.updatedAt, telegramId: json.telegramId });
-      setSyncStatus('online');
-      return true;
-    } catch (e) {
-      console.warn('Cloud push failed', e);
-      setSyncStatus('error', e.message);
-      if (!options.silent) pushToast('Не удалось отправить в облако', e.message, true);
-      return false;
-    }
-  }
-
-  function buildPwaSyncLink() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('api', state.sync.apiBase || 'PASTE_SYNC_API_URL');
-    if (state.sync.token) url.searchParams.set('sync', state.sync.token);
-    return url.toString();
-  }
-
-  function buildWidgetDeepLink() {
-    const api = encodeURIComponent(state.sync.apiBase || 'PASTE_SYNC_API_URL');
-    const token = encodeURIComponent(state.sync.token || 'PASTE_SYNC_TOKEN');
-    return `taskplanner://sync?api=${api}&token=${token}`;
-  }
-
-  async function copyTextToClipboard(text, okTitle = 'Скопировано') {
-    try {
-      await navigator.clipboard.writeText(text);
-      pushToast(okTitle);
-    } catch(e) {
-      prompt('Скопируйте вручную:', text);
-    }
-  }
-
-  function renderCloudSyncPanel() {
-    const apiInput = document.getElementById('cloud-sync-api-input');
-    if (apiInput && document.activeElement !== apiInput) apiInput.value = state.sync.apiBase || '';
-    const dot = document.getElementById('sync-status-dot');
-    const label = document.getElementById('sync-status-label');
-    const revision = document.getElementById('sync-revision-label');
-    const tgLabel = document.getElementById('sync-telegram-label');
-    const installLabel = document.getElementById('install-sync-status-label');
-    const statusNames = { local: 'Локально', online: 'Синхронизировано', syncing: 'Синхронизация', error: 'Ошибка' };
-    if (dot) dot.className = `sync-dot ${state.sync.status === 'online' ? 'online' : state.sync.status === 'syncing' ? 'syncing' : state.sync.status === 'error' ? 'error' : ''}`;
-    if (label) label.textContent = statusNames[state.sync.status] || 'Локально';
-    if (revision) revision.textContent = String(state.sync.revision || 0);
-    if (tgLabel) tgLabel.textContent = state.sync.telegramId || (tgUser?.id ? String(tgUser.id) : 'не связан');
-    if (installLabel) {
-      installLabel.textContent = state.sync.token
-        ? `Готово: токен привязан${state.sync.telegramId ? ` к Telegram ID ${state.sync.telegramId}` : ''}. API: ${state.sync.apiBase || 'не указан'}.`
-        : `Токен ещё не создан. Откройте приложение внутри Telegram и нажмите «Связать Telegram ID».`;
-    }
-  }
-
-  function openInstallSyncModal() {
-    renderCloudSyncPanel();
-    document.getElementById('install-sync-modal')?.classList.remove('hidden');
-  }
-
-  async function bootstrapPwaAndCloudSync() {
-    await registerPwaServiceWorker();
-    captureSyncParamsFromUrl();
-    hydrateSyncStateFromStorage();
-    renderCloudSyncPanel();
-
-    if (state.sync.apiBase && isTgEnv && tg?.initData) {
-      try { await authenticateTelegramCloudSync(); } catch(e) { console.warn('Telegram sync auth skipped', e); setSyncStatus(state.sync.token ? 'online' : 'local', e.message); }
-    } else if (state.sync.apiBase && state.sync.token) {
-      await pullCloudSync({ silent: true });
-    } else {
-      setSyncStatus('local');
-    }
-
-    if (!state.sync.pollTimer) {
-      state.sync.pollTimer = setInterval(() => pullCloudSync({ silent: true }), 20000);
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) pullCloudSync({ silent: true });
-      });
-      window.addEventListener('online', () => pullCloudSync({ silent: true }));
-    }
-  }
-
   /* ==========================================================================
      ДВУХУРОВНЕВАЯ АРХИТЕКТУРА ДАННЫХ (LOCAL STORAGE + TELEGRAM CLOUD)
      ========================================================================== */
   async function saveAllDataToDataStores() {
-    const dataPacket = buildSyncDataset();
-    const serialized = JSON.stringify(dataPacket);
+    const serialized = JSON.stringify({
+      projects: state.projects,
+      tasks: state.tasks,
+      uiPrefs: state.uiPrefs,
+      layoutTemplate: state.uiPrefs.listTemplate
+    });
     localStorage.setItem(STORAGE_KEY_UI_PREFS, JSON.stringify(state.uiPrefs));
     localStorage.setItem(STORAGE_KEY_DATA, serialized);
     if (isTgEnv && tg?.CloudStorage) {
@@ -1251,9 +915,6 @@
           if (err) console.error("CloudStorage Save Error", err);
         });
       } catch (e) { console.warn("Cloud storage unreachable"); }
-    }
-    if (!state.sync.suppressPush) {
-      await pushCloudSync(serialized, { silent: true });
     }
   }
 
@@ -2373,10 +2034,6 @@
     closeAsideMenu();
     openPremiumModalView();
   });
-  document.getElementById('menu-to-install-ios')?.addEventListener('click', () => {
-    closeAsideMenu();
-    openInstallSyncModal();
-  });
   document.getElementById('palette-button').addEventListener('click', () => {
     renderSettingsProjectsManager();
     document.getElementById('settings-modal').classList.remove('hidden');
@@ -2399,56 +2056,6 @@
   });
 
   document.querySelectorAll('.modal-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('task-modal').classList.add('hidden')));
-
-  document.querySelectorAll('.install-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('install-sync-modal').classList.add('hidden')));
-
-  document.getElementById('btn-open-ios-install')?.addEventListener('click', openInstallSyncModal);
-  document.getElementById('btn-save-sync-api')?.addEventListener('click', async () => {
-    const input = document.getElementById('cloud-sync-api-input');
-    const api = sanitizeApiBase(input?.value || '');
-    if (!api) {
-      localStorage.removeItem(STORAGE_KEY_SYNC_API);
-      state.sync.apiBase = '';
-      setSyncStatus('local');
-      pushToast('Sync API очищен', 'Приложение продолжит работать локально.');
-      return;
-    }
-    localStorage.setItem(STORAGE_KEY_SYNC_API, api);
-    state.sync.apiBase = api;
-    pushToast('Sync API сохранён');
-    if (isTgEnv && tg?.initData) {
-      try { await authenticateTelegramCloudSync(); } catch(e) { pushToast('Не удалось связать Telegram ID', e.message, true); }
-    } else if (state.sync.token) {
-      await pullCloudSync({ silent: false });
-    }
-    renderCloudSyncPanel();
-  });
-
-  document.getElementById('btn-connect-cloud-sync')?.addEventListener('click', async () => {
-    try { await authenticateTelegramCloudSync(); } catch(e) { pushToast('Нужно открыть внутри Telegram', e.message, true); }
-  });
-  document.getElementById('btn-pull-cloud-now')?.addEventListener('click', () => pullCloudSync({ silent: false }));
-  document.getElementById('btn-copy-pwa-link')?.addEventListener('click', () => {
-    if (!state.sync.token) return pushToast('Сначала свяжите Telegram ID', 'Откройте приложение в Telegram и нажмите «Связать Telegram ID».', true);
-    copyTextToClipboard(buildPwaSyncLink(), 'Ссылка для iPhone скопирована');
-  });
-  document.getElementById('btn-copy-pwa-link-modal')?.addEventListener('click', () => {
-    if (!state.sync.token) return pushToast('Сначала свяжите Telegram ID', '', true);
-    copyTextToClipboard(buildPwaSyncLink(), 'PWA-ссылка скопирована');
-  });
-  document.getElementById('btn-copy-widget-deeplink')?.addEventListener('click', () => {
-    if (!state.sync.token) return pushToast('Сначала свяжите Telegram ID', '', true);
-    copyTextToClipboard(buildWidgetDeepLink(), 'Widget-ссылка скопирована');
-  });
-  document.getElementById('btn-share-pwa-link')?.addEventListener('click', async () => {
-    if (!state.sync.token) return pushToast('Сначала свяжите Telegram ID', '', true);
-    const link = buildPwaSyncLink();
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Task Planner iOS Sync', text: 'Ссылка для iPhone/PWA', url: link }); return; } catch(e) {}
-    }
-    copyTextToClipboard(link, 'Ссылка скопирована');
-  });
-
   document.querySelectorAll('.settings-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('settings-modal').classList.add('hidden')));
   document.querySelectorAll('.premium-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('premium-modal').classList.add('hidden')));
   document.querySelectorAll('.admin-close-trigger').forEach(el => el.addEventListener('click', () => document.getElementById('admin-modal').classList.add('hidden')));
@@ -2584,7 +2191,6 @@
 
   await loadAllDataFromDataStores();
   evaluatePremiumState();
-  await bootstrapPwaAndCloudSync();
   
   const initialTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'light';
   applyThemeEngine(initialTheme);
